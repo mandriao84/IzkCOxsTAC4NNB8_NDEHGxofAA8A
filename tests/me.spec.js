@@ -3,5 +3,5 @@ const fs = require('fs')
 const hlp = require(process.cwd() + '/helpers/general/helpers.js')
 
 test('after ....', async ({ context, page, request }) => {
-  await hlp._uniqData(request)
+  await hlp._results(request)
 })
