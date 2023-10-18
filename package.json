@@ -1,0 +1,25 @@
+{
+  "name": "undefined",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "gh:pw:tests": "npx playwright test --project gh_pw_tests",
+    "run": "npx playwright test --project=chromium --workers=1",
+    "work": "npx playwright test --project=chromium --workers=12",
+    "stress": "npx playwright test --project=chromium --workers=12 --repeat-each=12",
+    "dev": "npx playwright test --debug --project=chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@google-cloud/local-auth": "^2.1.1",
+    "@playwright/browser-chromium": "^1.38.1",
+    "@playwright/browser-firefox": "^1.38.1",
+    "@playwright/browser-webkit": "^1.38.1",
+    "@playwright/test": "1.37",
+    "dayjs": "^1.11.5",
+    "dotenv": "^16.0.3"
+  }
+}
