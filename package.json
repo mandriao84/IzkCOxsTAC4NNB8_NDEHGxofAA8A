@@ -14,12 +14,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@google-cloud/local-auth": "^2.1.1",
     "@playwright/browser-chromium": "^1.38.1",
     "@playwright/browser-firefox": "^1.38.1",
     "@playwright/browser-webkit": "^1.38.1",
     "@playwright/test": "1.37",
-    "dayjs": "^1.11.5",
-    "dotenv": "^16.0.3"
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.3.1"
   }
 }
