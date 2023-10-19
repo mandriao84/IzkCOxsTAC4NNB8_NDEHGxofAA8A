@@ -1,12 +1,6 @@
 const { test, expect } = require('@playwright/test')
-const hlp = require(process.cwd() + '/helpers/general/helpers.js')
+const hlp = require(process.cwd() + '/helpers/data/helpers.js')
 
-test('data', async ({ context, page, request }) => {
-  const results = await hlp._results(request)
-  console.log(results)
-})
-
-test('x', async ({ context, page, request }) => {
-  const results = await hlp._results(request)
-  console.log(results)
+test('run', async ({ context, page, request }) => {
+  await hlp._x(request)
 })

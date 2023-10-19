@@ -1,6 +1,7 @@
 const config = require(process.cwd() + '/playwright.config.js')
 const dayjs = require(process.cwd() + '/plugins/index.js')
 const { expect } = require('@playwright/test')
+const { TwitterApi } = require('twitter-api-v2')
 
 export const _name = async () => {
   const text = process.env.PROJECT
@@ -81,4 +82,33 @@ export const _results = async (request) => {
   }
 
   return results
+}
+
+export const _x = async (request) => {
+  const results = await _results(request)
+
+  let x = ""
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    const date = result["date"]
+    const times = result["times"]
+    const guests = result["guests"]
+    x += `${date} - [ ${times.join(", ")} ] - [ ${guests.join(", ")} ]\n`
+    if (i == results.length - 1) {
+      x += `https://bookings.zenchef.com/results?rid=356354\n@mandriao84_`
+    }
+  }
+
+  const client = new TwitterApi({
+    "appKey": process.env.X_KEY,
+    "appSecret": process.env.X_SECRET,
+    "accessToken": process.env.X_ACCESS_TOKEN,
+    "accessSecret": process.env.X_ACCESS_SECRET,
+  })
+
+  const xPOST = await client.v2.tweet(x)
+  console.log(xPOST)
+
+  return xPOST
 }

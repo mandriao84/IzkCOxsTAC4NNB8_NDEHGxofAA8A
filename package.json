@@ -19,6 +19,7 @@
     "@playwright/browser-webkit": "^1.38.1",
     "@playwright/test": "1.37",
     "dayjs": "^1.11.10",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "twitter-api-v2": "^1.15.2"
   }
 }
