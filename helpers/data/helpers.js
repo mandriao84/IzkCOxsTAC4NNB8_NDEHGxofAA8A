@@ -91,7 +91,7 @@ export const _x = async (request) => {
 
   for (let i = 0; i < results.length; i++) {
     const result = results[i]
-    const date = result["date"]
+    const date = result["date"].replace(/-/g, '.')
     const times = result["times"]
     const guests = result["guests"]
     x += `${date} - [ ${times.join(", ")} ] - [ ${guests.join(", ")} ]\n`
