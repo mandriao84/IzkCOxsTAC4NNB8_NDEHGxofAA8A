@@ -1,0 +1,103 @@
+name: "run"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches-ignore:
+      - '**'
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      nvrnmt:
+        type: string
+        required: true
+      runscope:
+        type: string
+        required: true
+
+env:
+  CI: 1
+  FORCE_COLOR: 1
+  PROJECT: ${{ secrets.PROJECT }}
+  KEY: ${{ secrets.KEY }}
+
+
+jobs:
+  install:
+    timeout-minutes: 60
+    name: 🏗️ Install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        id: cache-node
+        with:
+          path: |
+            ./node_modules
+          key: modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Cache playwright binaries
+        uses: actions/cache@v3
+        id: cache-pw
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install playwright browsers
+        if: steps.cache-pw.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+
+  run:
+    name: 🔎 Run (${{ matrix.shard }}/${{ strategy.job-total }})
+    needs: [install]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Restore cached node
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./node_modules
+          key: |
+            modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Restore cached playwright
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: |
+            playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: run
+        id: pw
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --forbid-only --project=chromium --workers=1 tests/me.spec.js
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: playwright-report-${{ matrix.shard }}_${{ strategy.job-total }}
+          path: playwright-report
+          retention-days: 7
