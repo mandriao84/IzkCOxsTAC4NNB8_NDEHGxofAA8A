@@ -35,7 +35,7 @@ jobs:
     if: >-
       contains(github.event.head_commit.message, 'RUN') ||
       github.event_name == 'workflow_dispatch' ||
-      github.event.schedule == '0 3 * * *'
+      github.event.schedule == '0 2,10,18 * * *'
     timeout-minutes: 60
     name: 🏗️ Install
     runs-on: ubuntu-latest
