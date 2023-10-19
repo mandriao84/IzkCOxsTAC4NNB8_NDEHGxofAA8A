@@ -23,6 +23,9 @@ env:
   FORCE_COLOR: 1
   PROJECT: ${{ secrets.PROJECT }}
   KEY: ${{ secrets.KEY }}
+  X_KEY: ${{ secrets.KEY }}
+  X_SECRET: ${{ secrets.KEY }}
+  X_TOKEN: ${{ secrets.KEY }}
 
 
 jobs:
