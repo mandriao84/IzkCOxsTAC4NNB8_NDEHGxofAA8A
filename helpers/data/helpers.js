@@ -106,6 +106,7 @@ export const _x = async (request) => {
     "accessToken": process.env.X_ACCESS_TOKEN,
     "accessSecret": process.env.X_ACCESS_SECRET,
   })
+  console.log(client)
 
   const xPOST = await client.v2.tweet(x)
   console.log(xPOST)
