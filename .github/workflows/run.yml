@@ -102,7 +102,7 @@ jobs:
 
       - name: run
         id: pw
-        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --forbid-only --project=chromium --workers=1 tests/me.spec.js
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --forbid-only --project=chromium --workers=1 tests/run.spec.js
 
       - uses: actions/upload-artifact@v3
         if: ${{ always() }}
