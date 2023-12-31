@@ -21,8 +21,8 @@ const config = {
     bypassCSP: true,
     actionTimeout: 0,
     navigationTimeout: 0,
-    baseURL: process.env.URL === undefined ? "https://staging.inqom.com" : process.env.URL,
-    // storageState: "./.datasets/storageState.json",
+    baseURL: process.env.URL === undefined ? "https://twitter.com" : process.env.URL,
+    storageState: "./.storage/state.json",
     video: 'on-first-retry',
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],
@@ -35,20 +35,6 @@ const config = {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-      },
-    },
-
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-      },
-    },
-
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
       },
     },
 
