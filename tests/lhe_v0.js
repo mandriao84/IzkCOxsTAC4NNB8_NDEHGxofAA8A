@@ -1,3 +1,4 @@
+const fs = require('fs');
 const ACTIONS = ['check', 'bet', 'call', 'fold'];
 
 class LimitHoldemSolver {
@@ -8,6 +9,11 @@ class LimitHoldemSolver {
         this.regretSum = {};
         this.strategy = {};
         this.strategySum = {};
+        this.rounds = [];
+        this.roundLabel = null;
+        this.roundPlays = null;
+        this.roundBetCount = null;
+        this.player = null;
     }
 
     start() {
@@ -44,7 +50,7 @@ class LimitHoldemSolver {
         this.strategySum[log] = {};
         for (const action of ACTIONS) {
             this.regretSum[log][action] = 0;
-            this.strategy[log][action] = Math.random() * 0.01;
+            this.strategy[log][action] = 1 / ACTIONS.length;
             this.strategySum[log][action] = 0;
         }
     }
@@ -57,28 +63,30 @@ class LimitHoldemSolver {
     }
 
     updateStrategy(log) {
-        const epsilon = 1e-10;
+        // const epsilon = 1e-10;
         let normalizingSum = 0;
         for (const action of ACTIONS) {
             this.strategy[log][action] = Math.max(this.regretSum[log][action], 0);
             normalizingSum += this.strategy[log][action];
         }
-
-        if (normalizingSum > epsilon) {
+    
+        if (normalizingSum > 0) {
             for (const action of ACTIONS) {
                 this.strategy[log][action] /= normalizingSum;
-                this.strategySum[log][action] += this.strategy[log][action];
             }
         } else {
             const uniformProbability = 1 / ACTIONS.length;
             for (const action of ACTIONS) {
                 this.strategy[log][action] = uniformProbability;
-                this.strategySum[log][action] += uniformProbability;
             }
+        }
+
+        for (const action of ACTIONS) {
+            this.strategySum[log][action] += this.strategy[log][action];
         }
     }
 
-    roundsStatus(plays) {
+    updateRounds(plays) {
         const rounds = [{
             "label": "preflop",
             "plays": []
@@ -95,7 +103,6 @@ class LimitHoldemSolver {
         let roundNumber = 0;
         let roundPlays = [];
         let roundBetCount = 0;
-        
     
         for (let i = 0; i < plays.length; i++) {
             const play = plays[i];
@@ -125,37 +132,31 @@ class LimitHoldemSolver {
             }
         }
     
-        const result = {
-            "rounds": rounds,
-            "roundLabel": rounds[roundNumber]?.["label"] ?? null,
-            "roundPlays": roundPlays,
-            "roundBetCount": roundBetCount,
-        };
-    
-        return result
+        this.rounds = rounds;
+        this.roundLabel = rounds[roundNumber]?.["label"] ?? null;
+        this.roundPlays = roundPlays;
+        this.roundBetCount = roundBetCount;
+        this.player = roundPlays.length % 2 === 0 ? 0 : 1;
     }
 
     plays(history) {
         const plays = [...history];
-        const roundsStatus = this.roundsStatus(plays);
-        const roundLabel = roundsStatus['roundLabel'];
-        const roundPlays = roundsStatus['roundPlays'];
-        const roundBetCount = roundsStatus['roundBetCount'];
-        const roundPlay = roundPlays.slice(-1)[0];
+        this.updateRounds(plays);
+        const roundPlay = this.roundPlays.slice(-1)[0];
 
-        if (roundLabel === null) { 
+        if (this.roundLabel === null) { 
             return [];
         }
 
-        if (roundPlays.length === 0 || roundPlay === 'check' || roundPlay === 'call') { 
+        if (this.roundPlays.length === 0 || roundPlay === 'check' || roundPlay === 'call') { 
             return ['check', 'bet'];
         }
 
-        if (roundPlay === 'bet' && roundBetCount < 4) { 
+        if (roundPlay === 'bet' && this.roundBetCount < 4) { 
             return ['bet', 'call', 'fold'];
         }
 
-        if (roundPlay === 'bet' && roundBetCount >= 4) { 
+        if (roundPlay === 'bet' && this.roundBetCount >= 4) { 
             return ['call', 'fold'];
         }
 
@@ -190,12 +191,47 @@ class LimitHoldemSolver {
         return avgStrategy;
     }
 
-    train(iterations) {
+    train(iterations, loadFile = null, saveFile = null) {
+        if (loadFile) {
+            this.load(loadFile);
+        }
+
         for (let i = 0; i < iterations; i++) {
             this.start();
             const [p0_hand, p1_hand] = this.deal();
             this.cfr([], 1, 1, p0_hand, p1_hand);
         }
+
+        if (saveFile) {
+            this.save(saveFile);
+        }
+    }
+
+    load(filename) {
+        try {
+            const path = process.cwd() + '/tests/' + filename;
+            const dataRaw = fs.readFileSync(path, 'utf8');
+            const data = JSON.parse(dataRaw);
+            
+            for (const log in data) {
+                this.strategySum[log] = {};
+                for (const action in data[log]) {
+                    this.strategySum[log][action] = data[log][action];
+                }
+            }
+            
+            console.log(`Results loaded from ${path}`);
+        } catch (err) {
+            console.error(`Error loading file: ${err.message}`);
+        }
+    }
+
+    save(filename) {
+        const result = this.result();
+        const resultAsJson = JSON.stringify(result, null, 2);
+        const path = process.cwd() + '/tests/' + filename;
+        fs.writeFileSync(path, resultAsJson, 'utf8');
+        console.log(`Results saved to ${path}`);
     }
 
     cfr(history, p0, p1, p0_hand, p1_hand) {
@@ -205,46 +241,45 @@ class LimitHoldemSolver {
             return this.payoff(history, this.cardValue(p0_hand), this.cardValue(p1_hand));
         }
     
-        const historyLengthIsEven = history.length % 2 === 0;
-        const playerCard = historyLengthIsEven ? p0_hand : p1_hand;
-    
+        const playerCard = this.player === 0 ? p0_hand : p1_hand;
         const log = `${playerCard.rank}:${history.join('')}`;
+
         let strategy = this.getStrategy(log);
-        this.updateStrategy(log);
     
         let util = {};
         let nodeUtil = 0;
     
         for (const play of plays) {
             const newHistory = [...history, play];
-            
-            util[play] = historyLengthIsEven ? -this.cfr(
-                newHistory, p0 * strategy[play], p1, p0_hand, p1_hand
-            ) : -this.cfr(
-                newHistory, p0, p1 * strategy[play], p0_hand, p1_hand
-            )
+
+            // players dont alternate
+            util[play] = this.cfr(
+                newHistory,
+                this.player === 0 ? p0 * strategy[play] : p0,
+                this.player === 1 ? p1 * strategy[play] : p1,
+                p0_hand,
+                p1_hand
+            );
     
             nodeUtil += strategy[play] * util[play];
         }
     
         for (const play of plays) {
             const regret = util[play] - nodeUtil;
-            this.update(log, play, (historyLengthIsEven ? p0 : p1) * regret);
+            this.update(log, play, regret);
         }
+
+        this.updateStrategy(log);
     
         return nodeUtil;
     }
 
     payoff(history, p0_card_value, p1_card_value) {
-        const plays = [...history];
-        const roundsStatus = this.roundsStatus(plays);
-        const rounds = roundsStatus['rounds'];
-        
-        let pot = 0
+        let pot = 0;
         const playersNumber = 2;
-        for (let i = 0; i < rounds.length; i++) {
+        for (let i = 0; i < this.rounds.length; i++) {
             const unit = i < 2 ? 1 : 2;
-            const round = rounds[i];
+            const round = this.rounds[i];
             const roundPlays = round["plays"];
             const betPlays = roundPlays.filter(r => r === "bet");
             const betPlaysCount = betPlays.length;
@@ -268,7 +303,6 @@ class LimitHoldemSolver {
 }
 
 const solver = new LimitHoldemSolver();
-solver.start();
-solver.train(1);
-const result = solver.result();
-console.log('Result:', result);
+solver.train(10000, 'results.json', 'results.json');
+// const result = solver.result();
+// console.log('Result:', result);
