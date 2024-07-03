@@ -2,7 +2,8 @@ const PASS = 0
 const BET = 1
 const ACTIONS = {
   0: 'p',
-  1: 'b'
+  1: 'b',
+  2: 'c'
 }
 const NUM_ACTIONS = Object.keys(ACTIONS).length;
 const CARDS = {
@@ -91,6 +92,8 @@ class Solver {
           return `p: ${value}`;
         } else if (index === 1) {
           return `b: ${value}`;
+        } else if (index === 2) {
+          return `c: ${value}`;
         }
       }).join(' | ');
       console.log(`${card}${plays} || ${strategy}`);
@@ -124,13 +127,18 @@ class Solver {
     if (plays >= 2) {
       const opponentHistory = this.getOpponentHistory(history);
       const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
+      const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
       const opponentAnte = 1;
-      const betUnit = 1
-      const payoff = (opponentBetCount * betUnit) + (opponentAnte);
+      const betUnit = 2;
+      const callUnit = 1;
+      const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
 
-      let doublePass = history.slice(-2) === 'pp';
       let fold = history.slice(-2) === 'bp';
-      let maxBet = history.slice(-4) === 'bbbb';
+      let check = history.slice(-2) === 'pp';
+      let check2 = history.slice(-2) === 'cc';
+      let check3 = history.slice(-2) === 'pc';
+      let call = history.slice(-2) === 'bc';
+      let betMax = history.slice(-4) === 'bbbb';
       let isPlayerCardHigher = cards[player] > cards[opponent];
       let isOpponentCardHigher = cards[player] < cards[opponent];
 
@@ -138,8 +146,7 @@ class Solver {
         return payoff;
       }
 
-      if (doublePass || maxBet) {
-        if (maxBet) { console.log(payoff, opponentBetCount); }
+      if (check || check2 || check3 || call || betMax) {
         return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
       }
     }
@@ -172,7 +179,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 100;
+  const iterations = 1000000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
