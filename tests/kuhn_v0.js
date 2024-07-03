@@ -128,8 +128,6 @@ class Solver {
       const betUnit = 1
       const payoff = (opponentBetCount * betUnit) + (opponentAnte);
 
-      let terminalPass = history.slice(-1) === 'p';
-      let doubleBet = history.slice(-2) === 'bb';
       let doublePass = history.slice(-2) === 'pp';
       let fold = history.slice(-2) === 'bp';
       let maxBet = history.slice(-4) === 'bbbb';
@@ -141,6 +139,7 @@ class Solver {
       }
 
       if (doublePass || maxBet) {
+        if (maxBet) { console.log(payoff, opponentBetCount); }
         return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
       }
     }
@@ -173,7 +172,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000;
+  const iterations = 100;
   const trainer = new Solver();
   trainer.train(iterations);
 }
