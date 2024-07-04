@@ -1,169 +1,254 @@
-// Kuhn Poker Monte Carlo CFR Solver
+const PASS = 0
+const BET = 1
+const ACTIONS = {
+    0: 'p',
+    1: 'b',
+    2: 'c',
+    3: 'f'
+}
+const NUM_ACTIONS = Object.keys(ACTIONS).length;
+const CARDS = {
+    1: 'J',
+    2: 'Q',
+    3: 'K',
+};
 
-// Constants
-const PASS = 0;
-const BET = 1;
-const NUM_ACTIONS = 2;
-const NUM_CARDS = 3;
-
-class KuhnPokerCFR {
+class Node {
     constructor() {
-        this.nodeMap = new Map();
+        this.infoSet = '';
+        this.regretSum = new Array(NUM_ACTIONS).fill(0);
+        this.strategy = new Array(NUM_ACTIONS).fill(0);
+        this.strategySum = new Array(NUM_ACTIONS).fill(0);
     }
 
-    // Get information set
-    getInfoSet(history, card) {
-        const infoSet = card + history;
-        if (!this.nodeMap.has(infoSet)) {
-            this.nodeMap.set(infoSet, new Node(NUM_ACTIONS));
-        }
-        return this.nodeMap.get(infoSet);
+    getRandomInt(max) {
+        return Math.floor(Math.random() * max);
     }
 
-    // Calculate strategy
-    getStrategy(realizationWeight, node) {
-        const strategy = new Array(NUM_ACTIONS).fill(0);
+    getStrategy(realizationWeight) {
         let normalizingSum = 0;
-
         for (let a = 0; a < NUM_ACTIONS; a++) {
-            strategy[a] = node.regretSum[a] > 0 ? node.regretSum[a] : 0;
-            normalizingSum += strategy[a];
+            this.strategy[a] = this.regretSum[a] > 0 ? this.regretSum[a] : 0;
+            normalizingSum += this.strategy[a];
         }
 
         for (let a = 0; a < NUM_ACTIONS; a++) {
             if (normalizingSum > 0) {
-                strategy[a] /= normalizingSum;
+                this.strategy[a] /= normalizingSum;
             } else {
-                strategy[a] = 1.0 / NUM_ACTIONS;
+                this.strategy[a] = 1.0 / NUM_ACTIONS;
             }
-            node.strategy[a] += realizationWeight * strategy[a];
+            this.strategySum[a] += realizationWeight * this.strategy[a];
         }
 
-        return strategy;
+        return this.strategy;
     }
 
-    // Calculate utility for terminal states
-    getUtility(history, cards) {
-        const plays = history.length;
-        const player = plays % 2;
-        const opponent = 1 - player;
-
-        if (plays > 1) {
-            const terminalPass = history[plays - 1] === 'c';
-            const doubleBet = history.substring(plays - 2) === 'bb';
-
-            if (terminalPass) {
-                if (history === 'cc') {
-                    return cards[player] > cards[opponent] ? 1 : -1;
-                } else {
-                    return 1;
-                }
-            } else if (doubleBet) {
-                return cards[player] > cards[opponent] ? 2 : -2;
-            }
-        }
-        return 0;
-    }
-
-    // CFR+ implementation
-    cfr(cards, history, p0, p1) {
-        const plays = history.length;
-        const player = plays % 2;
-        const opponent = 1 - player;
-
-        if (plays > 1) {
-            const terminalUtil = this.getUtility(history, cards);
-            if (terminalUtil !== 0) {
-                return player === 0 ? terminalUtil : -terminalUtil;
-            }
-        }
-
-        const infoSet = this.getInfoSet(history, cards[player]);
-        const strategy = this.getStrategy(player === 0 ? p0 : p1, infoSet);
-        const util = new Array(NUM_ACTIONS).fill(0);
-        let nodeUtil = 0;
+    getAverageStrategy() {
+        let avgStrategy = new Array(NUM_ACTIONS).fill(0);
+        let normalizingSum = 0;
 
         for (let a = 0; a < NUM_ACTIONS; a++) {
-            const nextHistory = history + (a === PASS ? 'c' : 'b');
+            normalizingSum += this.strategySum[a];
+        }
+
+        // Calculate the average strategy
+        for (let a = 0; a < NUM_ACTIONS; a++) {
+            if (normalizingSum > 0) {
+                avgStrategy[a] = this.strategySum[a] / normalizingSum;
+            } else {
+                avgStrategy[a] = 1.0 / NUM_ACTIONS;
+            }
+        }
+
+        return avgStrategy;
+    }
+
+    toString() {
+        return `${this.infoSet.padEnd(4)}: ${JSON.stringify(this.getAverageStrategy())}`;
+    }
+}
+
+class Solver {
+    constructor() {
+        this.nodeMap = new Map();
+    }
+
+    train(iterations) {
+        const cards = [1, 2, 3, 1, 2, 3];
+        let util = 0;
+
+        for (let i = 0; i < iterations; i++) {
+            this.shuffle(cards);
+            util += this.cfr(cards, "", 1, 1);
+        }
+
+        // console.log(`Average game value: ${util / iterations}`);
+        this.nodeMap.forEach(node => {
+            const infoSet = node.infoSet;
+            const card = CARDS[infoSet.charAt(0)];
+            const plays = infoSet.slice(1);
+            const strategy = node.strategy.map((value, index) => {
+                if (index === 0) {
+                    return `p: ${value}`;
+                } else if (index === 1) {
+                    return `b: ${value}`;
+                } else if (index === 2) {
+                    return `c: ${value}`;
+                } else if (index === 3) {
+                    return `f: ${value}`;
+                }
+            }).join(' | ');
+            console.log(`${card}${plays} || ${strategy}`);
+        });
+    }
+
+    shuffle(cards) {
+        for (let c1 = cards.length - 1; c1 > 0; c1--) {
+            let c2 = Math.floor(Math.random() * (c1 + 1));
+            let tmp = cards[c1];
+            cards[c1] = cards[c2];
+            cards[c2] = tmp;
+        }
+    }
+
+    getPayoff(roundsHistory) {
+        const opponentHistories = [];
+
+        for (let h = 0; h < roundsHistory.length; h++) {
+            const historyRaw = roundsHistory[h];
+            const history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 5b = 4b + c
+            const historyLengthIsEven = history.length % 2 === 0;
+            if (historyLengthIsEven === true) {
+                let result = history.split('').filter((char, index) => index % 2 !== 0).join('');
+                opponentHistories.push(result);
+            } else {
+                let result = history.split('').filter((char, index) => index % 2 === 0).join('');
+                opponentHistories.push(result);
+            }
+        }
+
+        const opponentHistory = opponentHistories.join('');
+        const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
+        const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
+        const opponentAnte = 1;
+        const betUnit = 2;
+        const callUnit = 1;
+        const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
+        return payoff;
+    }
+
+    getActions(roundHistory) {
+        const lastAction = roundHistory.slice(-1);
+        const betCount = (roundHistory.match(/b/g) || []).length;
+        if (roundHistory.length === 0 || lastAction === 'p' || lastAction === 'c') {
+            return ['p', 'b'];
+        }
+
+        if (lastAction === 'b' && betCount < 4) { 
+            return ['b', 'c', 'f'];
+        }
+
+        if (lastAction === 'b' && betCount >= 4) { 
+            return ['c', 'f'];
+        }
+
+        return [];
+    }
+
+    getReverseActions(actions) {
+        const a = Object.values(ACTIONS)
+        return a.filter(e => !actions.includes(e));
+    }
+
+    cfr(cards, history, p0, p1) {
+        const roundsHistory = history.split('_');
+        const roundNumber = roundsHistory.length;
+        const roundHistory = roundsHistory.pop();
+
+        let plays = roundHistory.length;
+        let player = plays % 2;
+        let opponent = 1 - player;
+        let infoSet = cards[player] + history;
+        console.log(`infoSet: ${infoSet}`);
+
+        if (plays >= 2) {
+            const payoff = this.getPayoff(roundsHistory);
+
+            let fold = roundHistory.slice(-2) === 'bp';
+            let check = roundHistory.slice(-2) === 'pp';
+            let check2 = roundHistory.slice(-2) === 'cc';
+            let check3 = roundHistory.slice(-2) === 'pc';
+            let check4 = roundHistory.slice(-2) === 'cp';
+            let call = roundHistory.slice(-2) === 'bc';
+            let bets = roundHistory.slice(-5) === 'bbbbb';
+            let isPlayerCardHigher = cards[player] > cards[opponent];
+            let isOpponentCardHigher = cards[player] < cards[opponent];
+
+            if (fold) {
+                return payoff;
+            }
+
+            if (check || check2 || check3 || check4 || call || bets) {
+                history += '_';
+                if (roundNumber == 1) {
+                    return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
+                }
+            }
+        }
+
+        if (!this.nodeMap.has(infoSet)) {
+            this.nodeMap.set(infoSet, new Node());
+            this.nodeMap.get(infoSet).infoSet = infoSet;
+        }
+
+        let node = this.nodeMap.get(infoSet);
+        let strategy = node.getStrategy(player === 0 ? p0 : p1);
+        let util = new Array(NUM_ACTIONS).fill(0);
+        let nodeUtil = 0;
+
+        // for (let a = 0; a < NUM_ACTIONS.length; a++) {
+        //     const action = actions[a];
+        //     let nextHistory = history + action;
+        //     const index = Number(Object.keys(ACTIONS).find(r => ACTIONS[r] === action));
+        //     // console.log(`action: ${action}`, `index: ${index}`);
+        //     util[index] = player === 0
+        //         ? -this.cfr(cards, nextHistory, p0 * strategy[a], p1)
+        //         : -this.cfr(cards, nextHistory, p0, p1 * strategy[a]);
+        //     nodeUtil += strategy[index] * util[index];
+        // }
+
+        // const actionsReverse = this.getReverseActions(actions);
+        // for (let a = 0; a < NUM_ACTIONS.length; a++) {
+        //     const action = actionsReverse[a];
+        //     const index = Number(Object.keys(ACTIONS).find(r => ACTIONS[r] === action));
+        //     let regret = util[index] - nodeUtil;
+        //     node.regretSum[index] += (player === 0 ? p1 : p0) * regret;
+        // }
+
+        for (let a = 0; a < NUM_ACTIONS; a++) {
+            let nextHistory = history + ACTIONS[a];
             util[a] = player === 0
                 ? -this.cfr(cards, nextHistory, p0 * strategy[a], p1)
                 : -this.cfr(cards, nextHistory, p0, p1 * strategy[a]);
             nodeUtil += strategy[a] * util[a];
         }
-
+    
+        console.log(`nodeUtil: ${nodeUtil}`, `util: ${util}`);
+    
         for (let a = 0; a < NUM_ACTIONS; a++) {
-            const regret = util[a] - nodeUtil;
-            infoSet.regretSum[a] += (player === 0 ? p1 : p0) * regret;
+          let regret = util[a] - nodeUtil;
+          node.regretSum[a] += (player === 0 ? p1 : p0) * regret;
         }
 
         return nodeUtil;
     }
-
-    // Train the CFR solver
-    train(iterations) {
-        const util = new Array(iterations).fill(0);
-        const cards = [1, 2, 3];
-
-        for (let i = 0; i < iterations; i++) {
-            this.shuffle(cards);
-            util[i] = this.cfr(cards, '', 1, 1);
-        }
-
-        return util;
-    }
-
-    // Helper method to shuffle cards
-    shuffle(cards) {
-        for (let i = cards.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [cards[i], cards[j]] = [cards[j], cards[i]];
-        }
-    }
-
-    // Get average strategy across all information sets
-    getAverageStrategy() {
-        const avgStrategy = new Map();
-
-        for (const [infoSet, node] of this.nodeMap.entries()) {
-            const actionProbs = new Array(NUM_ACTIONS).fill(0);
-            let normalizingSum = 0;
-
-            for (let a = 0; a < NUM_ACTIONS; a++) {
-                normalizingSum += node.strategy[a];
-            }
-
-            for (let a = 0; a < NUM_ACTIONS; a++) {
-                if (normalizingSum > 0) {
-                    actionProbs[a] = node.strategy[a] / normalizingSum;
-                } else {
-                    actionProbs[a] = 1.0 / NUM_ACTIONS;
-                }
-            }
-
-            avgStrategy.set(infoSet, actionProbs);
-        }
-
-        return avgStrategy;
-    }
 }
 
-class Node {
-    constructor(numActions) {
-        this.regretSum = new Array(numActions).fill(0);
-        this.strategy = new Array(numActions).fill(0);
-    }
+function main() {
+    const iterations = 10;
+    const trainer = new Solver();
+    trainer.train(iterations);
 }
 
-// Usage example
-const cfr = new KuhnPokerCFR();
-const iterations = 1000000;
-const utilitySum = cfr.train(iterations);
-
-console.log("Average game value:", utilitySum.reduce((a, b) => a + b) / iterations);
-
-const avgStrategy = cfr.getAverageStrategy();
-console.log("Average strategy:", avgStrategy);
-// for (const [infoSet, actionProbs] of avgStrategy.entries()) {
-//     console.log("Info set:", infoSet);
-//     console.log("Action probabilities:", actionProbs.map(prob => prob.toFixed(4)).join(", "));
-// }
+main();

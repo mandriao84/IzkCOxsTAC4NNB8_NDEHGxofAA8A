@@ -9,7 +9,8 @@ const NUM_ACTIONS = Object.keys(ACTIONS).length;
 const CARDS = {
   1: 'J',
   2: 'Q',
-  3: 'K'
+  3: 'K',
+  4: 'A'
 };
 
 class Node {
@@ -74,7 +75,7 @@ class Solver {
   }
 
   train(iterations) {
-    const cards = [1, 2, 3, 1, 2, 3];
+    const cards = [1, 2, 3, 4, 1, 2, 3, 4];
     let util = 0;
 
     for (let i = 0; i < iterations; i++) {
@@ -113,7 +114,11 @@ class Solver {
     const opponentHistories = [];
 
     for (let h = 0; h < roundsHistory.length; h++) {
-      const history = roundsHistory[h];
+      const historyRaw = roundsHistory[h];
+      let history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+      history = history.replace(/b{2,}/g, (match) => { 
+        return 'b' + 'r'.repeat(match.length - 1); 
+      }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
       const historyLengthIsEven = history.length % 2 === 0;
       if (historyLengthIsEven === true) {
         let result = history.split('').filter((char, index) => index % 2 !== 0).join('');
@@ -126,11 +131,13 @@ class Solver {
 
     const opponentHistory = opponentHistories.join('');
     const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
+    const opponentRaiseCount = opponentHistory.replace(/[^r]/g, '').length;
     const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
     const opponentAnte = 1;
-    const betUnit = 2;
+    const betUnit = 1;
+    const raiseUnit = 2;
     const callUnit = 1;
-    const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
+    const payoff = (opponentBetCount * betUnit) + (opponentRaiseCount * raiseUnit) + (opponentCallCount * callUnit) + (opponentAnte);
     return payoff;
   }
 
@@ -152,7 +159,7 @@ class Solver {
       let check3 = roundHistory.slice(-2) === 'pc';
       let check4 = roundHistory.slice(-2) === 'cp';
       let call = roundHistory.slice(-2) === 'bc';
-      let betMax = roundHistory.slice(-4) === 'bbbb';
+      let bets = roundHistory.slice(-5) === 'bbbbb';
       let isPlayerCardHigher = cards[player] > cards[opponent];
       let isOpponentCardHigher = cards[player] < cards[opponent];
 
@@ -160,9 +167,9 @@ class Solver {
         return payoff;
       }
 
-      if (check || check2 || check3 || check4 || call || betMax) {
+      if (check || check2 || check3 || check4 || call || bets) {
           history += '_';
-          if (roundNumber == 2) {
+          if (roundNumber == 1) {
             return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
           }
       }
@@ -196,7 +203,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 100000;
+  const iterations = 10000000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
