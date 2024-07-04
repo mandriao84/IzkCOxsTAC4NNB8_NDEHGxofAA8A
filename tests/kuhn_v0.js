@@ -109,36 +109,50 @@ class Solver {
     }
   }
 
-  getOpponentHistory(history) {
-    const historyLengthIsEven = history.length % 2 === 0;
-    if (historyLengthIsEven) {
-      return history.split('').filter((char, index) => index % 2 !== 0).join('');
-    } else {
-      return history.split('').filter((char, index) => index % 2 === 0).join('');
+  getPayoff(roundsHistory) {
+    const opponentHistories = [];
+
+    for (let h = 0; h < roundsHistory.length; h++) {
+      const history = roundsHistory[h];
+      const historyLengthIsEven = history.length % 2 === 0;
+      if (historyLengthIsEven === true) {
+        let result = history.split('').filter((char, index) => index % 2 !== 0).join('');
+        opponentHistories.push(result); 
+      } else {
+        let result = history.split('').filter((char, index) => index % 2 === 0).join('');
+        opponentHistories.push(result); 
+      }
     }
+
+    const opponentHistory = opponentHistories.join('');
+    const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
+    const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
+    const opponentAnte = 1;
+    const betUnit = 2;
+    const callUnit = 1;
+    const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
+    return payoff;
   }
 
   cfr(cards, history, p0, p1) {
-    let plays = history.length;
+    const roundsHistory = history.split('_');
+    const roundNumber = roundsHistory.length;
+    const roundHistory = roundsHistory.pop();
+    let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
     let infoSet = cards[player] + history;
 
     if (plays >= 2) {
-      const opponentHistory = this.getOpponentHistory(history);
-      const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
-      const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
-      const opponentAnte = 1;
-      const betUnit = 2;
-      const callUnit = 1;
-      const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
+      const payoff = this.getPayoff(roundsHistory);
 
-      let fold = history.slice(-2) === 'bp';
-      let check = history.slice(-2) === 'pp';
-      let check2 = history.slice(-2) === 'cc';
-      let check3 = history.slice(-2) === 'pc';
-      let call = history.slice(-2) === 'bc';
-      let betMax = history.slice(-4) === 'bbbb';
+      let fold = roundHistory.slice(-2) === 'bp';
+      let check = roundHistory.slice(-2) === 'pp';
+      let check2 = roundHistory.slice(-2) === 'cc';
+      let check3 = roundHistory.slice(-2) === 'pc';
+      let check4 = roundHistory.slice(-2) === 'cp';
+      let call = roundHistory.slice(-2) === 'bc';
+      let betMax = roundHistory.slice(-4) === 'bbbb';
       let isPlayerCardHigher = cards[player] > cards[opponent];
       let isOpponentCardHigher = cards[player] < cards[opponent];
 
@@ -146,8 +160,11 @@ class Solver {
         return payoff;
       }
 
-      if (check || check2 || check3 || call || betMax) {
-        return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
+      if (check || check2 || check3 || check4 || call || betMax) {
+          history += '_';
+          if (roundNumber == 2) {
+            return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
+          }
       }
     }
 
@@ -179,7 +196,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000;
+  const iterations = 100000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
