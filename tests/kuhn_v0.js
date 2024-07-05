@@ -116,9 +116,10 @@ class Solver {
     for (let h = 0; h < roundsHistory.length; h++) {
       const historyRaw = roundsHistory[h];
       let history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
-      history = history.replace(/b{2,}/g, (match) => { 
-        return 'b' + 'r'.repeat(match.length - 1); 
-      }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+      history = history.replace(/b{2,}/g, (match) => {  return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+      history = !/b/.test(history) ? history.replace(/c/g, 'p') : history // 'cc' => 'pp'
+      history = history.charAt(0) === 'c' ? 'p' + history.slice(1) : history // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
+
       const historyLengthIsEven = history.length % 2 === 0;
       if (historyLengthIsEven === true) {
         let result = history.split('').filter((char, index) => index % 2 !== 0).join('');
@@ -144,7 +145,7 @@ class Solver {
   cfr(cards, history, p0, p1) {
     const roundsHistory = history.split('_');
     const roundNumber = roundsHistory.length;
-    const roundHistory = roundsHistory.pop();
+    const roundHistory = roundsHistory.slice(-1)[0] || '';
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
@@ -203,7 +204,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 10000000;
+  const iterations = 1000000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
