@@ -1,17 +1,9 @@
-const PASS = 0
-const BET = 1
 const ACTIONS = {
   0: 'p',
   1: 'b',
   2: 'c'
 }
 const NUM_ACTIONS = Object.keys(ACTIONS).length;
-const CARDS = {
-  1: 'J',
-  2: 'Q',
-  3: 'K',
-  4: 'A'
-};
 const DECK = {
   1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: 'Ts', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
   14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: 'Th', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
