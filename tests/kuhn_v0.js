@@ -12,6 +12,12 @@ const CARDS = {
   3: 'K',
   4: 'A'
 };
+const DECK = {
+  1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: 'Ts', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
+  14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: 'Th', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
+  27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
+  40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
+};
 
 class Node {
   constructor() {
@@ -75,10 +81,11 @@ class Solver {
   }
 
   train(iterations) {
-    const DECK = [1, 2, 3, 4, 1, 2, 3, 4];
+    const DECK = [52, 51, 50, 49, 26, 25, 24, 23]; //
     let util = 0;
 
     for (let i = 0; i < iterations; i++) {
+      // const deck = [...Object.keys(DECK)];
       const deck = [...DECK];
       const hands = this.deal(deck, 2, 1);
       util += this.cfr(hands, "", 1, 1);
@@ -87,7 +94,7 @@ class Solver {
     // console.log(`Average game value: ${util / iterations}`);
     this.nodeMap.forEach(node => {
       const infoSet = node.infoSet;
-      const card = CARDS[infoSet.charAt(0)]; // translate cards number to cards name
+      const card = infoSet.charAt(0)
       const plays = infoSet.slice(2); // remove the card + ':'
       const strategy = node.strategy.map((value, index) => {
         if (index === 0) {
@@ -156,6 +163,21 @@ class Solver {
     return payoff;
   }
 
+  getHandTranslated(hand) {
+    return hand.map(i => DECK[i]);
+  }
+
+  getWinner(playerHand, opponentHand) {
+    const CARDS_VALUE = {
+      'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1
+    };
+    const playerHandTranslated = this.getHandTranslated(playerHand).join('').slice(0, 1);
+    const playerHandValue = CARDS_VALUE[playerHandTranslated];
+    const opponentHandTranslated = this.getHandTranslated(opponentHand).join('').slice(0, 1);
+    const opponentHandValue = CARDS_VALUE[opponentHandTranslated];
+    return playerHandValue > opponentHandValue ? 'PLAYER' : (playerHandValue < opponentHandValue ? 'OPPONENT' : 'NONE');
+  }
+
   cfr(hands, history, p0, p1) {
     const roundsHistory = history.split('_');
     const roundNumber = roundsHistory.length;
@@ -163,11 +185,9 @@ class Solver {
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
-    let infoSet = hands[player].join('') + ':' + history;
+    let infoSet = this.getHandTranslated(hands[player]).join('').slice(0, 1) + ':' + history;
 
     if (plays >= 2) {
-      const payoff = this.getPayoff(roundsHistory);
-
       let fold = roundHistory.slice(-2) === 'bp';
       let check = roundHistory.slice(-2) === 'pp';
       let check2 = roundHistory.slice(-2) === 'cc';
@@ -175,17 +195,18 @@ class Solver {
       let check4 = roundHistory.slice(-2) === 'cp';
       let call = roundHistory.slice(-2) === 'bc';
       let bets = roundHistory.slice(-5) === 'bbbbb';
-      let isPlayerCardHigher = hands[player] > hands[opponent];
-      let isOpponentCardHigher = hands[player] < hands[opponent];
 
       if (fold) {
+        const payoff = this.getPayoff(roundsHistory);
         return payoff;
       }
 
       if (check || check2 || check3 || check4 || call || bets) {
           history += '_';
           if (roundNumber == 1) {
-            return isPlayerCardHigher ? payoff : (isOpponentCardHigher ? -payoff : 0);
+            const payoff = this.getPayoff(roundsHistory);
+            const winner = this.getWinner(hands[player], hands[opponent]);
+            return winner === 'PLAYER' ? payoff : (winner === 'OPPONENT' ? -payoff : 0);
           }
       }
     }
@@ -218,7 +239,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 10;
+  const iterations = 100000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
