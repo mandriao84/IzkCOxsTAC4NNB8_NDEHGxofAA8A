@@ -81,7 +81,7 @@ class Solver {
   }
 
   train(iterations) {
-    const DECK = [52, 51, 50, 49, 26, 25, 24, 23]; //
+    const DECK = [52, 51, 50, 49, 26, 25, 24, 23];
     let util = 0;
 
     for (let i = 0; i < iterations; i++) {
