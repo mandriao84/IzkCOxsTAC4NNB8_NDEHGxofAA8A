@@ -3,14 +3,14 @@ const BET = 1
 const ACTIONS = {
     0: 'p',
     1: 'b',
-    2: 'c',
-    3: 'f'
+    2: 'c'
 }
 const NUM_ACTIONS = Object.keys(ACTIONS).length;
 const CARDS = {
-    1: 'J',
-    2: 'Q',
-    3: 'K',
+    1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: 'Ts', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
+    14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: 'Th', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
+    27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
+    40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 
 class Node {
@@ -75,7 +75,7 @@ class Solver {
     }
 
     train(iterations) {
-        const cards = [1, 2, 3, 1, 2, 3];
+        const cards = [1, 2, 3, 4, 1, 2, 3, 4];
         let util = 0;
 
         for (let i = 0; i < iterations; i++) {
@@ -95,8 +95,6 @@ class Solver {
                     return `b: ${value}`;
                 } else if (index === 2) {
                     return `c: ${value}`;
-                } else if (index === 3) {
-                    return `f: ${value}`;
                 }
             }).join(' | ');
             console.log(`${card}${plays} || ${strategy}`);
@@ -112,12 +110,23 @@ class Solver {
         }
     }
 
+    deal(cards) {
+        this.shuffle();
+        const p0Hand = this.deck.pop();
+        const p1Hand = this.deck.pop();
+        return [p0Hand, p1Hand];
+    }
+
     getPayoff(roundsHistory) {
         const opponentHistories = [];
 
         for (let h = 0; h < roundsHistory.length; h++) {
             const historyRaw = roundsHistory[h];
-            const history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 5b = 4b + c
+            let history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+            history = history.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+            history = !/b/.test(history) ? history.replace(/c/g, 'p') : history // 'cc' => 'pp'
+            history = history.charAt(0) === 'c' ? 'p' + history.slice(1) : history // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
+
             const historyLengthIsEven = history.length % 2 === 0;
             if (historyLengthIsEven === true) {
                 let result = history.split('').filter((char, index) => index % 2 !== 0).join('');
@@ -130,47 +139,24 @@ class Solver {
 
         const opponentHistory = opponentHistories.join('');
         const opponentBetCount = opponentHistory.replace(/[^b]/g, '').length;
+        const opponentRaiseCount = opponentHistory.replace(/[^r]/g, '').length;
         const opponentCallCount = opponentHistory.replace(/[^c]/g, '').length;
         const opponentAnte = 1;
-        const betUnit = 2;
+        const betUnit = 1;
+        const raiseUnit = 2;
         const callUnit = 1;
-        const payoff = (opponentBetCount * betUnit) + (opponentCallCount * callUnit) + (opponentAnte);
+        const payoff = (opponentBetCount * betUnit) + (opponentRaiseCount * raiseUnit) + (opponentCallCount * callUnit) + (opponentAnte);
         return payoff;
-    }
-
-    getActions(roundHistory) {
-        const lastAction = roundHistory.slice(-1);
-        const betCount = (roundHistory.match(/b/g) || []).length;
-        if (roundHistory.length === 0 || lastAction === 'p' || lastAction === 'c') {
-            return ['p', 'b'];
-        }
-
-        if (lastAction === 'b' && betCount < 4) { 
-            return ['b', 'c', 'f'];
-        }
-
-        if (lastAction === 'b' && betCount >= 4) { 
-            return ['c', 'f'];
-        }
-
-        return [];
-    }
-
-    getReverseActions(actions) {
-        const a = Object.values(ACTIONS)
-        return a.filter(e => !actions.includes(e));
     }
 
     cfr(cards, history, p0, p1) {
         const roundsHistory = history.split('_');
         const roundNumber = roundsHistory.length;
-        const roundHistory = roundsHistory.pop();
-
+        const roundHistory = roundsHistory.slice(-1)[0] || '';
         let plays = roundHistory.length;
         let player = plays % 2;
         let opponent = 1 - player;
         let infoSet = cards[player] + history;
-        console.log(`infoSet: ${infoSet}`);
 
         if (plays >= 2) {
             const payoff = this.getPayoff(roundsHistory);
@@ -207,25 +193,6 @@ class Solver {
         let util = new Array(NUM_ACTIONS).fill(0);
         let nodeUtil = 0;
 
-        // for (let a = 0; a < NUM_ACTIONS.length; a++) {
-        //     const action = actions[a];
-        //     let nextHistory = history + action;
-        //     const index = Number(Object.keys(ACTIONS).find(r => ACTIONS[r] === action));
-        //     // console.log(`action: ${action}`, `index: ${index}`);
-        //     util[index] = player === 0
-        //         ? -this.cfr(cards, nextHistory, p0 * strategy[a], p1)
-        //         : -this.cfr(cards, nextHistory, p0, p1 * strategy[a]);
-        //     nodeUtil += strategy[index] * util[index];
-        // }
-
-        // const actionsReverse = this.getReverseActions(actions);
-        // for (let a = 0; a < NUM_ACTIONS.length; a++) {
-        //     const action = actionsReverse[a];
-        //     const index = Number(Object.keys(ACTIONS).find(r => ACTIONS[r] === action));
-        //     let regret = util[index] - nodeUtil;
-        //     node.regretSum[index] += (player === 0 ? p1 : p0) * regret;
-        // }
-
         for (let a = 0; a < NUM_ACTIONS; a++) {
             let nextHistory = history + ACTIONS[a];
             util[a] = player === 0
@@ -233,12 +200,10 @@ class Solver {
                 : -this.cfr(cards, nextHistory, p0, p1 * strategy[a]);
             nodeUtil += strategy[a] * util[a];
         }
-    
-        console.log(`nodeUtil: ${nodeUtil}`, `util: ${util}`);
-    
+
         for (let a = 0; a < NUM_ACTIONS; a++) {
-          let regret = util[a] - nodeUtil;
-          node.regretSum[a] += (player === 0 ? p1 : p0) * regret;
+            let regret = util[a] - nodeUtil;
+            node.regretSum[a] += (player === 0 ? p1 : p0) * regret;
         }
 
         return nodeUtil;
@@ -246,7 +211,7 @@ class Solver {
 }
 
 function main() {
-    const iterations = 10;
+    const iterations = 1000000;
     const trainer = new Solver();
     trainer.train(iterations);
 }

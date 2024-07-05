@@ -75,19 +75,20 @@ class Solver {
   }
 
   train(iterations) {
-    const cards = [1, 2, 3, 4, 1, 2, 3, 4];
+    const DECK = [1, 2, 3, 4, 1, 2, 3, 4];
     let util = 0;
 
     for (let i = 0; i < iterations; i++) {
-      this.shuffle(cards);
-      util += this.cfr(cards, "", 1, 1);
+      const deck = [...DECK];
+      const hands = this.deal(deck, 2, 1);
+      util += this.cfr(hands, "", 1, 1);
     }
 
     // console.log(`Average game value: ${util / iterations}`);
     this.nodeMap.forEach(node => {
       const infoSet = node.infoSet;
-      const card = CARDS[infoSet.charAt(0)];
-      const plays = infoSet.slice(1);
+      const card = CARDS[infoSet.charAt(0)]; // translate cards number to cards name
+      const plays = infoSet.slice(2); // remove the card + ':'
       const strategy = node.strategy.map((value, index) => {
         if (index === 0) {
           return `p: ${value}`;
@@ -101,13 +102,26 @@ class Solver {
     });
   }
 
-  shuffle(cards) {
-    for (let c1 = cards.length - 1; c1 > 0; c1--) {
+  shuffle(deck) {
+    for (let c1 = deck.length - 1; c1 > 0; c1--) {
       let c2 = Math.floor(Math.random() * (c1 + 1));
-      let tmp = cards[c1];
-      cards[c1] = cards[c2];
-      cards[c2] = tmp;
+      let tmp = deck[c1];
+      deck[c1] = deck[c2];
+      deck[c2] = tmp;
     }
+  }
+
+  deal(deck, playersNumber, cardsNumberPerPlayer) {
+    this.shuffle(deck);
+    const players = Array.from({ "length": playersNumber }, () => []);
+  
+    for (let i = 0; i < cardsNumberPerPlayer; i++) {
+      for (let j = 0; j < playersNumber; j++) {
+        players[j].push(deck.pop());
+      }
+    }
+  
+    return players;
   }
 
   getPayoff(roundsHistory) {
@@ -116,7 +130,7 @@ class Solver {
     for (let h = 0; h < roundsHistory.length; h++) {
       const historyRaw = roundsHistory[h];
       let history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
-      history = history.replace(/b{2,}/g, (match) => {  return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+      history = history.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
       history = !/b/.test(history) ? history.replace(/c/g, 'p') : history // 'cc' => 'pp'
       history = history.charAt(0) === 'c' ? 'p' + history.slice(1) : history // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
 
@@ -142,14 +156,14 @@ class Solver {
     return payoff;
   }
 
-  cfr(cards, history, p0, p1) {
+  cfr(hands, history, p0, p1) {
     const roundsHistory = history.split('_');
     const roundNumber = roundsHistory.length;
     const roundHistory = roundsHistory.slice(-1)[0] || '';
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
-    let infoSet = cards[player] + history;
+    let infoSet = hands[player].join('') + ':' + history;
 
     if (plays >= 2) {
       const payoff = this.getPayoff(roundsHistory);
@@ -161,8 +175,8 @@ class Solver {
       let check4 = roundHistory.slice(-2) === 'cp';
       let call = roundHistory.slice(-2) === 'bc';
       let bets = roundHistory.slice(-5) === 'bbbbb';
-      let isPlayerCardHigher = cards[player] > cards[opponent];
-      let isOpponentCardHigher = cards[player] < cards[opponent];
+      let isPlayerCardHigher = hands[player] > hands[opponent];
+      let isOpponentCardHigher = hands[player] < hands[opponent];
 
       if (fold) {
         return payoff;
@@ -189,8 +203,8 @@ class Solver {
     for (let a = 0; a < NUM_ACTIONS; a++) {
         let nextHistory = history + ACTIONS[a];
         util[a] = player === 0
-            ? -this.cfr(cards, nextHistory, p0 * strategy[a], p1)
-            : -this.cfr(cards, nextHistory, p0, p1 * strategy[a]);
+            ? -this.cfr(hands, nextHistory, p0 * strategy[a], p1)
+            : -this.cfr(hands, nextHistory, p0, p1 * strategy[a]);
         nodeUtil += strategy[a] * util[a];
     }
 
@@ -204,7 +218,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000;
+  const iterations = 10;
   const trainer = new Solver();
   trainer.train(iterations);
 }
