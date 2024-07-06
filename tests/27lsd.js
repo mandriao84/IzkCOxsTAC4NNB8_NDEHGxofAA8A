@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const ACTIONS = {
   0: 'p',
   1: 'b',
@@ -73,8 +76,12 @@ class Solver {
     this.nodeMap = new Map();
   }
 
-  train(iterations) {
+  train(iterations, directory = null) {
     let util = 0;
+
+    if (fs.existsSync(directory)) {
+      this.load(directory);
+    }
 
     for (let i = 0; i < iterations; i++) {
       const deck = [...Object.keys(DECK)];
@@ -82,22 +89,62 @@ class Solver {
       util += this.cfr(hands, "", 1, 1);
     }
 
+    this.save(directory);
+
     // console.log(`Average game value: ${util / iterations}`);
-    this.nodeMap.forEach(node => {
-      const infoSet = node.infoSet;
-      const hand = infoSet.slice(0, 14);
-      const plays = infoSet.slice(15); // remove the card + ':'
-      const strategy = node.strategy.map((value, index) => {
-        if (index === 0) {
-          return `p: ${value}`;
-        } else if (index === 1) {
-          return `b: ${value}`;
-        } else if (index === 2) {
-          return `c: ${value}`;
+    // this.nodeMap.forEach(node => {
+    //   const infoSet = node.infoSet;
+    //   const hand = infoSet.slice(0, 14);
+    //   const plays = infoSet.slice(15); // remove the card + ':'
+    //   const strategy = node.strategy.map((value, index) => {
+    //     if (index === 0) {
+    //       return `p: ${value}`;
+    //     } else if (index === 1) {
+    //       return `b: ${value}`;
+    //     } else if (index === 2) {
+    //       return `c: ${value}`;
+    //     }
+    //   }).join('\t');
+    //   console.log(`${hand}\t${plays.length === 0 ? ' ' : plays}\t|\t${strategy}`);
+    // });
+  }
+
+  load(directory) {
+    this.nodeMap.clear();
+    const files = fs.readdirSync(directory);
+
+    for (const file of files) {
+      if (path.extname(file) === '.json') {
+        const data = JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8'));
+        for (const [key, value] of data) {
+          this.nodeMap.set(key, Object.assign(new Node(), value));
         }
-      }).join('\t');
-      console.log(`${hand}\t${plays.length === 0 ? ' ' : plays}\t|\t${strategy}`);
-    });
+      }
+    }
+  }
+
+  save(directory) {
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory);
+    }
+
+    const CHUNK_SIZE = 100000; // Adjust this value based on your needs
+    let chunk = [];
+    let chunkIndex = 0;
+
+    for (const [key, value] of this.nodeMap.entries()) {
+      chunk.push([key, value]);
+
+      if (chunk.length === CHUNK_SIZE) {
+        fs.writeFileSync(path.join(directory, `chunk_${chunkIndex}.json`), JSON.stringify(chunk));
+        chunk = [];
+        chunkIndex++;
+      }
+    }
+
+    if (chunk.length > 0) {
+      fs.writeFileSync(path.join(directory, `chunk_${chunkIndex}.json`), JSON.stringify(chunk));
+    }
   }
 
   shuffle(deck) {
@@ -162,6 +209,13 @@ class Solver {
       return c1 - c2;
     });
     return handTranslatedSorted;
+  }
+
+  getHistoryTranslated(history) {
+    let result = history
+    result = !/b/.test(result) ? result.replace(/c/g, 'p') : result; // 'c...' => 'p...' || 'cc' => 'pp'
+    result = result.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+    return result;
   }
 
   getWinner(playerHand, opponentHand) {
@@ -393,7 +447,7 @@ class Solver {
     let nodeUtil = 0;
 
     for (let a = 0; a < NUM_ACTIONS; a++) {
-      let nextHistory = history + ACTIONS[a];
+      let nextHistory = this.getHistoryTranslated(history + ACTIONS[a]);
       util[a] = player === 0
         ? -this.cfr(hands, nextHistory, p0 * strategy[a], p1)
         : -this.cfr(hands, nextHistory, p0, p1 * strategy[a]);
@@ -410,9 +464,14 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1;
+  const iterations = 10000;
   const trainer = new Solver();
-  trainer.train(iterations);
+  trainer.train(iterations, '.results');
+  // trainer.load('.results');
+  // trainer.nodeMap.forEach(node => {
+  //   const infoSet = node.infoSet;
+  // });
+  // console.log(trainer.nodeMap.map(node => node.infoSet);
 }
 
 main();
