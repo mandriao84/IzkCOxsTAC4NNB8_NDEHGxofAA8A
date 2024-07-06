@@ -10,6 +10,7 @@ const DECK = {
   27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
   40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
+const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 
 class Node {
   constructor() {
@@ -84,8 +85,8 @@ class Solver {
     // console.log(`Average game value: ${util / iterations}`);
     this.nodeMap.forEach(node => {
       const infoSet = node.infoSet;
-      const card = infoSet.charAt(0)
-      const plays = infoSet.slice(2); // remove the card + ':'
+      const hand = infoSet.slice(0, 14);
+      const plays = infoSet.slice(15); // remove the card + ':'
       const strategy = node.strategy.map((value, index) => {
         if (index === 0) {
           return `p: ${value}`;
@@ -94,8 +95,8 @@ class Solver {
         } else if (index === 2) {
           return `c: ${value}`;
         }
-      }).join(' | ');
-      console.log(`${card}${plays} || ${strategy}`);
+      }).join('\t');
+      console.log(`${hand}\t${plays.length === 0 ? ' ' : plays}\t|\t${strategy}`);
     });
   }
 
@@ -154,12 +155,16 @@ class Solver {
   }
 
   getHandTranslated(hand) {
-    return hand.map(i => DECK[i]);
+    const handTranslated = hand.map(i => DECK[i]);
+    const handTranslatedSorted = handTranslated.sort((a, b) => {
+      const c1 = CARDS[a[0]];
+      const c2 = CARDS[b[0]];
+      return c1 - c2;
+    });
+    return handTranslatedSorted;
   }
 
   getWinner(playerHand, opponentHand) {
-    const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
-
     function getSameCards(handRanks) {
       const cardCounts = handRanks.reduce((acc, card) => {
         acc[card] = (acc[card] || 0) + 1;
@@ -351,7 +356,7 @@ class Solver {
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
-    let infoSet = this.getHandTranslated(hands[player]).join('').slice(0, 1) + ':' + history;
+    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
 
     if (plays >= 2) {
       let fold = roundHistory.slice(-2) === 'bp';
@@ -405,7 +410,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 100000;
+  const iterations = 1;
   const trainer = new Solver();
   trainer.train(iterations);
 }
