@@ -50,7 +50,6 @@ class Node {
       normalizingSum += this.strategySum[a];
     }
 
-    // Calculate the average strategy
     for (let a = 0; a < NUM_ACTIONS; a++) {
       if (normalizingSum > 0) {
         avgStrategy[a] = this.strategySum[a] / normalizingSum;
@@ -159,6 +158,13 @@ class Solver {
     return hand.map(i => DECK[i]);
   }
 
+  getHistoryTranslated(roundHistory) {
+    let result = roundHistory
+    result = !/b/.test(result) ? result.replace(/c/g, 'p') : result; // 'c...' => 'p...' || 'cc' => 'pp'
+    result = result.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+    return result;
+  }
+
   getWinner(playerHand, opponentHand) {
     const CARDS_VALUE = {
       'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1
@@ -214,7 +220,8 @@ class Solver {
     let nodeUtil = 0;
 
     for (let a = 0; a < NUM_ACTIONS; a++) {
-        let nextHistory = history + ACTIONS[a];
+        // let nextHistory = history + ACTIONS[a];
+        let nextHistory = this.getHistoryTranslated(history + ACTIONS[a]);
         util[a] = player === 0
             ? -this.cfr(hands, nextHistory, p0 * strategy[a], p1)
             : -this.cfr(hands, nextHistory, p0, p1 * strategy[a]);
@@ -231,7 +238,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 100000;
+  const iterations = 1000;
   const trainer = new Solver();
   trainer.train(iterations);
 }
