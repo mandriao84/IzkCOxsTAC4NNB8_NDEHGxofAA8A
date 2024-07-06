@@ -1,40 +1,63 @@
-function shuffle(cards) {
-    for (let c1 = cards.length - 1; c1 > 0; c1--) {
-      let c2 = Math.floor(Math.random() * (c1 + 1));
-      let tmp = cards[c1];
-      cards[c1] = cards[c2];
-      cards[c2] = tmp;
-    }
-  }
+const DECK = {
+    1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: 'Ts', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
+    14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: 'Th', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
+    27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
+    40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
+  };
+  const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+
+function getLoserByHandRanksValue(playerHandRanks, opponentHandRanks) {
+    const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
+    const playerHandRanksValueSorted = playerHandRanksValue.sort((a, b) => b - a);
+    const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
+    const opponentHandRanksValueSorted = opponentHandRanksValue.sort((a, b) => b - a);
   
-  function dealCards(deck, numPlayers, numCardsPerPlayer) {
-    // Initialize an array to hold each player's hand
-    const players = Array.from({ length: numPlayers }, () => []);
-  
-    // Deal the cards
-    for (let i = 0; i < numCardsPerPlayer; i++) {
-      for (let j = 0; j < numPlayers; j++) {
-        players[j].push(deck.pop());
+    for (let i = 0; i < playerHandRanksValueSorted.length; i++) {
+      const player = playerHandRanksValueSorted[i];
+      const opponent = opponentHandRanksValueSorted[i];
+      if (player !== opponent) {
+        if (player > opponent) {
+          return 'PLAYER' // { "hand": playerHandRanks, "loser": 'PLAYER' };
+        } else {
+          return 'OPPONENT' // { "hand": opponentHandRanks, "loser": 'OPPONENT' };
+        }
       }
     }
-  
-    return players;
+
+    return null;
   }
+
+let player = ['A', 'A', '9', 'Q', 'Q'];
+let opponent = ['A', 'A', 'Q', 'A', 'T'];
+
+function getSameCards(handRanks) {
+    const cardCounts = handRanks.reduce((acc, card) => {
+      acc[card] = (acc[card] || 0) + 1;
+      return acc;
+    }, {});
   
-  // Example usage:
-  let deck = ['As', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s', '10s', 'Js', 'Qs', 'Ks',
-              'Ac', '2c', '3c', '4c', '5c', '6c', '7c', '8c', '9c', '10c', 'Jc', 'Qc', 'Kc',
-              'Ah', '2h', '3h', '4h', '5h', '6h', '7h', '8h', '9h', '10h', 'Jh', 'Qh', 'Kh',
-              'Ad', '2d', '3d', '4d', '5d', '6d', '7d', '8d', '9d', '10d', 'Jd', 'Qd', 'Kd'];
+    const cardCountsAsArray = Object.entries(cardCounts);
   
-  // Shuffle the deck
-  shuffle(deck);
+    cardCountsAsArray.sort((a, b) => {
+      if (b[1] !== a[1]) {
+        return b[1] - a[1]; // by count (descending)
+      } else {
+        return CARDS[b[0]] - CARDS[a[0]]; // by value (descending)
+      }
+    });
   
-  // Deal 5 cards to 2 players
-  const numPlayers = 2;
-  const numCardsPerPlayer = 5;
-  const players = dealCards(deck, numPlayers, numCardsPerPlayer);
+    const result = cardCountsAsArray.map(([card, count]) => {
+      return count > 1 ? `${card}_${count}` : card;
+    });
   
-  console.log(players);
-  // Output: [Array of 5 cards for player 1, Array of 5 cards for player 2]
-  
+    return result;
+  }
+
+  const a = getSameCards(player);
+  const b = getSameCards(opponent);
+  console.log(a, a.length, b, b.length)
+  const aa = a.map(r => r.split('_')[0]);
+  const bb = b.map(r => r.split('_')[0]);
+  const result = getLoserByHandRanksValue(aa, bb);
+  console.log(aa, bb)
+  console.log(result)
