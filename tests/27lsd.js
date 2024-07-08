@@ -77,6 +77,7 @@ class Solver {
   }
 
   train(iterations, directory = null) {
+    const saveInterval = 100000;
     let util = 0;
 
     if (fs.existsSync(directory)) {
@@ -87,9 +88,12 @@ class Solver {
       const deck = [...Object.keys(DECK)];
       const hands = this.deal(deck, 2, 5);
       util += this.cfr(hands, "", 1, 1);
-    }
 
-    this.save(directory);
+      if ((i + 1) % saveInterval === 0) {
+        this.save(directory);
+        console.log(`saved at iteration ${i + 1}`);
+      }
+    }
 
     // console.log(`Average game value: ${util / iterations}`);
     // this.nodeMap.forEach(node => {
@@ -128,7 +132,7 @@ class Solver {
       fs.mkdirSync(directory);
     }
 
-    const CHUNK_SIZE = 100000; // Adjust this value based on your needs
+    const CHUNK_SIZE = 1000000; // Adjust this value based on your needs
     let chunk = [];
     let chunkIndex = 0;
 
@@ -208,7 +212,8 @@ class Solver {
       const c2 = CARDS[b[0]];
       return c1 - c2;
     });
-    return handTranslatedSorted;
+    
+    return handTranslatedSorted.map(r => r.slice(0, 1) + 'x') // temporary for bypassing flush
   }
 
   getHistoryTranslated(history) {
@@ -363,23 +368,23 @@ class Solver {
       const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
       const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
 
-      if (playerHandIsNotFlush === false && opponentHandIsNotFlush === false) { 
-        const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
-        return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
-      }
+      // if (playerHandIsNotFlush === false && opponentHandIsNotFlush === false) { 
+      //   const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
+      //   return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
+      // }
 
       if (playerHandIsNotStraight === false && opponentHandIsNotStraight === false) { 
         const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
         return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
       }
 
-      if (playerHandIsNotFlush === true && opponentHandIsNotFlush === false) { 
-        return 'PLAYER';
-      }
+      // if (playerHandIsNotFlush === true && opponentHandIsNotFlush === false) { 
+      //   return 'PLAYER';
+      // }
 
-      if (playerHandIsNotFlush === false && opponentHandIsNotFlush === true) { 
-        return 'OPPONENT';
-      }
+      // if (playerHandIsNotFlush === false && opponentHandIsNotFlush === true) { 
+      //   return 'OPPONENT';
+      // }
 
       if (playerHandIsNotStraight === true && opponentHandIsNotStraight === false) { 
         return 'PLAYER';
@@ -390,10 +395,10 @@ class Solver {
       }
 
       if (
-        playerHandIsNotStraight === true &&
-        playerHandIsNotFlush === true &&
-        opponentHandIsNotStraight === true &&
-        opponentHandIsNotFlush === true
+        playerHandIsNotStraight === true
+        // && playerHandIsNotFlush === true
+        && opponentHandIsNotStraight === true
+        // && opponentHandIsNotFlush === true
       ) { 
         const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
         return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
@@ -464,7 +469,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 10000;
+  const iterations = 1000000000;
   const trainer = new Solver();
   trainer.train(iterations, '.results');
   // trainer.load('.results');
