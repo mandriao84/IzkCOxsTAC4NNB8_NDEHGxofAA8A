@@ -76,7 +76,7 @@ class Solver {
     this.nodeMap = new Map();
   }
 
-  train(iterations, directory = null) {
+  train(iterations, directory = '.results') {
     const saveInterval = 100000;
     let util = 0;
 
@@ -93,6 +93,11 @@ class Solver {
         this.save(directory);
         console.log(`saved at iteration ${i + 1}`);
       }
+    }
+
+    if (iterations < saveInterval) {
+      this.save(directory);
+      console.log(`saved at iteration ${i + 1}`);
     }
 
     // console.log(`Average game value: ${util / iterations}`);
@@ -217,9 +222,12 @@ class Solver {
   }
 
   getHistoryTranslated(history) {
-    let result = history
-    result = !/b/.test(result) ? result.replace(/c/g, 'p') : result; // 'c...' => 'p...' || 'cc' => 'pp'
-    result = result.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+    const roundsHistory = history.split('_');
+    let roundHistory = roundsHistory.slice(-1)[0] || '';
+    roundHistory = !/b/.test(roundHistory) ? roundHistory.replace(/c/g, 'p') : roundHistory; // 'c...' => 'p...' || 'cc' => 'pp'
+    roundHistory = roundHistory.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+    roundsHistory[roundsHistory.length - 1] = roundHistory;
+    let result = roundsHistory.join('_');
     return result;
   }
 
@@ -433,7 +441,7 @@ class Solver {
 
       if (check || check2 || check3 || check4 || call || bets) {
         history += '_';
-        if (roundNumber == 1) {
+        if (roundNumber == 2) {
           const payoff = this.getPayoff(roundsHistory);
           const winner = this.getWinner(hands[player], hands[opponent]);
           return winner === 'PLAYER' ? payoff : (winner === 'OPPONENT' ? -payoff : 0);
@@ -469,9 +477,9 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000000;
+  const iterations = 50000000; // 1000000000;
   const trainer = new Solver();
-  trainer.train(iterations, '.results');
+  trainer.train(iterations);
   // trainer.load('.results');
   // trainer.nodeMap.forEach(node => {
   //   const infoSet = node.infoSet;
