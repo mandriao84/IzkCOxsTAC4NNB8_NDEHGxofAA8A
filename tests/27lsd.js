@@ -232,6 +232,7 @@ class Solver {
   }
 
   getWinner(playerHand, opponentHand) {
+    console.log("____", playerHand, opponentHand)
     function getSameCards(handRanks) {
       const cardCounts = handRanks.reduce((acc, card) => {
         acc[card] = (acc[card] || 0) + 1;
@@ -423,6 +424,7 @@ class Solver {
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
+    // console.log(hands[player], this.getHandTranslated(hands[player]));
     let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
 
     if (plays >= 2) {
@@ -477,7 +479,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 50000000; // 1000000000;
+  const iterations = 1; // 50000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
