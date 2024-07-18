@@ -361,13 +361,47 @@ class Solver {
       }
     }
 
-    if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
-      return 'PLAYER';
-    }
+    // if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
+    //   return 'PLAYER';
+    // }
 
-    if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
-      return 'OPPONENT';
-    }
+    // if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
+    //   return 'OPPONENT';
+    // }
+
+    if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
+      const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
+      // const playerHandIsNotFlush = isNotFlush(playerHandSuits);
+      const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
+      const opponentHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+
+      if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
+          return 'PLAYER';
+      } else {
+          if (playerHandIsNotStraight === false /* || playerHandIsNotFlush === false */) { 
+              return 'OPPONENT';
+          } else {
+              return 'PLAYER';
+          }
+      }
+  }
+
+  if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
+      const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
+      // const opponentHandIsNotFlush = isNotFlush(opponentHandSuits);
+      const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
+      const playerHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+
+      if (playerHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
+          return 'OPPONENT';
+      } else {
+          if (opponentHandIsNotStraight === false /* || opponentHandIsNotFlush === false */) { 
+              return 'PLAYER';
+          } else {
+              return 'OPPONENT';
+          }
+      }
+  }
 
     if (playerHandHasNotSame === true && opponentHandHasNotSame === true) {
       const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
