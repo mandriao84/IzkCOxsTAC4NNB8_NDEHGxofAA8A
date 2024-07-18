@@ -36,7 +36,7 @@ function getProbability(hand, opponentCardsDiscardNumber) {
                 combinationsCount++;
 
                 const winner = getWinner(hand, opponentHandNew);
-                console.log(winner, hand.map(i => DECK[i]), opponentHandNew.map(i => DECK[i]));
+                // console.log(winner, hand.map(i => DECK[i]), opponentHandNew.map(i => DECK[i]));
                 if (winner === 'OPPONENT') {
                     combinationsLoseCount++;
                 }
@@ -198,11 +198,37 @@ function getWinner(playerHand, opponentHand) {
     }
 
     if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
-        return 'PLAYER';
+        const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
+        const playerHandIsNotFlush = isNotFlush(playerHandSuits);
+        const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
+        const opponentHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+
+        if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
+            return 'PLAYER';
+        } else {
+            if (playerHandIsNotStraight === false || playerHandIsNotFlush === false) { 
+                return 'OPPONENT';
+            } else {
+                return 'PLAYER';
+            }
+        }
     }
 
     if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
-        return 'OPPONENT';
+        const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
+        const opponentHandIsNotFlush = isNotFlush(opponentHandSuits);
+        const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
+        const playerHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+
+        if (playerHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
+            return 'OPPONENT';
+        } else {
+            if (opponentHandIsNotStraight === false || opponentHandIsNotFlush === false) { 
+                return 'PLAYER';
+            } else {
+                return 'OPPONENT';
+            }
+        }
     }
 
     if (playerHandHasNotSame === true && opponentHandHasNotSame === true) {
@@ -273,7 +299,7 @@ function combinations(array, size) {
     return result;
 }
 
-const hand = ['50', '41', '43', '52', '51']; // ['Qc', '3c', '4c', 'Ac', 'Kc'];
+const hand = ['48', '41', '43', '34', '49']; // ['Tc', '3c', '4c', '9d', 'Jc'];
 const opponentCardsDiscardNumber = 1;
 const result = getProbability(hand, opponentCardsDiscardNumber);
 
