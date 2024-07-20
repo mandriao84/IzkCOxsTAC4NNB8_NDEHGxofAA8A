@@ -159,7 +159,7 @@ function getWinner(playerHand, opponentHand) {
 
     if (playerHandHasNotSame === false && opponentHandHasNotSame === false) {
         const playerHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
-        const opponentHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+        const opponentHandRanksSortedByDuplicates = getSameCards(opponentHandRanks); // [ 'K_2', 'J_2', 'A' ]
         const playerHandMaxDuplicateNumber = Math.max(...playerHandRanksSortedByDuplicates.map(r => Number(r.split('_')[1] || 1)));
         const opponentHandMaxDuplicateNumber = Math.max(...opponentHandRanksSortedByDuplicates.map(r => Number(r.split('_')[1] || 1)));
         if ( // ['A_2', ... ] vs [ 'K_3', ... ]
