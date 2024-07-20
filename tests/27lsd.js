@@ -217,7 +217,7 @@ class Solver {
       const c2 = CARDS[b[0]];
       return c1 - c2;
     });
-    
+
     return handTranslatedSorted.map(r => r.slice(0, 1) + 'x') // temporary for bypassing flush
   }
 
@@ -237,9 +237,9 @@ class Solver {
         acc[card] = (acc[card] || 0) + 1;
         return acc;
       }, {});
-    
+
       const cardCountsAsArray = Object.entries(cardCounts);
-    
+
       cardCountsAsArray.sort((a, b) => {
         if (b[1] !== a[1]) {
           return b[1] - a[1]; // by count (descending)
@@ -247,11 +247,11 @@ class Solver {
           return CARDS[b[0]] - CARDS[a[0]]; // by value (descending)
         }
       });
-    
+
       const result = cardCountsAsArray.map(([card, count]) => {
         return count > 1 ? `${card}_${count}` : card;
       });
-    
+
       return result;
     }
 
@@ -294,7 +294,7 @@ class Solver {
       const playerHandRanksValueSorted = playerHandRanksValue.sort((a, b) => b - a);
       const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
       const opponentHandRanksValueSorted = opponentHandRanksValue.sort((a, b) => b - a);
-    
+
       for (let i = 0; i < playerHandRanksValueSorted.length; i++) {
         const player = playerHandRanksValueSorted[i];
         const opponent = opponentHandRanksValueSorted[i];
@@ -311,12 +311,12 @@ class Solver {
     }
 
     const playerHandTranslated = this.getHandTranslated(playerHand);
-    const playerHandSuits = playerHandTranslated.map(h => h.slice(-1));
+    // const playerHandSuits = playerHandTranslated.map(h => h.slice(-1));
     const playerHandRanks = playerHandTranslated.map(h => h.slice(0, -1));
     const playerHandHasNotSame = hasNotSame(playerHandRanks);
 
     const opponentHandTranslated = this.getHandTranslated(opponentHand);
-    const opponentHandSuits = opponentHandTranslated.map(h => h.slice(-1));
+    // const opponentHandSuits = opponentHandTranslated.map(h => h.slice(-1));
     const opponentHandRanks = opponentHandTranslated.map(h => h.slice(0, -1));
     const opponentHandHasNotSame = hasNotSame(opponentHandRanks);
 
@@ -327,7 +327,7 @@ class Solver {
       const opponentHandMaxDuplicateNumber = Math.max(...opponentHandRanksSortedByDuplicates.map(r => Number(r.split('_')[1] || 1)));
       if ( // ['A_2', ... ] vs [ 'K_3', ... ]
         playerHandMaxDuplicateNumber < opponentHandMaxDuplicateNumber
-      ) { 
+      ) {
         return 'PLAYER';
       }
 
@@ -367,32 +367,32 @@ class Solver {
       const opponentHandRanksSortedByDuplicates = getSameCards(opponentHandRanks); // [ 'K_2', 'J_2', 'A' ]
 
       if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
-          return 'PLAYER';
+        return 'PLAYER';
       } else {
-          if (playerHandIsNotStraight === false/* || playerHandIsNotFlush === false */) { 
-              return 'OPPONENT';
-          } else {
-              return 'PLAYER';
-          }
+        if (playerHandIsNotStraight === false/* || playerHandIsNotFlush === false */) {
+          return 'OPPONENT';
+        } else {
+          return 'PLAYER';
+        }
       }
-  }
+    }
 
-  if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
+    if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
       const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
       // const opponentHandIsNotFlush = isNotFlush(opponentHandSuits);
       const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
       const playerHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
 
       if (playerHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
-          return 'OPPONENT';
+        return 'OPPONENT';
       } else {
-          if (opponentHandIsNotStraight === false/* || opponentHandIsNotFlush === false */) { 
-              return 'PLAYER';
-          } else {
-              return 'OPPONENT';
-          }
+        if (opponentHandIsNotStraight === false/* || opponentHandIsNotFlush === false */) {
+          return 'PLAYER';
+        } else {
+          return 'OPPONENT';
+        }
       }
-  }
+    }
 
     if (playerHandHasNotSame === true && opponentHandHasNotSame === true) {
       const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
@@ -407,7 +407,7 @@ class Solver {
       //   return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
       // }
 
-      if (playerHandIsNotStraight === false && opponentHandIsNotStraight === false) { 
+      if (playerHandIsNotStraight === false && opponentHandIsNotStraight === false) {
         const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
         return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
       }
@@ -420,11 +420,11 @@ class Solver {
       //   return 'OPPONENT';
       // }
 
-      if (playerHandIsNotStraight === true && opponentHandIsNotStraight === false) { 
+      if (playerHandIsNotStraight === true && opponentHandIsNotStraight === false) {
         return 'PLAYER';
       }
 
-      if (playerHandIsNotStraight === false && opponentHandIsNotStraight === true) { 
+      if (playerHandIsNotStraight === false && opponentHandIsNotStraight === true) {
         return 'OPPONENT';
       }
 
@@ -433,7 +433,7 @@ class Solver {
         // && playerHandIsNotFlush === true
         && opponentHandIsNotStraight === true
         // && opponentHandIsNotFlush === true
-      ) { 
+      ) {
         const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
         return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
       }
