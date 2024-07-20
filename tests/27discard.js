@@ -201,7 +201,7 @@ function getWinner(playerHand, opponentHand) {
         const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
         const playerHandIsNotFlush = isNotFlush(playerHandSuits);
         const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
-        const opponentHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+        const opponentHandRanksSortedByDuplicates = getSameCards(opponentHandRanks); // [ 'K_2', 'J_2', 'A' ]
 
         if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
             return 'PLAYER';
