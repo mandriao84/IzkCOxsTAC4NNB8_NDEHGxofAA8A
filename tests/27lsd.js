@@ -232,7 +232,6 @@ class Solver {
   }
 
   getWinner(playerHand, opponentHand) {
-    console.log("____", playerHand, opponentHand)
     function getSameCards(handRanks) {
       const cardCounts = handRanks.reduce((acc, card) => {
         acc[card] = (acc[card] || 0) + 1;
@@ -361,14 +360,6 @@ class Solver {
       }
     }
 
-    // if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
-    //   return 'PLAYER';
-    // }
-
-    // if (playerHandHasNotSame === false && opponentHandHasNotSame === true) {
-    //   return 'OPPONENT';
-    // }
-
     if (playerHandHasNotSame === true && opponentHandHasNotSame === false) {
       const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
       // const playerHandIsNotFlush = isNotFlush(playerHandSuits);
@@ -406,8 +397,8 @@ class Solver {
     if (playerHandHasNotSame === true && opponentHandHasNotSame === true) {
       const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
       const opponentHandRanksValue = opponentHandRanks.map(r => CARDS[r]);
-      const playerHandIsNotFlush = isNotFlush(playerHandSuits);
-      const opponentHandIsNotFlush = isNotFlush(opponentHandSuits);
+      // const playerHandIsNotFlush = isNotFlush(playerHandSuits);
+      // const opponentHandIsNotFlush = isNotFlush(opponentHandSuits);
       const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
       const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
 
@@ -477,7 +468,7 @@ class Solver {
 
       if (check || check2 || check3 || check4 || call || bets) {
         history += '_';
-        if (roundNumber == 2) {
+        if (roundNumber == 1) {
           const payoff = this.getPayoff(roundsHistory);
           const winner = this.getWinner(hands[player], hands[opponent]);
           return winner === 'PLAYER' ? payoff : (winner === 'OPPONENT' ? -payoff : 0);
@@ -513,7 +504,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1; // 50000000;
+  const iterations = 50000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');

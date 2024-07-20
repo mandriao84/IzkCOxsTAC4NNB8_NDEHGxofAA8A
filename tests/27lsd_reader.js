@@ -23,5 +23,11 @@ const dataLisible = dataRaw.map(r => {
   const strategy = r["strategy"];
   return { infoSet, strategy };
 });
-console.log(dataLisible.filter(r => r["strategy"][1] > 0 && r["infoSet"].endsWith('bbbb')))
+// console.log(dataLisible);
+// console.log(dataRaw.filter(r => r["strategy"][0] >= 0.5 && r["infoSet"].endsWith('_bbbb')));
+// console.dir(dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith('bbbb')).reverse());
 // console.log(dataLisible.filter(r => r["infoSet"].startsWith('4x-6x')))
+
+const result = dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith('bbbb')).reverse()
+const pathReader = process.cwd() + '/.results_reader/result.json'
+fs.writeFileSync(pathReader, JSON.stringify(result));
