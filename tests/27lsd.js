@@ -364,12 +364,12 @@ class Solver {
       const playerHandRanksValue = playerHandRanks.map(r => CARDS[r]);
       // const playerHandIsNotFlush = isNotFlush(playerHandSuits);
       const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
-      const opponentHandRanksSortedByDuplicates = getSameCards(playerHandRanks); // [ 'K_2', 'J_2', 'A' ]
+      const opponentHandRanksSortedByDuplicates = getSameCards(opponentHandRanks); // [ 'K_2', 'J_2', 'A' ]
 
       if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
           return 'PLAYER';
       } else {
-          if (playerHandIsNotStraight === false /* || playerHandIsNotFlush === false */) { 
+          if (playerHandIsNotStraight === false/* || playerHandIsNotFlush === false */) { 
               return 'OPPONENT';
           } else {
               return 'PLAYER';
@@ -386,7 +386,7 @@ class Solver {
       if (playerHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
           return 'OPPONENT';
       } else {
-          if (opponentHandIsNotStraight === false /* || opponentHandIsNotFlush === false */) { 
+          if (opponentHandIsNotStraight === false/* || opponentHandIsNotFlush === false */) { 
               return 'PLAYER';
           } else {
               return 'OPPONENT';
