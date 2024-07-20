@@ -299,7 +299,7 @@ function combinations(array, size) {
     return result;
 }
 
-const hand = ['48', '41', '43', '34', '49']; // ['Tc', '3c', '4c', '9d', 'Jc'];
+const hand = ['48', '41', '43', '34', '52']; // ['Tc', '3c', '4c', '9d', 'Ac'];
 const opponentCardsDiscardNumber = 1;
 const result = getProbability(hand, opponentCardsDiscardNumber);
 
