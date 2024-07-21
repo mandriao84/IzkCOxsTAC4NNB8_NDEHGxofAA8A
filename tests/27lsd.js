@@ -358,8 +358,8 @@ class Solver {
         playerHandRanksSortedByDuplicates.length === opponentHandRanksSortedByDuplicates.length
       ) {
         const a = playerHandRanksSortedByDuplicates.map(r => { 
-          const subArray = r.split('_')
-          return subArray.length > 1 ? subArray[0] : null
+          const sub = r.split('_')
+          return sub.length > 1 ? subArray[0] : null
         })
         console.log(a)
         const playerHandMaxDuplicateValue = [playerHandRanksSortedByDuplicates[0].split('_')[0]].map(r => CARDS[r]).sort((a, b) => b - a);
