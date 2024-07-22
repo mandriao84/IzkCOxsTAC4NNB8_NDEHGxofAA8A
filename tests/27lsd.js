@@ -545,7 +545,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 10 //50000000;
+  const iterations = 50000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
