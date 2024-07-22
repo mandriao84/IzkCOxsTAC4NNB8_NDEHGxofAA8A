@@ -357,23 +357,38 @@ class Solver {
         playerHandMaxDuplicateNumber === opponentHandMaxDuplicateNumber &&
         playerHandRanksSortedByDuplicates.length === opponentHandRanksSortedByDuplicates.length
       ) {
-        const a = playerHandRanksSortedByDuplicates.map(r => { 
+        const playerHandRanksSortedByDuplicatesAndFlattened = playerHandRanksSortedByDuplicates.map(r => { 
           const sub = r.split('_')
-          return sub.length > 1 ? subArray[0] : null
+          // return sub.length > 1 ? sub[0] : null
+          return sub[0]
         })
-        console.log(a)
-        const playerHandMaxDuplicateValue = [playerHandRanksSortedByDuplicates[0].split('_')[0]].map(r => CARDS[r]).sort((a, b) => b - a);
-        const opponentHandMaxDuplicateValue = [opponentHandRanksSortedByDuplicates[0].split('_')[0]].map(r => CARDS[r]).sort((a, b) => b - a);
-        console.log(playerHandRanks, playerHandMaxDuplicateValue)
-        console.log(opponentHandRanks, opponentHandMaxDuplicateValue)
-        const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
-        loser === 'OPPONENT' ? result = 'PLAYER' : (loser === 'PLAYER' ? result = 'OPPONENT' : result = 'NONE');
+        const playerHandValuesSortedByDuplicatesAndFlattened = playerHandRanksSortedByDuplicatesAndFlattened.map(r => CARDS[r])
+        // console.log(playerHandRanksSortedByDuplicates, playerHandRanksSortedByDuplicatesAndFlattened, playerHandValuesSortedByDuplicatesAndFlattened)
+        
+        const opponentHandRanksSortedByDuplicatesAndFlattened = opponentHandRanksSortedByDuplicates.map(r => { 
+          const sub = r.split('_')
+          return sub[0]
+        })
+        const opponentHandValuesSortedByDuplicatesAndFlattened = opponentHandRanksSortedByDuplicatesAndFlattened.map(r => CARDS[r])
+        // console.log(opponentHandRanksSortedByDuplicates, opponentHandRanksSortedByDuplicatesAndFlattened, opponentHandValuesSortedByDuplicatesAndFlattened)
 
-        // playerHandMaxDuplicateValue > opponentHandMaxDuplicateValue ? result = 'OPPONENT'
-        // : (playerHandMaxDuplicateValue < opponentHandMaxDuplicateValue ? result = 'PLAYER' : result = 'NONE');
+        for (let i = 0; i < playerHandValuesSortedByDuplicatesAndFlattened.length; i++) {
+          const playerCard = playerHandValuesSortedByDuplicatesAndFlattened[i];
+          const opponentCard = opponentHandValuesSortedByDuplicatesAndFlattened[i];
+          if (playerCard > opponentCard) {
+            result = 'OPPONENT';
+            break;
+          } else if (playerCard < opponentCard) {
+            result = 'PLAYER';
+            break;
+          } else {
+            result = 'NONE';
+            continue;
+          }
+        }
       }
 
-      console.log(playerHandTranslated, opponentHandTranslated, result)
+      // console.log("____", playerHandTranslated, opponentHandTranslated, result)
       return result;
     }
 
