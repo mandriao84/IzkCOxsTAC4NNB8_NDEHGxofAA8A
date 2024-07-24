@@ -192,8 +192,29 @@ function getWinner(playerHand, opponentHand) {
             playerHandMaxDuplicateNumber === opponentHandMaxDuplicateNumber &&
             playerHandRanksSortedByDuplicates.length === opponentHandRanksSortedByDuplicates.length
         ) {
-            const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
-            return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
+            const playerHandRanksSortedByDuplicatesAndFlattened = playerHandRanksSortedByDuplicates.map(r => {
+                const sub = r.split('_')
+                return sub[0]
+            })
+            const playerHandValuesSortedByDuplicatesAndFlattened = playerHandRanksSortedByDuplicatesAndFlattened.map(r => CARDS[r])
+
+            const opponentHandRanksSortedByDuplicatesAndFlattened = opponentHandRanksSortedByDuplicates.map(r => {
+                const sub = r.split('_')
+                return sub[0]
+            })
+            const opponentHandValuesSortedByDuplicatesAndFlattened = opponentHandRanksSortedByDuplicatesAndFlattened.map(r => CARDS[r])
+
+            for (let i = 0; i < playerHandValuesSortedByDuplicatesAndFlattened.length; i++) {
+                const playerCard = playerHandValuesSortedByDuplicatesAndFlattened[i];
+                const opponentCard = opponentHandValuesSortedByDuplicatesAndFlattened[i];
+                if (playerCard > opponentCard) {
+                    return 'OPPONENT';
+                } else if (playerCard < opponentCard) {
+                    return 'PLAYER';
+                }
+            }
+
+            return 'NONE';
         }
     }
 
@@ -206,7 +227,7 @@ function getWinner(playerHand, opponentHand) {
         if (opponentHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
             return 'PLAYER';
         } else {
-            if (playerHandIsNotStraight === false || playerHandIsNotFlush === false) { 
+            if (playerHandIsNotStraight === false || playerHandIsNotFlush === false) {
                 return 'OPPONENT';
             } else {
                 return 'PLAYER';
@@ -223,7 +244,7 @@ function getWinner(playerHand, opponentHand) {
         if (playerHandRanksSortedByDuplicates.length <= 2) { // need to check for straight flush
             return 'OPPONENT';
         } else {
-            if (opponentHandIsNotStraight === false || opponentHandIsNotFlush === false) { 
+            if (opponentHandIsNotStraight === false || opponentHandIsNotFlush === false) {
                 return 'PLAYER';
             } else {
                 return 'OPPONENT';
@@ -239,9 +260,9 @@ function getWinner(playerHand, opponentHand) {
         const playerHandIsNotStraight = isNotStraight(playerHandRanksValue);
         const opponentHandIsNotStraight = isNotStraight(opponentHandRanksValue);
 
-        if (playerHandIsNotFlush === false && opponentHandIsNotFlush === false) { 
-          const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
-          return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
+        if (playerHandIsNotFlush === false && opponentHandIsNotFlush === false) {
+            const loser = getLoserByHandRanks(playerHandRanks, opponentHandRanks);
+            return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
         }
 
         if (playerHandIsNotStraight === false && opponentHandIsNotStraight === false) {
@@ -249,12 +270,12 @@ function getWinner(playerHand, opponentHand) {
             return loser === 'OPPONENT' ? 'PLAYER' : (loser === 'PLAYER' ? 'OPPONENT' : 'NONE');
         }
 
-        if (playerHandIsNotFlush === true && opponentHandIsNotFlush === false) { 
-          return 'PLAYER';
+        if (playerHandIsNotFlush === true && opponentHandIsNotFlush === false) {
+            return 'PLAYER';
         }
 
-        if (playerHandIsNotFlush === false && opponentHandIsNotFlush === true) { 
-          return 'OPPONENT';
+        if (playerHandIsNotFlush === false && opponentHandIsNotFlush === true) {
+            return 'OPPONENT';
         }
 
         if (playerHandIsNotStraight === true && opponentHandIsNotStraight === false) {
