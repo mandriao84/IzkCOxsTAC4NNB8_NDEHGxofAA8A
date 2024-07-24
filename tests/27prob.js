@@ -17,7 +17,6 @@ const getDrawsProbability = (numberOfRoundsLeft, numberOfCardsDiscarded, numberO
         let result = 1;
         for (let i = 0; i < numberOfCardsDiscarded; i++) { 
             const p = (numberOfCardsLeft - i) / (cardsLeft - i);
-            // result = result ? result * p : p;
             result *= p;
         }
         return result
