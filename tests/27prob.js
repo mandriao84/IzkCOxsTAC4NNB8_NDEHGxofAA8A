@@ -2,12 +2,12 @@ const getDrawsProbability = (numberOfRoundsLeft, numberOfCardsToDraw) => {
     const cardsTotal = 52;
     const handSize = 5;
 
-    // probability of single draw : 16/47 * 15/46 * 14/45
+    // probability of drawing 3 cards in a single draw
     const getDrawProbability = () => { 
         const cardsLeft = cardsTotal - handSize;
-        const p1 = numberOfCardsToDraw / cardsLeft;
-        const p2 = (numberOfCardsToDraw - 1) / (cardsLeft - 1);
-        const p3 = (numberOfCardsToDraw - 2) / (cardsLeft - 2);
+        const p1 = numberOfCardsToDraw / cardsLeft; // probability of drawing 1 card : 16/47
+        const p2 = (numberOfCardsToDraw - 1) / (cardsLeft - 1); // probability of drawing 2 cards : 15/46
+        const p3 = (numberOfCardsToDraw - 2) / (cardsLeft - 2); // probability of drawing 3 cards : 14/45
         return p1 * p2 * p3;
     };
 
