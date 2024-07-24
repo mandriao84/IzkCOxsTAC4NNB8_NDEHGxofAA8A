@@ -33,7 +33,7 @@ const getDrawsProbability = (numberOfRoundsLeft, numberOfCardsDiscarded, numberO
 
 
 const numberOfRoundsLeft = 3;
-const numberOfCardsDiscarded = 3;
+const numberOfCardsDiscarded = 0;
 const numberOfCardsLeft = 16; // 4 each of 3, 4, 5, 6
 for (let i = 1; i <= numberOfRoundsLeft; i++) {
     const probabilityOfSuccess = getDrawsProbability(i, numberOfCardsDiscarded, numberOfCardsLeft);
