@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const directory = '.results';
+// const directory = '.results_archives';
 const files = fs.readdirSync(directory);
 const dataRaw = [];
 
@@ -23,12 +24,12 @@ const dataLisible = dataRaw.map(r => {
   const strategy = r["strategy"];
   return { infoSet, strategy };
 });
-// console.log(dataLisible);
-// console.dir(dataRaw.filter(r => r["infoSet"].startsWith('2x-2x-2x-6x-9x')), { maxArrayLength: null });
+
+console.dir(dataRaw.filter(r => r["infoSet"].startsWith('2x-2x-2x-6x-9x')), { maxArrayLength: null });
 // console.dir(dataLisible.filter(r => r["infoSet"].startsWith('5x-6x-7x-8x')), { maxArrayLength: null });
 // console.dir(dataRaw.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith(':')).reverse());
 // console.dir(dataRaw.filter(r => r["infoSet"].includes('Qx-Qx-Qx-Qx')), { maxArrayLength: null });
-console.dir(dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith(':bb')).reverse(), { maxArrayLength: 300 });
+// console.dir(dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith(':bb')).reverse(), { maxArrayLength: 300 });
 // console.dir(dataLisible.filter(r => r["infoSet"].startsWith('2x-2x-2x') && r["infoSet"].includes('6x')), { maxArrayLength: null });
 
 // const result = dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith('bbbb')).reverse()
