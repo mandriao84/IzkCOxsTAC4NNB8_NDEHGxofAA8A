@@ -191,7 +191,6 @@ class Solver {
       histories.push(history)
     }
 
-    console.log(histories)
     const history = histories.join('');
     const betCount = history.replace(/[^b]/g, '').length;
     const raiseCount = history.replace(/[^r]/g, '').length;
@@ -509,6 +508,8 @@ class Solver {
   }
 
   cfr(hands, history, p0, p1) {
+    // const historyTranslated = this.getHistoriesTranslated(history)
+
     const roundsHistory = history.split('_');
     const roundNumber = roundsHistory.length;
     const roundHistory = roundsHistory.slice(-1)[0] || '';
@@ -516,9 +517,10 @@ class Solver {
     let player = plays % 2;
     let opponent = 1 - player;
     // console.log(hands[player], this.getHandTranslated(hands[player]));
-    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
+    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history; // should implement a this.getHistoriesTranslated()
 
-    console.log(infoSet, this.getPayoff(roundsHistory), this.getPot(roundsHistory))
+    console.log(history)
+    // console.log(infoSet, this.getPayoff(roundsHistory), this.getPot(roundsHistory))
 
     if (plays >= 2) {
       let fold = roundHistory.slice(-2) === 'bp';
@@ -529,6 +531,7 @@ class Solver {
       let call = roundHistory.slice(-2) === 'bc';
       let bets = roundHistory.slice(-5) === 'bbbbb';
 
+      // we should check which player turn his and give the payoff accordingly
       if (fold) {
         const payoff = this.getPayoff(roundsHistory); // should be replace by this.getPot(roundsHistory)
         return payoff;
