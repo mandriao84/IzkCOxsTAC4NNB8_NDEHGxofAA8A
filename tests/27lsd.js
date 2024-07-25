@@ -178,6 +178,32 @@ class Solver {
     return players;
   }
 
+  getPot(roundsHistory) {
+    const histories = [];
+
+    for (let h = 0; h < roundsHistory.length; h++) {
+      const historyRaw = roundsHistory[h];
+      let history = historyRaw.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+      history = history.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+      history = !/b/.test(history) ? history.replace(/c/g, 'p') : history // 'cc' => 'pp'
+      history = history.charAt(0) === 'c' ? 'p' + history.slice(1) : history // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
+      history = history.split('')
+      histories.push(history)
+    }
+
+    console.log(histories)
+    const history = histories.join('');
+    const betCount = history.replace(/[^b]/g, '').length;
+    const raiseCount = history.replace(/[^r]/g, '').length;
+    const callCount = history.replace(/[^c]/g, '').length;
+    const ante = 2;
+    const betUnit = 1;
+    const raiseUnit = 2;
+    const callUnit = 1;
+    const pot = (betCount * betUnit) + (raiseCount * raiseUnit) + (callCount * callUnit) + (ante);
+    return pot;
+  }
+
   getPayoff(roundsHistory) {
     const opponentHistories = [];
 
@@ -492,6 +518,8 @@ class Solver {
     // console.log(hands[player], this.getHandTranslated(hands[player]));
     let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
 
+    console.log(infoSet, this.getPayoff(roundsHistory), this.getPot(roundsHistory))
+
     if (plays >= 2) {
       let fold = roundHistory.slice(-2) === 'bp';
       let check = roundHistory.slice(-2) === 'pp';
@@ -502,14 +530,14 @@ class Solver {
       let bets = roundHistory.slice(-5) === 'bbbbb';
 
       if (fold) {
-        const payoff = this.getPayoff(roundsHistory);
+        const payoff = this.getPayoff(roundsHistory); // should be replace by this.getPot(roundsHistory)
         return payoff;
       }
 
       if (check || check2 || check3 || check4 || call || bets) {
         history += '_';
         if (roundNumber == 1) {
-          const payoff = this.getPayoff(roundsHistory);
+          const payoff = this.getPayoff(roundsHistory); // should be replace by this.getPot(roundsHistory)
           const winner = this.getWinner(hands[player], hands[opponent]);
           // console.log(this.getHandTranslated(hands[player]), this.getHandTranslated(hands[opponent]), winner)
           return winner === 'PLAYER' ? payoff : (winner === 'OPPONENT' ? -payoff : 0);
@@ -545,7 +573,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000000;
+  const iterations = 1; // 1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
