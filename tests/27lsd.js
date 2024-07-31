@@ -251,6 +251,20 @@ class Solver {
     let roundHistory = roundsHistory.slice(-1)[0] || '';
     roundHistory = !/b/.test(roundHistory) ? roundHistory.replace(/c/g, 'p') : roundHistory; // 'c...' => 'p...' || 'cc' => 'pp'
     roundHistory = roundHistory.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
+    // roundHistory = roundHistory.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+    // roundHistory = roundHistory.charAt(0) === 'c' ? 'p' + roundHistory.slice(1) : roundHistory // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
+    roundsHistory[roundsHistory.length - 1] = roundHistory;
+    let result = roundsHistory.join('_');
+    return result;
+  }
+
+  getHistoryTranslated2(history) {
+    const roundsHistory = history.split('_');
+    let roundHistory = roundsHistory.slice(-1)[0] || '';
+    roundHistory = !/b/.test(roundHistory) ? roundHistory.replace(/c/g, 'p') : roundHistory; // 'c...' => 'p...' || 'cc' => 'pp'
+    roundHistory = roundHistory.replace(/(?<=r)b/g, 'r'); // 'pbb...' => 'pbr...' || 'bbb' => 'brr'
+    roundHistory = roundHistory.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
+    roundHistory = roundHistory.replace(/r{4}/g, 'rrrc'); // 'brrrr' => 'brrrc' || 'pbrrrr' => 'pbrrrc'
     roundsHistory[roundsHistory.length - 1] = roundHistory;
     let result = roundsHistory.join('_');
     return result;
@@ -532,32 +546,42 @@ class Solver {
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
-    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history; // should implement a this.getHistoriesTranslated()
+    // let historyTranslated = this.getHistoryTranslated2(history);
+    console.log('_', history)
+    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
+    // HISTORYTRANSLATED2 >> let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
     // console.log(infoSet, this.getPayoff(roundsHistory), this.getPot(roundsHistory))
 
     if (plays >= 2) {
+      // HISTORYTRANSLATED2 >> let fold = roundHistory.slice(-2) === 'bp';
+      // HISTORYTRANSLATED2 >> let check = roundHistory.slice(-2) === 'pp';
+      // HISTORYTRANSLATED2 >> let check2 = roundHistory.slice(-2) === 'cc';
+      // HISTORYTRANSLATED2 >> let check3 = roundHistory.slice(-2) === 'pc';
+      // HISTORYTRANSLATED2 >> let check4 = roundHistory.slice(-2) === 'cp';
+      // HISTORYTRANSLATED2 >> let call = roundHistory.slice(-2) === 'bc';
+      // HISTORYTRANSLATED2 >> let bets = roundHistory.slice(-5) === 'bbbbb';
       let fold = roundHistory.slice(-2) === 'bp';
+      let fold2 = roundHistory.slice(-2) === 'rp';
       let check = roundHistory.slice(-2) === 'pp';
-      let check2 = roundHistory.slice(-2) === 'cc';
-      let check3 = roundHistory.slice(-2) === 'pc';
-      let check4 = roundHistory.slice(-2) === 'cp';
       let call = roundHistory.slice(-2) === 'bc';
-      let bets = roundHistory.slice(-5) === 'bbbbb';
+      let call2 = roundHistory.slice(-2) === 'rc';
 
-      if (fold) {
+      // HISTORYTRANSLATED2 >> if (fold) {
+      if (fold || fold2) {
         // const payoff = this.getPayoff(roundsHistory);
         // return payoff;
         const pot = this.getPot(roundsHistory);
         return player === 0 ? pot : -pot;
       }
 
-      if (check || check2 || check3 || check4 || call || bets) {
+      // HISTORYTRANSLATED2 >> if (check || check2 || check3 || check4 || call || bets) {
+      if (check || call || call2) {
         history += '_';
+        // historyTranslated += '_';
         if (roundNumber == 1) {
           // const payoff = this.getPayoff(roundsHistory);
           const pot = this.getPot(roundsHistory);
           const winner = this.getWinner(hands[player], hands[opponent]);
-          // return winner === 'PLAYER' ? payoff : (winner === 'OPPONENT' ? -payoff : 0);
           if (player === 0) {
             return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : 0);
           } else {
@@ -583,7 +607,8 @@ class Solver {
     let nodeUtil = 0;
 
     for (let a = 0; a < NUM_ACTIONS; a++) {
-      let nextHistory = this.getHistoryTranslated(history + ACTIONS[a]);
+      // HISTORYTRANSLATED2 >> let nextHistory = this.getHistoryTranslated(history + ACTIONS[a]);
+      let nextHistory = this.getHistoryTranslated2(history + ACTIONS[a])
       util[a] = player === 0
         ? -this.cfr(hands, nextHistory, p0 * strategy[a], p1)
         : -this.cfr(hands, nextHistory, p0, p1 * strategy[a]);

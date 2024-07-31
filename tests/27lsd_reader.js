@@ -19,6 +19,7 @@ for (const file of files) {
 }
 
 // const data = dataRaw.flat().filter(r => r["infoSet"])
+// const data = dataRaw.filter(r => r["regretSum"] !== [0, 0, 0]);
 const dataLisible = dataRaw.map(r => {
   const infoSet = r["infoSet"];
   const strategy = r["strategy"];
@@ -28,7 +29,7 @@ const dataLisible = dataRaw.map(r => {
 // console.dir(dataRaw.filter(r => r["infoSet"].startsWith('2x-2x-2x-6x-9x')), { maxArrayLength: null });
 // console.dir(dataLisible.filter(r => r["infoSet"].startsWith('5x-6x-7x-8x')), { maxArrayLength: null });
 // console.dir(dataRaw.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith(':')).reverse());
-console.dir(dataRaw.filter(r => r["infoSet"].includes('Qx-Qx-Qx-Qx')), { maxArrayLength: null });
+// console.dir(dataRaw.filter(r => r["infoSet"].includes('Qx-Qx-Qx-Qx')), { maxArrayLength: null });
 // console.dir(dataLisible.filter(r => r["strategy"][1] >= 0.5 && r["infoSet"].endsWith('bbbb')).reverse(), { maxArrayLength: 300 });
 // console.dir(dataLisible.filter(r => r["infoSet"].startsWith('2x-2x-2x') && r["infoSet"].includes('6x')), { maxArrayLength: null });
 
