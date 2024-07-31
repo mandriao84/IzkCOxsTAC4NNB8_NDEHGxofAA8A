@@ -270,23 +270,6 @@ class Solver {
     return result;
   }
 
-  // getHistoriesTranslated(history) {
-  //   const roundsHistory = history.split('_');
-  //   const histories = [];
-
-  //   for (let h = 0; h < roundsHistory.length; h++) {
-  //     const roundHistory = roundsHistory[h];
-  //     let historyTranslated = roundHistory.replace(/b{5}/g, 'bbbbc'); // 'bbbbb' => 'bbbbc'
-  //     historyTranslated = historyTranslated.replace(/b{2,}/g, (match) => { return 'b' + 'r'.repeat(match.length - 1); }) // 'bb' => 'br', 'bbb' => 'brr', 'bbbb' => 'brrr
-  //     historyTranslated = !/b/.test(historyTranslated) ? historyTranslated.replace(/c/g, 'p') : historyTranslated // 'cc' => 'pp'
-  //     historyTranslated = historyTranslated.charAt(0) === 'c' ? 'p' + historyTranslated.slice(1) : historyTranslated // 'cp' => 'pp' || 'cbbbb' => 'pbbbb'
-  //     historyTranslated = historyTranslated.split('')
-  //     histories.push(historyTranslated)
-  //   }
-
-  //   return histories.join('_');
-  // }
-
   getWinner(playerHand, opponentHand) {
     function getSameCards(handRanks) {
       const cardCounts = handRanks.reduce((acc, card) => {
