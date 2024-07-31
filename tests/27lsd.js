@@ -203,6 +203,18 @@ class Solver {
     return pot;
   }
 
+  getPot2(history) {
+    const betCount = history.replace(/[^b]/g, '').length;
+    const raiseCount = history.replace(/[^r]/g, '').length;
+    const callCount = history.replace(/[^c]/g, '').length;
+    const ante = 2;
+    const betUnit = 1;
+    const raiseUnit = 2;
+    const callUnit = 1;
+    const pot = (betCount * betUnit) + (raiseCount * raiseUnit) + (callCount * callUnit) + (ante);
+    return pot;
+  }
+
   getPayoff(roundsHistory) {
     const opponentHistories = [];
 
@@ -563,7 +575,8 @@ class Solver {
         // historyTranslated += '_';
         if (roundNumber == 1) {
           // const payoff = this.getPayoff(roundsHistory);
-          const pot = this.getPot(roundsHistory);
+          // HISTORYTRANSLATED2 >> const pot = this.getPot(roundsHistory);
+          const pot = this.getPot2(history);
           const winner = this.getWinner(hands[player], hands[opponent]);
           if (player === 0) {
             return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : 0);
