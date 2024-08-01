@@ -590,10 +590,12 @@ class Solver {
     }
 
     let node = this.nodeMap.get(infoSet);
-    // const getNodeInfoSetEndsWithB = ...;
-    // const getNodeInfoSetEndsWithP = ...;
-    // if node.infoSet.history.startsWith('b') || node.infoSet.history.startsWith('p') && node.infoSet.history.length > 1 
-    // && getNodeInfoSetEndsWithB.strategy[0] === 1 || getNodeInfoSetEndsWithP.strategy[0] === 1 => return 0;
+    // let nodePrev = this.nodeMap.get(infoSet.slice(0, -1));
+    // if (nodePrev?.strategy[0] === 1) {
+    //   node.strategy = [1, 0, 0];
+    //   console.log(nodePrev, node)
+    //   return;
+    // }
 
     let strategy = node.getStrategy(player === 0 ? p0 : p1);
     let util = new Array(NUM_ACTIONS).fill(0);
@@ -618,7 +620,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1; //1000000000;
+  const iterations = 100; //1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
