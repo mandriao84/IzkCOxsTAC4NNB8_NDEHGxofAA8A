@@ -4,7 +4,7 @@ const getDrawsProbability = (numberOfRoundsLeft, numberOfCardsDiscarded, numberO
 
     // probability of drawing X cards in a single draw
     const getDrawProbability = (numberOfCardsDiscarded) => { 
-        const cardsLeft = cardsTotal - handSize;
+        const cardsLeft = cardsTotal - handSize - numberOfCardsDiscarded;
 
         // // probability of drawing 1 card | ex: 16/47
         // const p1 = numberOfCardsDesired / cardsLeft;
