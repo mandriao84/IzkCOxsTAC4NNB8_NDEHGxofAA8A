@@ -513,7 +513,6 @@ class Solver {
       let call = roundHistory.slice(-2) === 'bc';
       let call2 = roundHistory.slice(-2) === 'rc';
 
-      // HISTORYTRANSLATED2 >> if (fold) {
       if (fold || fold2) {
         // const payoff = this.getPayoff(roundsHistory);
         // return payoff;
