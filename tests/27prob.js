@@ -32,8 +32,8 @@ const getDrawsProbability = (numberOfRoundsLeft, numberOfCardsDiscarded, numberO
 
 
 const numberOfRoundsLeft = 1;
-const numberOfCardsDiscarded = 2;
-const numberOfCardsDesired = 28; // 4 each of 3, 4, 5, 6
+const numberOfCardsDiscarded = 1;
+const numberOfCardsDesired = 20; // 4 each of 3, 4, 5, 6
 for (let i = 1; i <= numberOfRoundsLeft; i++) {
     const probabilityOfSuccess = getDrawsProbability(i, numberOfCardsDiscarded, numberOfCardsDesired);
     console.log(`- Probability to draw ${numberOfCardsDiscarded} desired cards in ${i} round${i > 1 ? 's' : ''}: ${(probabilityOfSuccess * 100).toFixed(2)}%`);

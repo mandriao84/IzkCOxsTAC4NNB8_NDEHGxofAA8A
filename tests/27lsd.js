@@ -182,12 +182,25 @@ class Solver {
     const betCount = history.replace(/[^b]/g, '').length;
     const raiseCount = history.replace(/[^r]/g, '').length;
     const callCount = history.replace(/[^c]/g, '').length;
+    const histories = history.split('_');
+
     const ante = 2;
-    const betUnit = 1;
-    const raiseUnit = 2;
-    const callUnit = 1;
+    let betUnit = 1;
+    let raiseUnit = 2;
+    let callUnit = 1;
+
+    if (histories.length > 2) {
+      betUnit *= 2;
+      raiseUnit *= 2;
+      callUnit *= 2;
+    }
+
     const pot = (betCount * betUnit) + (raiseCount * raiseUnit) + (callCount * callUnit) + (ante);
     return pot;
+  }
+
+  getPotOdds(betUnit, pot) {
+    return betUnit / (betUnit + pot);
   }
 
   getPayoff(roundsHistory) {
@@ -504,7 +517,9 @@ class Solver {
     let player = plays % 2;
     let opponent = 1 - player;
     let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
-    // console.log(infoSet, this.getPayoff(roundsHistory), this.getPot(roundsHistory))
+    // const chipUnit = roundsHistory.length > 2 ? 2 : 1;
+    const pot = this.getPot(history);
+    // console.log(infoSet, pot)
 
     if (plays >= 2) {
       let fold = roundHistory.slice(-2) === 'bp';
@@ -516,7 +531,6 @@ class Solver {
       if (fold || fold2) {
         // const payoff = this.getPayoff(roundsHistory);
         // return payoff;
-        const pot = this.getPot(history);
         return player === 0 ? pot : -pot;
       }
 
@@ -524,7 +538,6 @@ class Solver {
         history += '_';
         if (roundNumber == 1) {
           // const payoff = this.getPayoff(roundsHistory);
-          const pot = this.getPot(history);
           const winner = this.getWinner(hands[player], hands[opponent]);
           if (player === 0) {
             return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : 0);
@@ -554,6 +567,10 @@ class Solver {
 
     for (let a = 0; a < NUM_ACTIONS; a++) {
       let nextHistory = this.getHistoryTranslated(history + ACTIONS[a])
+      // console.log(history === "" ? "_" : history, nextHistory)
+      // if (ACTIONS[a] === 'b' || ACTIONS[a] === 'c') { 
+      // }
+
       util[a] = player === 0
         ? -this.cfr(hands, nextHistory, p0 * strategy[a], p1)
         : -this.cfr(hands, nextHistory, p0, p1 * strategy[a]);
@@ -570,7 +587,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 100; //1000000000;
+  const iterations = 1; //1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
