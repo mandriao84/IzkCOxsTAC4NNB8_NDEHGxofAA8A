@@ -246,6 +246,36 @@ class Solver {
     return handTranslatedSorted.map(r => r.slice(0, 1) + 'x') // temporary for bypassing flush
   }
 
+  getHandSimplified(handTranslated) {
+    const duplicates = new Set();
+    const excluded = [];
+
+    const kept = handTranslated.filter(card => {
+        const cardRank = card.slice(0, -1);
+        // remove cards >= 'J'
+        if (CARDS[cardRank] >= 10) {
+            excluded.push(card);
+            return false;
+        }
+        // remove cards == cards
+        if (duplicates.has(card)) {
+            excluded.push(card);
+            return false;
+        }
+        duplicates.add(card);
+        return true;
+    });
+
+    for (let i = kept.length; i < handTranslated.length; i++) {
+      kept.push('X');
+    }
+
+    return {
+        "cardsKept": kept,
+        "cardsExcluded": excluded
+    };
+  }
+
   getHistoryTranslated(history) {
     const roundsHistory = history.split('_');
     let roundHistory = roundsHistory.slice(-1)[0] || '';
@@ -516,10 +546,12 @@ class Solver {
     let plays = roundHistory.length;
     let player = plays % 2;
     let opponent = 1 - player;
-    let infoSet = this.getHandTranslated(hands[player]).join('-').slice(0, 14) + ':' + history;
+    const handTranslated = this.getHandTranslated(hands[player]);
+    const handSimplified = this.getHandSimplified(handTranslated);
+    let infoSet = handSimplified["cardsKept"].join('-') + ':' + history;
+
     // const chipUnit = roundsHistory.length > 2 ? 2 : 1;
     const pot = this.getPot(history);
-    // console.log(infoSet, pot)
 
     if (plays >= 2) {
       let fold = roundHistory.slice(-2) === 'bp';
@@ -587,7 +619,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1; //1000000000;
+  const iterations = 10000000; //1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
