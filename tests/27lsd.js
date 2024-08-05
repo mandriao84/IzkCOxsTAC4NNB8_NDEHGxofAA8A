@@ -549,6 +549,7 @@ class Solver {
     const handTranslated = this.getHandTranslated(hands[player]);
     const handSimplified = this.getHandSimplified(handTranslated);
     let infoSet = handSimplified["cardsKept"].join('-') + ':' + history;
+    // console.log(infoSet, opponentInfoSet)
 
     // const chipUnit = roundsHistory.length > 2 ? 2 : 1;
     const pot = this.getPot(history);
@@ -564,6 +565,7 @@ class Solver {
         // const payoff = this.getPayoff(roundsHistory);
         // return payoff;
         return player === 0 ? pot : -pot;
+
       }
 
       if (check || call || call2) {
@@ -571,11 +573,12 @@ class Solver {
         if (roundNumber == 1) {
           // const payoff = this.getPayoff(roundsHistory);
           const winner = this.getWinner(hands[player], hands[opponent]);
-          if (player === 0) {
-            return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : 0);
-          } else {
-            return winner === 'OPPONENT' ? pot : (winner === 'PLAYER' ? -pot : 0);
-          }
+          // if (player === 0) {
+          //   return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : pot / 2);
+          // } else {
+          //   return winner === 'OPPONENT' ? pot : (winner === 'PLAYER' ? -pot : pot / 2);
+          // }
+          return winner === 'PLAYER' ? pot : (winner === 'OPPONENT' ? -pot : pot / 2);
         }
       }
     }
@@ -619,7 +622,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 10000000; //1000000000;
+  const iterations = 1; //1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
