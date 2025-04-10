@@ -268,7 +268,7 @@ const getDataComputedForOneRound = (simulationNumber = 2) => {
         const key = handSorted.join('');
 
         if (!data.has(key)) {
-            const result = getDiscardsDetails(hand, deck, 1000);
+            const result = getDiscardsDetails(hand, deck);
             result.key = key;
             const entry = JSON.stringify(result) + '\n';
             
