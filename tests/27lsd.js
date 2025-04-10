@@ -622,7 +622,7 @@ class Solver {
 }
 
 function main() {
-  const iterations = 1000000; //1000000000;
+  const iterations = 10000000; //1000000000;
   const trainer = new Solver();
   trainer.train(iterations);
   // trainer.load('.results');
