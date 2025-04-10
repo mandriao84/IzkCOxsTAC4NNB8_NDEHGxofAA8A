@@ -1,3 +1,5 @@
+const fs = require('fs');
+const PATH_RESULTS = '.results/mccfr/strategies.json';
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -6,6 +8,28 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
+
+Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
+    method = method.toUpperCase();
+    if (!["ROUND", "FLOOR", "CEIL"].includes(method)) {
+        throw new Error("Number.prototype.safe.method.Error: ['round', 'floor', 'ceil']");
+    }
+    if (typeof decimals !== "number" || decimals < 0 || !Number.isInteger(decimals)) {
+        throw new Error("Number.prototype.safe.decimals.Error: ['number', 'isInteger', '>=0']");
+    }
+
+    const factor = Math.pow(10, decimals);
+    const value = this.valueOf();
+
+    switch (method) {
+        case "ROUND":
+            return Math.round((value + Number.EPSILON) * factor) / factor;
+        case "FLOOR":
+            return Math.floor((value + Number.EPSILON) * factor) / factor;
+        case "CEIL":
+            return Math.ceil((value - Number.EPSILON) * factor) / factor;
+    }
+};
 
 const getArrayShuffled = (array) => {
     for (let c1 = array.length - 1; c1 > 0; c1--) {
@@ -115,10 +139,13 @@ const getHandScore = (hand) => {
         score = getHandScoreBelowPair(cardsValue);
     }
 
-    return score
+    return score;
 }
 
-// Generates all combinations of k elements from an array
+
+
+
+
 const getAllCombinationsPossible = (arr, k) => {
     if (k === 0) return [[]];
     if (arr.length < k) return [];
@@ -128,96 +155,218 @@ const getAllCombinationsPossible = (arr, k) => {
     return [...withFirst, ...withoutFirst];
 }
 
-// Simulates discarding specific cards and drawing replacements
-function simulateDiscard(playerHand, discardIndices, remainingDeck, numSimulations = 1000) {
-    const keptCards = playerHand.filter((_, idx) => !discardIndices.includes(idx));
-    const numDraw = discardIndices.length;
 
-    let totalScore = 0;
-    for (let i = 0; i < numSimulations; i++) {
-        const deckCopy = [...remainingDeck];
-        getArrayShuffled(deckCopy);
-        const drawnCards = deckCopy.slice(0, numDraw);
-        const newHand = [...keptCards, ...drawnCards];
-        totalScore += getHandScore(newHand);
+
+
+
+function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber = 1000) {
+    const handKept = hand.filter((_, idx) => !discardIndices.includes(idx));
+    const discardNumber = discardIndices.length;
+
+    let score = 0;
+    for (let i = 0; i < simulationNumber; i++) {
+        const deck = [...deckLeft];
+        getArrayShuffled(deck);
+        const cardsReceived = deck.slice(0, discardNumber);
+        const handNew = [...handKept, ...cardsReceived];
+        score += getHandScore(handNew);
     }
 
-    return totalScore / numSimulations;
+    const scoreFinal = score / simulationNumber.length;
+    return scoreFinal.safe("ROUND", 3);
 }
 
-/**
- * Enumerate all possible ways to draw `discardIndices.length` cards from `remainingDeck`,
- * calculate average final hand score. No random simulation.
- */
-function enumerateDiscard(playerHand, discardIndices, remainingDeck) {
-    // which cards we keep from the original 5
-    const keptCards = playerHand.filter((_, idx) => !discardIndices.includes(idx));
-    const numDraw = discardIndices.length;
 
-    if (numDraw === 0) {
-        // if discarding 0, there's exactly one final hand: the original
-        return getHandScore(playerHand);
+
+
+
+const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
+    const handKept = hand.filter((_, index) => !discardIndices.includes(index));
+    const discardNumber = discardIndices.length;
+
+    if (discardNumber === 0) {
+        return getHandScore(hand);
     }
 
-    // get all combos of 'numDraw' from the remaining deck
-    const drawCombos = getAllCombinationsPossible(remainingDeck, numDraw);
+    const allCombinationsPossible = getAllCombinationsPossible(deckLeft, discardNumber);
 
-    let totalScore = 0;
-    for (const drawSet of drawCombos) {
-        const newHand = [...keptCards, ...drawSet];
-        totalScore += getHandScore(newHand);
+    let score = 0;
+    for (const cardsReceived of allCombinationsPossible) {
+        const handNew = [...handKept, ...cardsReceived];
+        score += getHandScore(handNew);
     }
-    return totalScore / drawCombos.length; // average
+
+    const scoreFinal = score / allCombinationsPossible.length;
+    return scoreFinal.safe("ROUND", 3);
 }
 
-// Estimates the best discard strategy by evaluating all combinations
-function estimateBestDiscard(playerHand, remainingDeck, numSimulations = 10000000) {
+
+
+
+
+const getDiscardsDetails = (hand, deckLeft, simulationNumber = 100000) => {
     const results = {};
-    let bestScore = Infinity;
-    let bestDiscard = null;
-    let bestCombination = null;
+    let score = Infinity;
+    let index = null;
+    let cards = null;
 
-    for (let numDraw = 0; numDraw <= 5; numDraw++) {
-        const allCombinations = getAllCombinationsPossible([...Array(5).keys()], numDraw);
-        let minScoreForNumDraw = Infinity;
-        let bestCombinationForNumDraw = null;
+    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
+        const allCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
+        let scoreByDiscardNumber = Infinity;
+        let cardsByDiscardNumber = null;
 
         for (const discardIndices of allCombinations) {
-            // const avgScore = simulateDiscard(playerHand, discardIndices, remainingDeck, numSimulations);
-            const avgScore = enumerateDiscard(playerHand, discardIndices, remainingDeck);
-            if (avgScore < minScoreForNumDraw) {
-                minScoreForNumDraw = avgScore;
-                bestCombinationForNumDraw = discardIndices;
+            // const scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
+            const scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
+            if (scoreAverage < scoreByDiscardNumber) {
+                scoreByDiscardNumber = scoreAverage;
+                cardsByDiscardNumber = discardIndices;
             }
         }
 
-        results[numDraw] = minScoreForNumDraw;
+        results[discardNumber] = scoreByDiscardNumber;
 
-        if (minScoreForNumDraw < bestScore) {
-            bestScore = minScoreForNumDraw;
-            bestDiscard = numDraw;
-            bestCombination = bestCombinationForNumDraw;
+        if (scoreByDiscardNumber < score) {
+            score = scoreByDiscardNumber;
+            index = discardNumber;
+            cards = cardsByDiscardNumber;
         }
     }
 
-    const bestDiscardedCards = bestCombination.map(idx => playerHand[idx]);
+    results.cards = cards.map(index => hand[index]);
+    results.index = index;
+    results.round = 1;
 
-    return { bestDiscard, bestDiscardedCards, results };
+    return results;
 }
 
-// Example usage
-const fullDeck = Object.values(DECK);
-getArrayShuffled(fullDeck);
-const hands = getHandsDealed(fullDeck, 5, 1);
-const playerHand = hands[0];
-const remainingDeck = fullDeck.filter(card => !playerHand.includes(card));
 
-console.log(`Player's hand: ${playerHand.join(', ')}`);
 
-const { bestDiscard, bestDiscardedCards, results } = estimateBestDiscard(playerHand, remainingDeck);
-console.log('Average hand scores for each discard choice:');
-for (const [discardCount, avgScore] of Object.entries(results)) {
-    console.log(`Discard ${discardCount} cards: ${avgScore.toFixed(2)}`);
+
+
+const getDataComputedForOneRound = (simulationNumber = 2) => {
+    const isPathExists = fs.existsSync(PATH_RESULTS);
+    const data = new Set();
+
+    if (isPathExists) {
+        const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+        content.split('\n').forEach(line => {
+            if (line.trim()) {
+                const entry = JSON.parse(line);
+                data.add(entry.key);
+            }
+        });
+    }
+
+    const fd = fs.openSync(PATH_RESULTS, 'a+');
+    for (let i = 0; i < simulationNumber; i++) {
+        const deck = Object.values(DECK);
+        getArrayShuffled(deck);
+        const hands = getHandsDealed(deck, 5, 1);
+        const hand = hands[0];
+        const { hand: handSorted } = getHandSorted([...hand]);
+        const key = handSorted.join('');
+
+        if (!data.has(key)) {
+            const result = getDiscardsDetails(hand, deck, 1000);
+            result.key = key;
+            const entry = JSON.stringify(result) + '\n';
+            
+            fs.appendFileSync(fd, entry);
+            data.add(key);
+        }
+    }
+    
+    fs.closeSync(fd);
 }
-console.log(`Best discard choice: ${bestDiscard} cards`);
-console.log(`Best cards to discard: ${bestDiscardedCards.join(', ')}`);
+
+getDataComputedForOneRound();
+
+
+// function estimateBestDiscardMulti(hand, remainingDeck, roundsLeft = 1) {
+//     // Base case: return final hand score when no more rounds
+//     if (roundsLeft <= 0) {
+//         return {
+//             score: getHandScore(hand),
+//             discards: []
+//         };
+//     }
+
+//     let bestScore = Infinity;
+//     let bestDiscard = null;
+//     const results = {};
+
+//     // Consider all possible discard counts (0-5)
+//     for (let numDraw = 0; numDraw <= 5; numDraw++) {
+//         const allDiscardCombos = getAllCombinationsPossible([...Array(5).keys()], numDraw);
+//         let minScoreForNumDraw = Infinity;
+//         let bestComboForNumDraw = null;
+
+//         // Evaluate each discard combination
+//         for (const discardIndices of allDiscardCombos) {
+//             let totalScore = 0;
+//             const samples = 1000; // Reduce for faster but less accurate results
+            
+//             // Monte Carlo simulation for card draws
+//             for (let i = 0; i < samples; i++) {
+//                 const deckCopy = [...remainingDeck];
+//                 getArrayShuffled(deckCopy);
+                
+//                 // Draw new cards
+//                 const drawnCards = deckCopy.splice(0, numDraw);
+//                 const newHand = hand.filter((_, idx) => !discardIndices.includes(idx)).concat(drawnCards);
+//                 const newRemaining = deckCopy;
+                
+//                 // Recursive call for next round
+//                 const nextRound = estimateBestDiscardMulti(newHand, newRemaining, roundsLeft - 1);
+//                 totalScore += nextRound.score;
+//             }
+            
+//             const avgScore = totalScore / samples;
+//             if (avgScore < minScoreForNumDraw) {
+//                 minScoreForNumDraw = avgScore;
+//                 bestComboForNumDraw = discardIndices;
+//             }
+//         }
+
+//         // Track best discard count
+//         results[numDraw] = minScoreForNumDraw;
+//         if (minScoreForNumDraw < bestScore) {
+//             bestScore = minScoreForNumDraw;
+//             bestDiscard = {
+//                 count: numDraw,
+//                 indices: bestComboForNumDraw,
+//                 cards: bestComboForNumDraw.map(idx => hand[idx])
+//             };
+//         }
+//     }
+
+//     return {
+//         score: bestScore,
+//         rounds: roundsLeft,
+//         bestDiscard,
+//         results
+//     };
+// }
+
+// const fullDeck = Object.values(DECK);
+// getArrayShuffled(fullDeck);
+// const hands = getHandsDealed(fullDeck, 5, 1);
+// const playerHand = hands[0];
+// const remainingDeck = fullDeck.filter(card => !playerHand.includes(card));
+
+// console.log(`Player's hand: ${playerHand.join(', ')}`);
+
+// const result = estimateBestDiscardMulti(playerHand, remainingDeck, 2);
+// console.log(`Optimal strategy for ${result.rounds} rounds:`);
+// console.log(`Discard ${result.bestDiscard.count} cards: ${result.bestDiscard.cards.join(', ')}`);
+// console.log(`Projected final score: ${result.score.toFixed(1)}`);
+
+
+// const deck = Object.values(DECK);
+// getArrayShuffled(deck);
+// const hands = getHandsDealed(deck, 5, 1);
+// const hand = hands[0];
+// console.log(`Player's hand: ${hand.join(', ')}`);
+// const results = getDiscardsDetails(hand, deck);
+// console.log(results)
