@@ -159,8 +159,8 @@ const getAllCombinationsPossible = (arr, k) => {
 
 
 
-function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber = 1000) {
-    const handKept = hand.filter((_, idx) => !discardIndices.includes(idx));
+function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber) {
+    const handKept = hand.filter((_, index) => !discardIndices.includes(index));
     const discardNumber = discardIndices.length;
 
     let score = 0;
@@ -172,7 +172,7 @@ function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber
         score += getHandScore(handNew);
     }
 
-    const scoreFinal = score / simulationNumber.length;
+    const scoreFinal = score / simulationNumber;
     return scoreFinal.safe("ROUND", 3);
 }
 
@@ -237,7 +237,6 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber) => {
             cards = cardsByDiscardNumber;
         }
     }
-
     results.cards = cards.map(index => hand[index]);
     results.index = index;
     results.round = 1;
@@ -318,9 +317,9 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
     }
 };
 
-(async () => {
-    await getDataComputedForOneRound();
-})();
+// (async () => {
+//     await getDataComputedForOneRound();
+// })();
 
 
 
@@ -408,6 +407,20 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
 // getArrayShuffled(deck);
 // const hands = getHandsDealed(deck, 5, 1);
 // const hand = hands[0];
+// console.log(hand, deck)
 // console.log(`Player's hand: ${hand.join(', ')}`);
 // const results = getDiscardsDetails(hand, deck);
 // console.log(results)
+
+const getDiscardsDetailsForGivenHand = (hand, simulationNumber = null) => {
+    const deck = Object.values(DECK);
+    getArrayShuffled(deck);
+
+    const deckLeft = deck.filter(card => !hand.includes(card));
+    const result =  getDiscardsDetails(hand, deckLeft, simulationNumber);
+    console.log(hand, result);
+    return result;
+};
+
+const hand = ["2d", "3d", "4d", "10d", "Kh"]
+getDiscardsDetailsForGivenHand(hand);
