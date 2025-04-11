@@ -1,5 +1,5 @@
 const fs = require('fs');
-const PATH_RESULTS = '.results/mccfr/strategies.json';
+const PATH_RESULTS = '.results/mccfr/strategies.ndjson';
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -244,40 +244,50 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber = 100000) => {
 
 
 
-const getDataComputedForOneRound = (simulationNumber = 2) => {
-    const isPathExists = fs.existsSync(PATH_RESULTS);
-    const data = new Set();
+const getDataComputedForOneRound = (simulationNumber = 3) => {
+    let fd;
+    const cleanup = () => {
+        if (fd) fs.closeSync(fd);
+        process.off('SIGINT', cleanup);
+    };
 
-    if (isPathExists) {
-        const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-        content.split('\n').forEach(line => {
-            if (line.trim()) {
-                const entry = JSON.parse(line);
-                data.add(entry.key);
-            }
-        });
-    }
+    process.on('SIGINT', cleanup);
 
-    const fd = fs.openSync(PATH_RESULTS, 'a+');
-    for (let i = 0; i < simulationNumber; i++) {
-        const deck = Object.values(DECK);
-        getArrayShuffled(deck);
-        const hands = getHandsDealed(deck, 5, 1);
-        const hand = hands[0];
-        const { hand: handSorted } = getHandSorted([...hand]);
-        const key = handSorted.join('');
+    try {
+        const isPathExists = fs.existsSync(PATH_RESULTS);
+        const data = new Set();
 
-        if (!data.has(key)) {
-            const result = getDiscardsDetails(hand, deck);
-            result.key = key;
-            const entry = JSON.stringify(result) + '\n';
-            
-            fs.appendFileSync(fd, entry);
-            data.add(key);
+        if (isPathExists) {
+            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+            content.split('\n').forEach(line => {
+                if (line.trim()) {
+                    const entry = JSON.parse(line);
+                    data.add(entry.key);
+                }
+            });
         }
+
+        fd = fs.openSync(PATH_RESULTS, 'a+');
+        for (let i = 0; i < simulationNumber; i++) {
+            const deck = Object.values(DECK);
+            getArrayShuffled(deck);
+            const hands = getHandsDealed(deck, 5, 1);
+            const hand = hands[0];
+            const { hand: handSorted } = getHandSorted([...hand]);
+            const key = handSorted.join('');
+
+            if (!data.has(key)) {
+                const result = getDiscardsDetails(hand, deck);
+                result.key = key;
+                const entry = JSON.stringify(result) + '\n';
+
+                data.add(key);
+                fs.appendFileSync(fd, entry);
+            }
+        }
+    } finally {
+        cleanup();
     }
-    
-    fs.closeSync(fd);
 }
 
 getDataComputedForOneRound();
