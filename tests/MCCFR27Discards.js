@@ -228,55 +228,54 @@ const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
 
 
 
-const getDiscardsDetails = (hand, deckLeft, roundNumber = 1, simulationNumber) => {
-    const results = {};
-    let score = Infinity;
-    let index = null;
-    let cards = null;
+// const getDiscardsDetails = (hand, deckLeft, roundNumber = 1, simulationNumber) => {
+//     const results = {};
+//     let score = Infinity;
+//     let index = null;
+//     let cards = null;
 
-    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
-        const allCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
-        let scoreByDiscardNumber = Infinity;
-        let cardsByDiscardNumber = null;
+//     for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
+//         const allCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
+//         let scoreByDiscardNumber = Infinity;
+//         let cardsByDiscardNumber = null;
 
-        for (const discardIndices of allCombinations) {
-            let scoreAverage;
-            if (simulationNumber) {
-                scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
-            } else {
-                scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
-            }
+//         for (const discardIndices of allCombinations) {
+//             let scoreAverage;
+//             if (simulationNumber) {
+//                 scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
+//             } else {
+//                 scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
+//             }
             
-            if (scoreAverage < scoreByDiscardNumber) {
-                scoreByDiscardNumber = scoreAverage;
-                cardsByDiscardNumber = discardIndices;
-            }
-        }
+//             if (scoreAverage < scoreByDiscardNumber) {
+//                 scoreByDiscardNumber = scoreAverage;
+//                 cardsByDiscardNumber = discardIndices;
+//             }
+//         }
 
-        results[discardNumber] = scoreByDiscardNumber;
+//         results[discardNumber] = scoreByDiscardNumber;
 
-        if (scoreByDiscardNumber < score) {
-            score = scoreByDiscardNumber;
-            index = discardNumber;
-            cards = cardsByDiscardNumber;
-        }
-    }
+//         if (scoreByDiscardNumber < score) {
+//             score = scoreByDiscardNumber;
+//             index = discardNumber;
+//             cards = cardsByDiscardNumber;
+//         }
+//     }
 
-    results.cards = cards.map(index => hand[index]);
-    results.index = index;
-    results.round = 1;
+//     results.cards = cards.map(index => hand[index]);
+//     results.index = index;
+//     results.round = 1;
 
-    return results;
-}
-
-
+//     return results;
+// }
 
 
 
-const getDiscardsDetailsForGivenHand = (hand, roundNumber = 1, simulationNumber = null) => {
+
+
+const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = null) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
-
     const deckLeft = deck.filter(card => !hand.includes(card));
     const result =  getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
     console.log(hand, result);
@@ -287,7 +286,7 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber = 1, simulationNumber 
 
 
 
-const getDataComputedForOneRound = async (simulationNumber = 10000) => {
+const getDataComputed = async (roundNumber = 1, simulationNumber = 1000) => {
     let fd;
     let exit = false;
 
@@ -341,7 +340,8 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
             const key = handSorted.join('');
 
             if (!data.has(key)) {
-                const result = getDiscardsDetails(hand, deck);
+                const deckLeft = deck.filter(card => !hand.includes(card));
+                const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
                 result.key = key;
                 const entry = JSON.stringify(result) + '\n';
                 data.add(key);
@@ -358,7 +358,7 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
 
 
 
-const multiRoundMonteCarlo = (hand, deckLeft, roundNumber, simulationNumber) => {
+const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
     const results = {};
     let scoreFinal = Infinity;
     let indexFinal = null;
@@ -415,11 +415,11 @@ const multiRoundMonteCarlo = (hand, deckLeft, roundNumber, simulationNumber) => 
 
 
 
-// (async () => {
-//     // getAllCombinationsHandsPossible();
-//     // await getDataComputedForOneRound();
-//     getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"]);
-// })();
+(async () => {
+    // getAllCombinationsHandsPossible();
+    // await getDataComputedForOneRound();
+    getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
+})();
 
 
 // const deck = Object.values(DECK);
@@ -431,10 +431,10 @@ const multiRoundMonteCarlo = (hand, deckLeft, roundNumber, simulationNumber) => 
 // const results = getDiscardsDetails(hand, deck);
 // console.log(results)
 
-const deck = Object.values(DECK);
-getArrayShuffled(deck);
-const hand = getHandsDealed(deck, 5, 1)[0];
-const remainingDeck = deck.filter(c => !hand.includes(c));
-console.log(hand)
-const result = multiRoundMonteCarlo(hand, remainingDeck, 2, 250);
-console.log(result);
+// const deck = Object.values(DECK);
+// getArrayShuffled(deck);
+// const hand = getHandsDealed(deck, 5, 1)[0];
+// const remainingDeck = deck.filter(c => !hand.includes(c));
+// console.log(hand)
+// const result = getDiscardsDetails2(hand, remainingDeck, 2, 250);
+// console.log(result);
