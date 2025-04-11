@@ -1,5 +1,9 @@
 const fs = require('fs');
-const PATH_RESULTS = '.results/mccfr/strategies.ndjson';
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+const os = require('os');
+const LRU = require('lru-cache');
+const path = require('path');
+const PATH_RESULTS = path.join(__dirname, '.results/mccfr/strategies.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -9,6 +13,12 @@ const DECK = {
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
 const allCombinationsPossibleCache = {};
+const handCache = new LRU({
+    max: 100000,
+    maxSize: 100000000,
+    sizeCalculation: (value, key) => key.length * 2 + 8,
+    allowStale: false
+});
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -53,15 +63,16 @@ const getHandsDealed = (deck, cardsNumberPerHand, handsNumber) => {
 };
 
 const getHandSorted = (hand) => {
+    let handCopy = [...hand];
     const getCardRank = (card) => card.slice(0, -1);
     const getCardValue = (card) => CARDS[getCardRank(card)];
     const getCardSuit = (card) => card.slice(-1);
-    const cardsValue = hand.map(getCardValue).sort((a, b) => a - b);
-    const cardsSuit = hand.map(getCardSuit).sort((a, b) => a - b);
+    const cardsValue = handCopy.map(getCardValue).sort((a, b) => a - b);
+    const cardsSuit = handCopy.map(getCardSuit).sort((a, b) => a - b);
     const straightWithAs = [13, 1, 2, 3, 4];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
 
-    hand.sort((a, b) => {
+    handCopy.sort((a, b) => {
         const cardValueA = getCardValue(a);
         const cardValueB = getCardValue(b);
         if (isStraightWithAs) {
@@ -70,8 +81,9 @@ const getHandSorted = (hand) => {
         }
         return cardValueA - cardValueB;
     });
+    const handKey = handCopy.join('|');
 
-    return { hand, cardsValue, cardsSuit };
+    return { hand: handCopy, handKey, cardsValue, cardsSuit };
 }
 
 const getHandScore = (hand) => {
@@ -101,7 +113,13 @@ const getHandScore = (hand) => {
         return score;
     }
 
-    var { hand: handSorted, cardsValue, cardsSuit } = getHandSorted([...hand]);
+    var { hand: handSorted, handKey, cardsValue, cardsSuit } = getHandSorted([...hand]);
+
+    if (handCache.has(handKey)) {
+        const handCached = handCache.get(handKey);
+        return handCached;
+    }
+
     cardsValue = cardsValue.sort((a, b) => b - a);
     const straightWithAs = [13, 1, 2, 3, 4];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
@@ -140,6 +158,7 @@ const getHandScore = (hand) => {
         score = getHandScoreBelowPair(cardsValue);
     }
 
+    handCache.set(handKey, score);
     return score;
 }
 
@@ -228,51 +247,6 @@ const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
 
 
 
-// const getDiscardsDetails = (hand, deckLeft, roundNumber = 1, simulationNumber) => {
-//     const results = {};
-//     let score = Infinity;
-//     let index = null;
-//     let cards = null;
-
-//     for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
-//         const allCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
-//         let scoreByDiscardNumber = Infinity;
-//         let cardsByDiscardNumber = null;
-
-//         for (const discardIndices of allCombinations) {
-//             let scoreAverage;
-//             if (simulationNumber) {
-//                 scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
-//             } else {
-//                 scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
-//             }
-            
-//             if (scoreAverage < scoreByDiscardNumber) {
-//                 scoreByDiscardNumber = scoreAverage;
-//                 cardsByDiscardNumber = discardIndices;
-//             }
-//         }
-
-//         results[discardNumber] = scoreByDiscardNumber;
-
-//         if (scoreByDiscardNumber < score) {
-//             score = scoreByDiscardNumber;
-//             index = discardNumber;
-//             cards = cardsByDiscardNumber;
-//         }
-//     }
-
-//     results.cards = cards.map(index => hand[index]);
-//     results.index = index;
-//     results.round = 1;
-
-//     return results;
-// }
-
-
-
-
-
 const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = null) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
@@ -286,79 +260,162 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = nu
 
 
 
-const getDataComputed = async (roundNumber = 1, simulationNumber = 1000) => {
-    let fd;
-    let exit = false;
+// const getDataComputed = async (roundNumber = 1, simulationNumber = 1000) => {
+//     let fd;
+//     let exit = false;
 
-    const cleanupHandler = () => {
-        if (fd) {
-            fs.closeSync(fd);
-            fd = null;
-        }
-    };
+//     const cleanupHandler = () => {
+//         if (fd) {
+//             fs.closeSync(fd);
+//             fd = null;
+//         }
+//     };
 
-    const exitHandler = (event, error) => {
-        if (error) {
-            console.error(`getDataComputedForOneRound.Error.${event}:`, error);
-        } else {
-            console.log(`getDataComputedForOneRound.Exit.${event}`);
-        }
-        exit = true;
-    };
+//     const exitHandler = (event, error) => {
+//         if (error) {
+//             console.error(`getDataComputed.Error.${event}:`, error);
+//         } else {
+//             console.log(`getDataComputed.Exit.${event}`);
+//         }
+//         exit = true;
+//     };
 
-    ['SIGINT', 'SIGTERM', 'SIGQUIT', 'uncaughtException', 'unhandledRejection'].forEach((signal) => {
-        process.once(signal, (error) => exitHandler(signal, error));
-    });
+//     ['SIGINT', 'SIGTERM', 'SIGQUIT', 'uncaughtException', 'unhandledRejection'].forEach((signal) => {
+//         process.once(signal, (error) => exitHandler(signal, error));
+//     });
 
-    try {
-        const isPathExists = fs.existsSync(PATH_RESULTS);
-        const data = new Set();
+//     try {
+//         const isPathExists = fs.existsSync(PATH_RESULTS);
+//         const data = new Set();
 
-        if (isPathExists) {
-            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-            content.split('\n').forEach((line) => {
-                if (line.trim()) {
-                    const entry = JSON.parse(line);
-                    data.add(entry.key);
+//         if (isPathExists) {
+//             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+//             content.split('\n').forEach((line) => {
+//                 if (line.trim()) {
+//                     const entry = JSON.parse(line);
+//                     data.add(entry.handKey);
+//                 }
+//             });
+//         }
+
+//         fd = fs.openSync(PATH_RESULTS, 'a+');
+
+//         for (let i = 0; i < simulationNumber; i++) {
+//             if (exit) {
+//                 console.log('getDataComputed.ExitEarly');
+//                 break;
+//             }
+
+//             const deck = Object.values(DECK);
+//             getArrayShuffled(deck);
+//             const hands = getHandsDealed(deck, 5, 1);
+//             const hand = hands[0];
+//             const { hand: handSorted } = getHandSorted([...hand]);
+//             const handKey = handSorted.join('|');
+
+//             if (!data.has(handKey)) {
+//                 const deckLeft = deck.filter(card => !hand.includes(card));
+//                 const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
+//                 result.handKey = handKey;
+//                 const entry = JSON.stringify(result) + '\n';
+//                 data.add(handKey);
+//                 fs.appendFileSync(fd, entry);
+//                 console.log(`getDataComputed.Iteration.${i}.Done\n>> ${entry}`);
+//             }
+
+//             await new Promise((resolve) => setImmediate(resolve));
+//         }
+//     } finally {
+//         cleanupHandler();
+//     }
+// };
+async function getDataComputed(roundNumber = 1, simulationNumber = 1000) {
+    if (isMainThread) {
+        const cpuCount = os.cpus().length;
+        const workers = [];
+        
+        const existingHands = new Set(
+            fs.existsSync(PATH_RESULTS) 
+            ? fs.readFileSync(PATH_RESULTS, 'utf8')
+                .split('\n')
+                .filter(l => l)
+                .map(l => JSON.parse(l).handKey)
+            : []
+        );
+
+        for (let i = 0; i < cpuCount; i++) {
+            const worker = new Worker(__filename, {
+                workerData: { 
+                    start: Math.floor(i * simulationNumber / cpuCount),
+                    end: Math.floor((i + 1) * simulationNumber / cpuCount),
+                    roundNumber,
+                    simulationNumber,
+                    PATH_RESULTS,
+                    existingHands: [...existingHands] // Pass initial state
                 }
             });
+            
+            worker.on('message', (entriesBatch) => {
+                if (entriesBatch) {
+                    fs.appendFileSync(PATH_RESULTS, entriesBatch);
+                    entriesBatch.split('\n').filter(l => l).forEach(line => {
+                        existingHands.add(JSON.parse(line).handKey);
+                    });
+                }
+            });
+            
+            workers.push(new Promise(resolve => worker.on('exit', resolve)));
         }
+        
+        await Promise.all(workers);
+    } else {
+        const existingHands = new Set(workerData.existingHands);
+        const entries = [];
 
-        fd = fs.openSync(PATH_RESULTS, 'a+');
-
-        for (let i = 0; i < simulationNumber; i++) {
-            if (exit) {
-                console.log('getDataComputedForOneRound.ExitEarly');
-                break;
+        const dataSaved = new Map();
+        if (workerData.roundNumber > 1) {
+            if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
+                fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
             }
-
+            
+            const data = fs.existsSync(PATH_RESULTS) 
+                ? fs.readFileSync(PATH_RESULTS, 'utf8')
+                    .split('\n')
+                    .filter(l => l)
+                    .map(l => JSON.parse(l))
+                    .filter(entry => entry.round === workerData.roundNumber - 1)
+                : [];
+                
+            data.forEach(entry => {
+                dataSaved.set(entry.handKey, entry.score);
+            });
+        }
+        
+        for (let i = workerData.start; i < workerData.end; i++) {
             const deck = Object.values(DECK);
             getArrayShuffled(deck);
             const hands = getHandsDealed(deck, 5, 1);
             const hand = hands[0];
-            const { hand: handSorted } = getHandSorted([...hand]);
-            const key = handSorted.join('');
+            const { hand: handSorted, handKey } = getHandSorted([...hand]);
 
-            if (!data.has(key)) {
+            if (!existingHands.has(handKey)) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-                result.key = key;
-                const entry = JSON.stringify(result) + '\n';
-                data.add(key);
-                fs.appendFileSync(fd, entry);
-                console.log(`getDataComputedForOneRound.Iteration.${i}.Done\n>> ${entry}`);
+                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 100, dataSaved);
+                result.handKey = handKey;
+                const resultAsString = JSON.stringify(result);
+                console.log(resultAsString);
+                entries.push(resultAsString);
             }
-
-            await new Promise((resolve) => setImmediate(resolve));
         }
-    } finally {
-        cleanupHandler();
+        
+        parentPort.postMessage(entries.join('\n') + '\n');
+        process.exit(0);
     }
-};
+}
 
 
 
-const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
+const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataSaved = new Map()) => {
     const results = {};
     let scoreFinal = Infinity;
     let indexFinal = null;
@@ -380,13 +437,21 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
                 let handNew = [...cardsKept, ...cardsReceived];
                 
                 if (roundNumber > 1 && deck.length >= 5) {
-                    const roundNext = multiRoundMonteCarlo(
-                        handNew, 
-                        deck, 
-                        roundNumber - 1, 
-                        Math.sqrt(simulationNumber)
-                    );
-                    scorePerDiscardIndices += roundNext.score;
+                    const { handKey } = getHandSorted([...handNew]);
+
+                    if (dataSaved.has(handKey)) {
+                        scorePerDiscardIndices += dataSaved.get(handKey);
+                    } else {
+                        const roundNext = getDiscardsDetails(
+                            handNew,
+                            deck, 
+                            roundNumber - 1,
+                            simulationNumber, //Math.sqrt(simulationNumber)
+                            dataSaved
+                        );
+                        scorePerDiscardIndices += roundNext.score;
+                    }
+
                 } else {
                     scorePerDiscardIndices += getHandScore(handNew);
                 }
@@ -417,24 +482,6 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
 
 (async () => {
     // getAllCombinationsHandsPossible();
-    // await getDataComputedForOneRound();
-    getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
+    await getDataComputed(2);
+    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
 })();
-
-
-// const deck = Object.values(DECK);
-// getArrayShuffled(deck);
-// const hands = getHandsDealed(deck, 5, 1);
-// const hand = hands[0];
-// console.log(hand, deck)
-// console.log(`Player's hand: ${hand.join(', ')}`);
-// const results = getDiscardsDetails(hand, deck);
-// console.log(results)
-
-// const deck = Object.values(DECK);
-// getArrayShuffled(deck);
-// const hand = getHandsDealed(deck, 5, 1)[0];
-// const remainingDeck = deck.filter(c => !hand.includes(c));
-// console.log(hand)
-// const result = getDiscardsDetails2(hand, remainingDeck, 2, 250);
-// console.log(result);
