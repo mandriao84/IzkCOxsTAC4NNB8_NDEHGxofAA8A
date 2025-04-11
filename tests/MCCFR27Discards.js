@@ -204,7 +204,7 @@ const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
 
 
 
-const getDiscardsDetails = (hand, deckLeft, simulationNumber = 100000) => {
+const getDiscardsDetails = (hand, deckLeft, simulationNumber) => {
     const results = {};
     let score = Infinity;
     let index = null;
@@ -216,8 +216,13 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber = 100000) => {
         let cardsByDiscardNumber = null;
 
         for (const discardIndices of allCombinations) {
-            // const scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
-            const scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
+            let scoreAverage;
+            if (simulationNumber) {
+                scoreAverage = getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber);
+            } else {
+                scoreAverage = getDiscardsEnumerated(hand, discardIndices, deckLeft);
+            }
+            
             if (scoreAverage < scoreByDiscardNumber) {
                 scoreByDiscardNumber = scoreAverage;
                 cardsByDiscardNumber = discardIndices;
@@ -244,14 +249,29 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber = 100000) => {
 
 
 
-const getDataComputedForOneRound = (simulationNumber = 3) => {
+const getDataComputedForOneRound = async (simulationNumber = 10000) => {
     let fd;
-    const cleanup = () => {
-        if (fd) fs.closeSync(fd);
-        process.off('SIGINT', cleanup);
+    let exit = false;
+
+    const cleanupHandler = () => {
+        if (fd) {
+            fs.closeSync(fd);
+            fd = null;
+        }
     };
 
-    process.on('SIGINT', cleanup);
+    const exitHandler = (event, error) => {
+        if (error) {
+            console.error(`getDataComputedForOneRound.Error.${event}:`, error);
+        } else {
+            console.log(`getDataComputedForOneRound.Exit.${event}`);
+        }
+        exit = true;
+    };
+
+    ['SIGINT', 'SIGTERM', 'SIGQUIT', 'uncaughtException', 'unhandledRejection'].forEach((signal) => {
+        process.once(signal, (error) => exitHandler(signal, error));
+    });
 
     try {
         const isPathExists = fs.existsSync(PATH_RESULTS);
@@ -259,7 +279,7 @@ const getDataComputedForOneRound = (simulationNumber = 3) => {
 
         if (isPathExists) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-            content.split('\n').forEach(line => {
+            content.split('\n').forEach((line) => {
                 if (line.trim()) {
                     const entry = JSON.parse(line);
                     data.add(entry.key);
@@ -268,7 +288,13 @@ const getDataComputedForOneRound = (simulationNumber = 3) => {
         }
 
         fd = fs.openSync(PATH_RESULTS, 'a+');
+
         for (let i = 0; i < simulationNumber; i++) {
+            if (exit) {
+                console.log('getDataComputedForOneRound.ExitEarly');
+                break;
+            }
+
             const deck = Object.values(DECK);
             getArrayShuffled(deck);
             const hands = getHandsDealed(deck, 5, 1);
@@ -280,17 +306,22 @@ const getDataComputedForOneRound = (simulationNumber = 3) => {
                 const result = getDiscardsDetails(hand, deck);
                 result.key = key;
                 const entry = JSON.stringify(result) + '\n';
-
                 data.add(key);
                 fs.appendFileSync(fd, entry);
+                console.log(`getDataComputedForOneRound.Iteration.${i}.Done\n>> ${entry}`);
             }
+
+            await new Promise((resolve) => setImmediate(resolve));
         }
     } finally {
-        cleanup();
+        cleanupHandler();
     }
-}
+};
 
-getDataComputedForOneRound();
+(async () => {
+    await getDataComputedForOneRound();
+})();
+
 
 
 // function estimateBestDiscardMulti(hand, remainingDeck, roundsLeft = 1) {
