@@ -8,6 +8,7 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
+const allCombinationsPossibleCache = {};
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -146,14 +147,37 @@ const getHandScore = (hand) => {
 
 
 
-const getAllCombinationsPossible = (arr, k) => {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-    const [first, ...rest] = arr;
-    const withFirst = getAllCombinationsPossible(rest, k - 1).map(c => [first, ...c]);
-    const withoutFirst = getAllCombinationsPossible(rest, k);
-    return [...withFirst, ...withoutFirst];
+function getAllCombinationsHandsPossible(deckCardsNumber = 52, handCardsNumber = 5) {
+    let result = 1;
+    for (let i = 1; i <= handCardsNumber; i++) {
+        result = result * (deckCardsNumber - i + 1) / i;
+    }
+    console.log(`getAllCombinationsHandsPossible.deckCardsNumber(${deckCardsNumber}).x.handCardsNumber(${handCardsNumber}) === ${result}`);
+    return result;
 }
+
+const getAllCombinationsPossible = (arr, k) => {
+    const key = JSON.stringify({ arr, k });
+    
+    if (allCombinationsPossibleCache.hasOwnProperty(key)) {
+        return allCombinationsPossibleCache[key];
+    }
+
+    let result;
+    if (k === 0) {
+        result = [[]];
+    } else if (arr.length < k) {
+        result = [];
+    } else {
+        const [first, ...rest] = arr;
+        const withFirst = getAllCombinationsPossible(rest, k - 1).map(c => [first, ...c]);
+        const withoutFirst = getAllCombinationsPossible(rest, k);
+        result = [...withFirst, ...withoutFirst];
+    }
+    
+    allCombinationsPossibleCache[key] = result;
+    return result;
+};
 
 
 
@@ -237,12 +261,27 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber) => {
             cards = cardsByDiscardNumber;
         }
     }
+
     results.cards = cards.map(index => hand[index]);
     results.index = index;
     results.round = 1;
 
     return results;
 }
+
+
+
+
+
+const getDiscardsDetailsForGivenHand = (hand, simulationNumber = null) => {
+    const deck = Object.values(DECK);
+    getArrayShuffled(deck);
+
+    const deckLeft = deck.filter(card => !hand.includes(card));
+    const result =  getDiscardsDetails(hand, deckLeft, simulationNumber);
+    console.log(hand, result);
+    return result;
+};
 
 
 
@@ -317,9 +356,11 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
     }
 };
 
-// (async () => {
-//     await getDataComputedForOneRound();
-// })();
+(async () => {
+    // getAllCombinationsHandsPossible();
+    await getDataComputedForOneRound();
+    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"]);
+})();
 
 
 
@@ -411,16 +452,3 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
 // console.log(`Player's hand: ${hand.join(', ')}`);
 // const results = getDiscardsDetails(hand, deck);
 // console.log(results)
-
-const getDiscardsDetailsForGivenHand = (hand, simulationNumber = null) => {
-    const deck = Object.values(DECK);
-    getArrayShuffled(deck);
-
-    const deckLeft = deck.filter(card => !hand.includes(card));
-    const result =  getDiscardsDetails(hand, deckLeft, simulationNumber);
-    console.log(hand, result);
-    return result;
-};
-
-const hand = ["2d", "3d", "4d", "10d", "Kh"]
-getDiscardsDetailsForGivenHand(hand);
