@@ -157,11 +157,11 @@ function getAllCombinationsHandsPossible(deckCardsNumber = 52, handCardsNumber =
 }
 
 const getAllCombinationsPossible = (arr, k) => {
-    const key = JSON.stringify({ arr, k });
+    // const key = JSON.stringify({ arr, k });
     
-    if (allCombinationsPossibleCache.hasOwnProperty(key)) {
-        return allCombinationsPossibleCache[key];
-    }
+    // if (allCombinationsPossibleCache.hasOwnProperty(key)) {
+    //     return allCombinationsPossibleCache[key];
+    // }
 
     let result;
     if (k === 0) {
@@ -175,7 +175,7 @@ const getAllCombinationsPossible = (arr, k) => {
         result = [...withFirst, ...withoutFirst];
     }
     
-    allCombinationsPossibleCache[key] = result;
+    // allCombinationsPossibleCache[key] = result;
     return result;
 };
 
@@ -228,7 +228,8 @@ const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
 
 
 
-const getDiscardsDetails = (hand, deckLeft, simulationNumber) => {
+const getDiscardsDetails = (hand, deckLeft, roundNumber = 1, simulationNumber) => {
+
     const results = {};
     let score = Infinity;
     let index = null;
@@ -273,12 +274,12 @@ const getDiscardsDetails = (hand, deckLeft, simulationNumber) => {
 
 
 
-const getDiscardsDetailsForGivenHand = (hand, simulationNumber = null) => {
+const getDiscardsDetailsForGivenHand = (hand, roundNumber = 1, simulationNumber = null) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
 
     const deckLeft = deck.filter(card => !hand.includes(card));
-    const result =  getDiscardsDetails(hand, deckLeft, simulationNumber);
+    const result =  getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
     console.log(hand, result);
     return result;
 };
@@ -356,92 +357,74 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
     }
 };
 
-(async () => {
-    // getAllCombinationsHandsPossible();
-    await getDataComputedForOneRound();
-    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"]);
-})();
 
 
+const multiRoundMonteCarlo = (hand, deckLeft, rounds = 2, simulations = 1000) => {
+    let bestScore = Infinity;
+    let bestDiscard = null;
 
-// function estimateBestDiscardMulti(hand, remainingDeck, roundsLeft = 1) {
-//     // Base case: return final hand score when no more rounds
-//     if (roundsLeft <= 0) {
-//         return {
-//             score: getHandScore(hand),
-//             discards: []
-//         };
-//     }
+    // Evaluate all possible discard counts (0-5 cards)
+    for (let discardCount = 0; discardCount <= 5; discardCount++) {
+        const allDiscards = getAllCombinationsPossible([...Array(5).keys()], discardCount);
+        let minScore = Infinity;
+        let currentBest = null;
 
-//     let bestScore = Infinity;
-//     let bestDiscard = null;
-//     const results = {};
-
-//     // Consider all possible discard counts (0-5)
-//     for (let numDraw = 0; numDraw <= 5; numDraw++) {
-//         const allDiscardCombos = getAllCombinationsPossible([...Array(5).keys()], numDraw);
-//         let minScoreForNumDraw = Infinity;
-//         let bestComboForNumDraw = null;
-
-//         // Evaluate each discard combination
-//         for (const discardIndices of allDiscardCombos) {
-//             let totalScore = 0;
-//             const samples = 1000; // Reduce for faster but less accurate results
+        for (const discardIndices of allDiscards) {
+            let totalScore = 0;
             
-//             // Monte Carlo simulation for card draws
-//             for (let i = 0; i < samples; i++) {
-//                 const deckCopy = [...remainingDeck];
-//                 getArrayShuffled(deckCopy);
+            // Simulate multiple possible outcomes
+            for (let i = 0; i < simulations; i++) {
+                const deckCopy = [...deckLeft];
+                getArrayShuffled(deckCopy);
                 
-//                 // Draw new cards
-//                 const drawnCards = deckCopy.splice(0, numDraw);
-//                 const newHand = hand.filter((_, idx) => !discardIndices.includes(idx)).concat(drawnCards);
-//                 const newRemaining = deckCopy;
+                // First round discard and draw
+                const keptCards = hand.filter((_, idx) => !discardIndices.includes(idx));
+                const drawnCards = deckCopy.splice(0, discardCount);
+                let currentHand = [...keptCards, ...drawnCards];
+                let currentDeck = deckCopy;
                 
-//                 // Recursive call for next round
-//                 const nextRound = estimateBestDiscardMulti(newHand, newRemaining, roundsLeft - 1);
-//                 totalScore += nextRound.score;
-//             }
+                // Recursive second round
+                if (rounds > 1 && currentDeck.length >= 5) {
+                    const nextRound = multiRoundMonteCarlo(
+                        currentHand, 
+                        currentDeck, 
+                        rounds - 1, 
+                        Math.sqrt(simulations) // Reduce simulations for depth
+                    );
+                    totalScore += nextRound.score;
+                } else {
+                    totalScore += getHandScore(currentHand);
+                }
+            }
             
-//             const avgScore = totalScore / samples;
-//             if (avgScore < minScoreForNumDraw) {
-//                 minScoreForNumDraw = avgScore;
-//                 bestComboForNumDraw = discardIndices;
-//             }
-//         }
+            const averageScore = totalScore / simulations;
+            if (averageScore < minScore) {
+                minScore = averageScore;
+                currentBest = discardIndices;
+            }
+        }
 
-//         // Track best discard count
-//         results[numDraw] = minScoreForNumDraw;
-//         if (minScoreForNumDraw < bestScore) {
-//             bestScore = minScoreForNumDraw;
-//             bestDiscard = {
-//                 count: numDraw,
-//                 indices: bestComboForNumDraw,
-//                 cards: bestComboForNumDraw.map(idx => hand[idx])
-//             };
-//         }
-//     }
+        if (minScore < bestScore) {
+            bestScore = minScore;
+            bestDiscard = currentBest;
+        }
+    }
 
-//     return {
-//         score: bestScore,
-//         rounds: roundsLeft,
-//         bestDiscard,
-//         results
-//     };
-// }
+    return {
+        score: bestScore.safe("ROUND", 3),
+        discardIndices: bestDiscard || [],
+        discardCards: (bestDiscard || []).map(idx => hand[idx]),
+        rounds
+    };
+};
 
-// const fullDeck = Object.values(DECK);
-// getArrayShuffled(fullDeck);
-// const hands = getHandsDealed(fullDeck, 5, 1);
-// const playerHand = hands[0];
-// const remainingDeck = fullDeck.filter(card => !playerHand.includes(card));
 
-// console.log(`Player's hand: ${playerHand.join(', ')}`);
 
-// const result = estimateBestDiscardMulti(playerHand, remainingDeck, 2);
-// console.log(`Optimal strategy for ${result.rounds} rounds:`);
-// console.log(`Discard ${result.bestDiscard.count} cards: ${result.bestDiscard.cards.join(', ')}`);
-// console.log(`Projected final score: ${result.score.toFixed(1)}`);
+// (async () => {
+//     // getAllCombinationsHandsPossible();
+//     // await getDataComputedForOneRound();
+//     getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"]);
+// })();
 
 
 // const deck = Object.values(DECK);
@@ -452,3 +435,11 @@ const getDataComputedForOneRound = async (simulationNumber = 10000) => {
 // console.log(`Player's hand: ${hand.join(', ')}`);
 // const results = getDiscardsDetails(hand, deck);
 // console.log(results)
+
+const deck = Object.values(DECK);
+getArrayShuffled(deck);
+const hand = getHandsDealed(deck, 5, 1)[0];
+const remainingDeck = deck.filter(c => !hand.includes(c));
+console.log(hand)
+const result = multiRoundMonteCarlo(hand, remainingDeck, 2, 1000);
+console.log(result);
