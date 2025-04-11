@@ -3,7 +3,7 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 const os = require('os');
 const LRU = require('lru-cache');
 const path = require('path');
-const PATH_RESULTS = path.join(__dirname, '.results/mccfr/strategies.ndjson');
+const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -333,6 +333,11 @@ async function getDataComputed(roundNumber = 1, simulationNumber = 1000) {
     if (isMainThread) {
         const cpuCount = os.cpus().length;
         const workers = [];
+
+        const resultsDir = path.dirname(PATH_RESULTS);
+        if (!fs.existsSync(resultsDir)) {
+            fs.mkdirSync(resultsDir, { recursive: true });
+        }
         
         const existingHands = new Set(
             fs.existsSync(PATH_RESULTS) 
@@ -400,7 +405,7 @@ async function getDataComputed(roundNumber = 1, simulationNumber = 1000) {
 
             if (!existingHands.has(handKey)) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 100, dataSaved);
+                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000, dataSaved);
                 result.handKey = handKey;
                 const resultAsString = JSON.stringify(result);
                 console.log(resultAsString);
@@ -482,6 +487,6 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataS
 
 (async () => {
     // getAllCombinationsHandsPossible();
-    await getDataComputed(2);
+    await getDataComputed(1, 1);
     // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
 })();
