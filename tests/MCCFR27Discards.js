@@ -1,8 +1,10 @@
-const fs = require('fs');
-const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+const Piscina = require('piscina');
+const { isMainThread } = require('worker_threads');
 const os = require('os');
-const LRU = require('lru-cache');
+const fs = require('fs');
 const path = require('path');
+const LRU = require('lru-cache');
+
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
@@ -329,94 +331,6 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = nu
 //         cleanupHandler();
 //     }
 // };
-async function getDataComputed(roundNumber = 1, simulationNumber = 1000) {
-    if (isMainThread) {
-        const cpuCount = os.cpus().length;
-        const workers = [];
-
-        const resultsDir = path.dirname(PATH_RESULTS);
-        if (!fs.existsSync(resultsDir)) {
-            fs.mkdirSync(resultsDir, { recursive: true });
-        }
-        
-        const existingHands = new Set(
-            fs.existsSync(PATH_RESULTS) 
-            ? fs.readFileSync(PATH_RESULTS, 'utf8')
-                .split('\n')
-                .filter(l => l)
-                .map(l => JSON.parse(l).handKey)
-            : []
-        );
-
-        for (let i = 0; i < cpuCount; i++) {
-            const worker = new Worker(__filename, {
-                workerData: { 
-                    start: Math.floor(i * simulationNumber / cpuCount),
-                    end: Math.floor((i + 1) * simulationNumber / cpuCount),
-                    roundNumber,
-                    simulationNumber,
-                    PATH_RESULTS,
-                    existingHands: [...existingHands] // Pass initial state
-                }
-            });
-            
-            worker.on('message', (entriesBatch) => {
-                if (entriesBatch) {
-                    fs.appendFileSync(PATH_RESULTS, entriesBatch);
-                    entriesBatch.split('\n').filter(l => l).forEach(line => {
-                        existingHands.add(JSON.parse(line).handKey);
-                    });
-                }
-            });
-            
-            workers.push(new Promise(resolve => worker.on('exit', resolve)));
-        }
-        
-        await Promise.all(workers);
-    } else {
-        const existingHands = new Set(workerData.existingHands);
-        const entries = [];
-
-        const dataSaved = new Map();
-        if (workerData.roundNumber > 1) {
-            if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
-                fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
-            }
-            
-            const data = fs.existsSync(PATH_RESULTS) 
-                ? fs.readFileSync(PATH_RESULTS, 'utf8')
-                    .split('\n')
-                    .filter(l => l)
-                    .map(l => JSON.parse(l))
-                    .filter(entry => entry.round === workerData.roundNumber - 1)
-                : [];
-                
-            data.forEach(entry => {
-                dataSaved.set(entry.handKey, entry.score);
-            });
-        }
-        
-        for (let i = workerData.start; i < workerData.end; i++) {
-            const deck = Object.values(DECK);
-            getArrayShuffled(deck);
-            const hands = getHandsDealed(deck, 5, 1);
-            const hand = hands[0];
-            const { hand: handSorted, handKey } = getHandSorted([...hand]);
-
-            if (!existingHands.has(handKey)) {
-                const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000, dataSaved);
-                result.handKey = handKey;
-                const resultAsString = JSON.stringify(result);
-                console.log(resultAsString);
-                entries.push(resultAsString);
-            }
-        }
-        
-        parentPort.postMessage(entries.join('\n') + '\n');
-        process.exit(0);
-    }
-}
 
 
 
@@ -485,8 +399,65 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataS
 
 
 
-(async () => {
-    // getAllCombinationsHandsPossible();
-    await getDataComputed(1, 1);
-    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
-})();
+
+
+if (isMainThread) {
+    const pool = new Piscina({
+        filename: __filename,
+        minThreads: os.cpus().length,
+        maxThreads: os.cpus().length,
+    });
+
+    async function getDataComputed(roundNumber, simulationNumber) {
+        const cpuCount = os.cpus().length;
+        const simulationsPerWorker = Math.ceil(simulationNumber / cpuCount);
+        const tasks = [];
+
+        for (let i = 0; i < cpuCount; i++) {
+            tasks.push(pool.run({ roundNumber, simulationNumber: simulationsPerWorker }));
+        }
+
+        const results = await Promise.all(tasks);
+        const allResults = results.flat();
+
+        const writeStream = fs.createWriteStream(PATH_RESULTS, { flags: 'a' });
+        const existingHands = new Set();
+
+        allResults.forEach(result => {
+            if (!existingHands.has(result.handKey)) {
+                existingHands.add(result.handKey);
+                writeStream.write(JSON.stringify(result) + '\n');
+            }
+        });
+        writeStream.end();
+    }
+
+    // 1000 > 1min
+    (async () => {
+        await getDataComputed(1, 120000)
+    })();
+} else {
+    module.exports = ({ roundNumber, simulationNumber}) => {
+        const results = [];
+        for (let i = 0; i < simulationNumber; i++) {
+            const deck = Object.values(DECK);
+            getArrayShuffled(deck);
+            const hands = getHandsDealed(deck, 5, 1);
+            const hand = hands[0];
+            const deckLeft = deck.filter(card => !hand.includes(card));
+            const result = getDiscardsDetails(hand, deckLeft, roundNumber, 10000);
+            result.handKey = getHandSorted(hand).handKey;
+            results.push(result);
+        }
+        return results;
+    };
+}
+
+
+
+
+// (async () => {
+//     // getAllCombinationsHandsPossible();
+//     await getDataComputed(1, 500);
+//     // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
+// })();
