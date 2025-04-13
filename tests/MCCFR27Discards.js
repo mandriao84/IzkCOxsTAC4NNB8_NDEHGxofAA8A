@@ -118,7 +118,7 @@ const getHandScore = async (hand) => {
 
     var { hand: handSorted, handKey, cardsValue, cardsSuit } = getHandSorted([...hand]);
 
-    let redisKey = `sim:${handKey}:S`;
+    let redisKey = `${handKey}:S`;
     let handScore = await redis.get(redisKey);
     if (handScore !== null) {
         return Number(handScore);
@@ -289,7 +289,7 @@ const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber)
                 if (roundNumber > 1 && deck.length >= 5) {
                     const { handKey } = getHandSorted([...handNew]);
 
-                    const redisKey = `sim:${handKey}:S`;
+                    const redisKey = `${handKey}:S`;
                     let handScore = await redis.get(redisKey);
                     if (handScore !== null) {
                         scorePerDiscardIndices += Number(handScore);
@@ -347,7 +347,7 @@ if (isMainThread) {
             const pipeline = redis.pipeline();
             for (const line of lines) {
                 const entry = JSON.parse(line);
-                pipeline.set(`sim:${entry.key}`, JSON.stringify(entry));
+                pipeline.set(entry.key, JSON.stringify(entry));
             }
             await pipeline.exec();
             console.log(`Loaded ${lines.length} entries from Ndjson file to Redis`);
@@ -355,7 +355,7 @@ if (isMainThread) {
     };
 
     const getDataFlushedFromRedisToNdjson = async (roundNumber) => {
-        const keys = await redis.keys('sim:*');
+        const keys = await redis.keys('*');
 
         const pipeline = redis.pipeline();
         for (const key of keys) {
@@ -365,9 +365,7 @@ if (isMainThread) {
 
         const fd = fs.openSync(PATH_RESULTS, 'w');
         for (let i = 0; i < keys.length; i++) {
-            // const key = keys[i].substring(4); // REMOVE "sim:" PREFIX
             const entry = JSON.parse(values[i]);
-            // entry.key = key;
             fs.writeSync(fd, JSON.stringify(entry) + '\n');
         }
         fs.fsyncSync(fd);
@@ -425,15 +423,14 @@ if (isMainThread) {
             const hands = getHandsDealed(deck, 5, 1);
             const hand = hands[0];
             const { handKey } = getHandSorted(hand);
-            const discardsDetailsKey = `${handKey}:R${roundNumber}`;
-            const redisKey = `sim:${handKey}`;
-            const redisExists = await redis.exists(redisKey);
+            const resultKey = `${handKey}:R${roundNumber}`;
+            const redisExists = await redis.exists(resultKey);
             if (!redisExists) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
                 const result = await getDiscardsDetails(hand, deckLeft, roundNumber, 10000);
-                result.key = discardsDetailsKey;
+                result.key = resultKey;
                 results.push(result);
-                await redis.set(redisKey, JSON.stringify(result));
+                await redis.set(resultKey, JSON.stringify(result));
             }
         }
         return results;
