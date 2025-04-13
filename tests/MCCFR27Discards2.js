@@ -1,7 +1,4 @@
 const { createClient } = require('redis');
-const Piscina = require('piscina');
-const { isMainThread } = require('worker_threads');
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,12 +10,7 @@ const DECK = {
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: '10c', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
-const cardsLength = Object.keys(CARDS).length
-const allCombinationsPossibleCache = {};
-
-/** REDIS START */
-
-/** REDIS END */
+const cardsLength = Object.keys(CARDS).length;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -84,11 +76,11 @@ const getHandSorted = (hand) => {
     const handKey = handCopy.join('|');
 
     return { hand: handCopy, handKey, cardsValue, cardsSuit };
-}
+};
 
-const getHandScore = async (hand) => {
+const getHandScore = async (hand, redis) => {
     function getHandScoreBelowPair(cardsValueDesc, cardsValueMax = [6, 4, 3, 2, 1], cardsValueMin = [13, 12, 11, 10, 8]) {
-        const multiplier = cardsLength + 1
+        const multiplier = cardsLength + 1;
 
         let raw = 0;
         for (let i = 0; i < cardsValueDesc.length; i++) {
@@ -126,16 +118,16 @@ const getHandScore = async (hand) => {
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
     if (isStraightWithAs) { cardsValue = [0, 1, 2, 3, 4]; }
 
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] + 1)
-    const isFlush = new Set(cardsSuit).size === 1
+    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] + 1);
+    const isFlush = new Set(cardsSuit).size === 1;
 
     const cardCounts = cardsValue.reduce((acc, rank) => {
         acc[rank] = (acc[rank] || 0) + 1;
-        return acc
-    }, {})
+        return acc;
+    }, {});
 
-    let score = 0
-    const multiplier = cardsLength + 1
+    let score = 0;
+    const multiplier = cardsLength + 1;
     const countValues = Object.values(cardCounts).sort((a, b) => b - a);
     if (isStraight && isFlush) {
         score = 80000 + cardsValue.at(0);
@@ -160,30 +152,10 @@ const getHandScore = async (hand) => {
     }
 
     await redis.set(redisKey, score);
-
     return score;
-}
-
-
-
-
-
-function getAllCombinationsHandsPossible(deckCardsNumber = 52, handCardsNumber = 5) {
-    let result = 1;
-    for (let i = 1; i <= handCardsNumber; i++) {
-        result = result * (deckCardsNumber - i + 1) / i;
-    }
-    console.log(`getAllCombinationsHandsPossible.deckCardsNumber(${deckCardsNumber}).x.handCardsNumber(${handCardsNumber}) === ${result}`);
-    return result;
-}
+};
 
 const getAllCombinationsPossible = (arr, k) => {
-    // const key = JSON.stringify({ arr, k });
-    
-    // if (allCombinationsPossibleCache.hasOwnProperty(key)) {
-    //     return allCombinationsPossibleCache[key];
-    // }
-
     let result;
     if (k === 0) {
         result = [[]];
@@ -195,74 +167,10 @@ const getAllCombinationsPossible = (arr, k) => {
         const withoutFirst = getAllCombinationsPossible(rest, k);
         result = [...withFirst, ...withoutFirst];
     }
-    
-    // allCombinationsPossibleCache[key] = result;
     return result;
 };
 
-
-
-
-
-// function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber) {
-//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-//     const discardNumber = discardIndices.length;
-
-//     let score = 0;
-//     for (let i = 0; i < simulationNumber; i++) {
-//         const deck = [...deckLeft];
-//         getArrayShuffled(deck);
-//         const cardsReceived = deck.slice(0, discardNumber);
-//         const handNew = [...handKept, ...cardsReceived];
-//         score += getHandScore(handNew);
-//     }
-
-//     const scoreFinal = score / simulationNumber;
-//     return scoreFinal.safe("ROUND", 3);
-// }
-
-
-
-
-
-// const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
-//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-//     const discardNumber = discardIndices.length;
-
-//     if (discardNumber === 0) {
-//         return getHandScore(hand);
-//     }
-
-//     const allCombinationsPossible = getAllCombinationsPossible(deckLeft, discardNumber);
-
-//     let score = 0;
-//     for (const cardsReceived of allCombinationsPossible) {
-//         const handNew = [...handKept, ...cardsReceived];
-//         score += getHandScore(handNew);
-//     }
-
-//     const scoreFinal = score / allCombinationsPossible.length;
-//     return scoreFinal.safe("ROUND", 3);
-// }
-
-
-
-
-
-const getDiscardsDetailsForGivenHand = async (hand, roundNumber, simulationNumber = null) => {
-    const deck = Object.values(DECK);
-    getArrayShuffled(deck);
-    const deckLeft = deck.filter(card => !hand.includes(card));
-    const result = await getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-    console.log(hand, result);
-    return result;
-};
-
-
-
-
-
-const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber) => {
+const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber, redis) => {
     const results = {};
     let scoreFinal = Infinity;
     let indexFinal = null;
@@ -278,31 +186,23 @@ const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber)
             for (let i = 0; i < simulationNumber; i++) {
                 const deck = [...deckLeft];
                 getArrayShuffled(deck);
-                
                 const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
                 const cardsReceived = deck.splice(0, discardNumber);
                 let handNew = [...cardsKept, ...cardsReceived];
                 
                 if (roundNumber > 1 && deck.length >= 5) {
                     const { handKey } = getHandSorted([...handNew]);
-
                     const redisKey = `${handKey}:S`;
                     let handScore = await redis.get(redisKey);
                     if (handScore !== null) {
                         scorePerDiscardIndices += Number(handScore);
                     } else {
-                        const roundNext = await getDiscardsDetails(
-                            handNew,
-                            deck,
-                            roundNumber - 1,
-                            simulationNumber //Math.sqrt(simulationNumber)
-                        );
+                        const roundNext = await getDiscardsDetails(handNew, deck, roundNumber - 1, simulationNumber, redis);
                         scorePerDiscardIndices += roundNext.score;
                         await redis.set(redisKey, roundNext.score);
                     }
-
                 } else {
-                    scorePerDiscardIndices += await getHandScore(handNew);
+                    scorePerDiscardIndices += await getHandScore(handNew, redis);
                 }
             }
             
@@ -313,8 +213,7 @@ const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber)
             }
         }
 
-        results[discardNumber] = score
-
+        results[discardNumber] = score;
         if (score < scoreFinal) {
             scoreFinal = score;
             indexFinal = index;
@@ -326,132 +225,96 @@ const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber)
     return results;
 };
 
-
-
-
 const redis = createClient({ url: 'redis://127.0.0.1:6379' });
 redis.on('error', (err) => console.error('Redis Error:', err));
 
-if (isMainThread) {
-    const pool = new Piscina({
-        filename: __filename,
-        minThreads: os.cpus().length,
-        maxThreads: os.cpus().length,
-    });
-
-    const getDataLoadedFromNdjsonToRedis = async () => {
-        if (fs.existsSync(PATH_RESULTS)) {
-            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-            const lines = content.split('\n').filter(line => line.trim());
-            const pipeline = redis.multi();
-            lines.forEach(line => {
-                const entry = JSON.parse(line);
-                pipeline.set(entry.key, JSON.stringify(entry));
-            });
-            await pipeline.exec();
-            console.log(`Loaded ${lines.length} entries from Ndjson file to Redis`);
-        }
-    };
-
-    const getDataFlushedFromRedisToNdjson = async (roundNumber) => {
-        const keys = await redis.keys(`*:R${roundNumber}`);
-
+const getDataLoadedFromNdjsonToRedis = async () => {
+    if (fs.existsSync(PATH_RESULTS)) {
+        const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim());
         const pipeline = redis.multi();
-        keys.forEach(key => pipeline.get(key));
-        const values = await pipeline.exec();
-        console.log(values);
+        lines.forEach(line => {
+            const entry = JSON.parse(line);
+            pipeline.set(entry.key, JSON.stringify(entry));
+        });
+        await pipeline.exec();
+        console.log(`Loaded ${lines.length} entries from Ndjson file to Redis`);
+    }
+};
 
-        const fd = fs.openSync(PATH_RESULTS, 'w');
-        for (let i = 0; i < values.length; i++) {
-            const entry = JSON.parse(values[i]);
-            fs.writeSync(fd, JSON.stringify(entry) + '\n');
-        }
-        fs.fsyncSync(fd);
-        fs.closeSync(fd);
-        console.log(`Flushed ${keys.length} entries from Redis to Ndjson file.`);
-    };
+const getDataFlushedFromRedisToNdjson = async (roundNumber) => {
+    const strategyPattern = `*:R${roundNumber}`; // Only strategy keys for this round
+    const keys = await redis.keys(strategyPattern);
+    // const keys = await redis.keys('*');
 
-    const getDataComputed = async (roundNumber, simulationNumber) => {
-        const cpuCount = os.cpus().length;
-        const simulationsPerWorker = Math.ceil(simulationNumber / cpuCount);
-        const tasks = [];
-        for (let i = 0; i < cpuCount; i++) {
-            tasks.push(pool.run({ roundNumber, simulationNumber: simulationsPerWorker }));
-        }
-        const results = await Promise.all(tasks);
-        const resultsFlattened = results.flat();
-        return resultsFlattened;
-    };
-
-    const getTimeElapsed = (timeStart, signal, error) => {
-        const timeElapsed = process.hrtime(timeStart);
-        const timeElapsedAsMs = timeElapsed[0] * 1000 + timeElapsed[1] / 1e6;
-        console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
+    if (keys.length === 0) {
+        console.log('No strategy entries found in Redis.');
+        return;
     }
 
-    (async () => {
-        await redis.connect();
-        await redis.flushDb(); // CLEAR REDIS
+    const pipeline = redis.multi();
+    keys.forEach(key => pipeline.get(key));
+    const results = await pipeline.exec();
 
-        // 1000 > 1min
-        const timeStart = process.hrtime();
-        const roundNumber = 1;
-        const simulationNumber = 300000;
+    const fd = fs.openSync(PATH_RESULTS, 'w');
+    for (let i = 0; i < results.length; i++) {
+        const entry = JSON.parse(results[i]);
+        fs.writeSync(fd, JSON.stringify(entry) + '\n');
+    }
 
-        await getDataLoadedFromNdjsonToRedis();
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    console.log(`Flushed ${keys.length} strategy entries to strategies.ndjson`);
+};
 
-        const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
-        signals.forEach((signal) => {
-            process.on(signal, async (error) => {
-                await getDataFlushedFromRedisToNdjson(roundNumber);
-                getTimeElapsed(timeStart, signal, error);
-                process.exit(0);
-            });
+const getDataComputed = async (roundNumber, simulationNumber, redis) => {
+    const results = [];
+    for (let i = 0; i < simulationNumber; i++) {
+        const deck = Object.values(DECK);
+        getArrayShuffled(deck);
+        const hands = getHandsDealed(deck, 5, 1);
+        const hand = hands[0];
+        const { handKey } = getHandSorted(hand);
+        const resultKey = `${handKey}:R${roundNumber}`;
+        const redisExists = await redis.exists(resultKey);
+        if (!redisExists) {
+            const deckLeft = deck.filter(card => !hand.includes(card));
+            const result = await getDiscardsDetails(hand, deckLeft, roundNumber, 10000, redis);
+            result.key = resultKey;
+            results.push(result);
+            await redis.set(resultKey, JSON.stringify(result));
+        }
+    }
+    return results;
+};
+
+const getTimeElapsed = (timeStart, signal, error) => {
+    const timeElapsed = process.hrtime(timeStart);
+    const timeElapsedAsMs = timeElapsed[0] * 1000 + timeElapsed[1] / 1e6;
+    console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
+};
+
+(async () => {
+    await redis.connect();
+    await redis.flushDb(); // Clear Redis
+
+    const timeStart = process.hrtime();
+    const roundNumber = 1;
+    const simulationNumber = 1;
+
+    await getDataLoadedFromNdjsonToRedis();
+
+    const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
+    signals.forEach((signal) => {
+        process.on(signal, async (error) => {
+            await getDataFlushedFromRedisToNdjson(roundNumber);
+            getTimeElapsed(timeStart, signal, error);
+            process.exit(0);
         });
+    });
 
-        const results = await getDataComputed(roundNumber, simulationNumber);
-        await getDataFlushedFromRedisToNdjson(roundNumber);
-        getTimeElapsed(timeStart, 'END', null);
-        process.exit(0);
-    })();
-} else {
-    module.exports = async ({ roundNumber, simulationNumber}) => {
-        if (!redis.isReady) {
-            await redis.connect();
-        }
-
-
-        const results = [];
-        for (let i = 0; i < simulationNumber; i++) {
-            const deck = Object.values(DECK);
-            getArrayShuffled(deck);
-            const hands = getHandsDealed(deck, 5, 1);
-            const hand = hands[0];
-            const { handKey } = getHandSorted(hand);
-            const resultKey = `${handKey}:R${roundNumber}`;
-            const redisExists = await redis.exists(resultKey);
-            if (!redisExists) {
-                const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = await getDiscardsDetails(hand, deckLeft, roundNumber, 10000);
-                result.key = resultKey;
-                results.push(result);
-                await redis.set(resultKey, JSON.stringify(result));
-            }
-        }
-
-        // await redis.disconnect();
-        return results;
-    };
-}
-
-
-
-
-
-// (async () => {
-//     await redis.connect();
-//     await redis.flushDb(); // clear redis db
-//     // getAllCombinationsHandsPossible();
-//     // await getDataComputed(1, 500);
-//     await getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
-// })();
+    const results = await getDataComputed(roundNumber, simulationNumber, redis);
+    await getDataFlushedFromRedisToNdjson(roundNumber);
+    getTimeElapsed(timeStart, 'END', null);
+    process.exit(0);
+})();
