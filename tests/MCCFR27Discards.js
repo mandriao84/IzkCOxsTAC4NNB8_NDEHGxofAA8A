@@ -440,6 +440,7 @@ if (isMainThread) {
 
 
 
+
 // (async () => {
 //     await redis.connect();
 //     await redis.flushDb(); // clear redis db
