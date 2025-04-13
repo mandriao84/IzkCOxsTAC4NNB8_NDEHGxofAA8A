@@ -24,6 +24,7 @@
   "dependencies": {
     "mathjs": "^13.0.2",
     "piscina": "^4.9.2",
-    "random": "^4.1.0"
+    "random": "^4.1.0",
+    "redis": "^4.7.0"
   }
 }
