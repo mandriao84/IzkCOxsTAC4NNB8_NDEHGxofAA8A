@@ -408,47 +408,65 @@ if (isMainThread) {
         maxThreads: os.cpus().length,
     });
 
+    const timeStart = process.hrtime();
+
+    const getTimeElapsed = (signal, error) => {
+      const timeElapsed = process.hrtime(timeStart);
+      const timeElapsedAsMs = timeElapsed[0] * 1000 + timeElapsed[1] / 1e6;
+      console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
+    }
+  
+    const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
+    signals.forEach((signal) => {
+      process.on(signal, (error) => {
+        getTimeElapsed(signal, error);
+        process.exit(1);
+      });
+    });
+
     async function getDataComputed(roundNumber, simulationNumber) {
         const cpuCount = os.cpus().length;
         const simulationsPerWorker = Math.ceil(simulationNumber / cpuCount);
         const tasks = [];
-
         for (let i = 0; i < cpuCount; i++) {
-            tasks.push(pool.run({ roundNumber, simulationNumber: simulationsPerWorker }));
+          tasks.push(pool.run({ roundNumber, simulationNumber: simulationsPerWorker }));
         }
-
         const results = await Promise.all(tasks);
-        const allResults = results.flat();
+        const resultsFlattened = results.flat();
+        return resultsFlattened;
+      }
 
-        const writeStream = fs.createWriteStream(PATH_RESULTS, { flags: 'a' });
-        const existingHands = new Set();
-
-        allResults.forEach(result => {
-            if (!existingHands.has(result.handKey)) {
-                existingHands.add(result.handKey);
-                writeStream.write(JSON.stringify(result) + '\n');
-            }
-        });
-        writeStream.end();
-    }
-
-    // 1000 > 1min
     (async () => {
-        await getDataComputed(1, 120000)
+        // 1000 > 1min
+        const results = await getDataComputed(1, 200000);
     })();
 } else {
     module.exports = ({ roundNumber, simulationNumber}) => {
+        const resultsDir = path.dirname(PATH_RESULTS);
+        if (!fs.existsSync(resultsDir)) {
+            fs.mkdirSync(resultsDir, { recursive: true });
+        }
+
+        const fd = fs.openSync(PATH_RESULTS, 'a');
+    
         const results = [];
         for (let i = 0; i < simulationNumber; i++) {
-            const deck = Object.values(DECK);
-            getArrayShuffled(deck);
-            const hands = getHandsDealed(deck, 5, 1);
-            const hand = hands[0];
-            const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getDiscardsDetails(hand, deckLeft, roundNumber, 10000);
-            result.handKey = getHandSorted(hand).handKey;
-            results.push(result);
+          const deck = Object.values(DECK);
+          getArrayShuffled(deck);
+          const hands = getHandsDealed(deck, 5, 1);
+          const hand = hands[0];
+          const deckLeft = deck.filter(card => !hand.includes(card));
+    
+          const result = getDiscardsDetails(hand, deckLeft, roundNumber, 10000);
+          result.handKey = getHandSorted(hand).handKey;
+          results.push(result);
+    
+          const line = JSON.stringify(result) + '\n';
+          fs.writeSync(fd, line);
+          fs.fsyncSync(fd);
         }
+    
+        fs.closeSync(fd);
         return results;
     };
 }
