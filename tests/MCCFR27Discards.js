@@ -329,7 +329,15 @@ const getDiscardsDetails = async (hand, deckLeft, roundNumber, simulationNumber)
 
 
 
-const redis = createClient({ url: 'redis://127.0.0.1:6379' });
+const redis = createClient({ 
+    url: 'redis://127.0.0.1:6379',
+    socket: {
+        tls: false,
+        keepAlive: 10000,
+        reconnectStrategy: retries => Math.min(retries * 50, 1000)
+    },
+    pingInterval: 60000  
+});
 redis.on('error', (err) => console.error('Redis Error:', err));
 
 if (isMainThread) {
@@ -396,7 +404,7 @@ if (isMainThread) {
         // 1000 > 1min
         const timeStart = process.hrtime();
         const roundNumber = 1;
-        const simulationNumber = 300000;
+        const simulationNumber = 1;
 
         await getDataLoadedFromNdjsonToRedis();
 
@@ -420,8 +428,10 @@ if (isMainThread) {
             await redis.connect();
         }
 
-
         const results = [];
+        // const redisMulti = redis.multi();
+        // const redisBatchSize = 100;
+
         for (let i = 0; i < simulationNumber; i++) {
             const deck = Object.values(DECK);
             getArrayShuffled(deck);
@@ -429,6 +439,8 @@ if (isMainThread) {
             const hand = hands[0];
             const { handKey } = getHandSorted(hand);
             const resultKey = `${handKey}:R${roundNumber}`;
+
+
             const redisExists = await redis.exists(resultKey);
             if (!redisExists) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
