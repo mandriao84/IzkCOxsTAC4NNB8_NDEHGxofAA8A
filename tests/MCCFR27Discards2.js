@@ -412,7 +412,7 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             lines.forEach(line => {
                 if (line.trim()) {
                     try {
-                        const entry = JSON.parse(line);
+                        const entry = JSON.parse(line.trim());
                         CACHE.set(entry.key, JSON.stringify(entry));
                     } catch (error) {
                         console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
@@ -425,6 +425,17 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
     if (isMainThread) {
         const cpuCount = os.cpus().length;
         const workers = [];
+        const entries = new Set();
+        
+        if (fs.existsSync(PATH_RESULTS)) {
+            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                if (line.trim()) {
+                    entries.add(line.trim());
+                }
+            });
+        }
 
         for (let i = 0; i < cpuCount; i++) {
             const worker = new Worker(__filename, {
@@ -438,23 +449,14 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             });
             
             worker.on('message', (content) => {
-                if (content) {
-                    fs.appendFileSync(PATH_RESULTS, content);
-                    const lines = content.split('\n');
-                    lines.forEach(line => {
-                        if (line.trim()) {
-                            try {
-                                const entry = JSON.parse(line);
-                                if (entry.key) {
-                                    CACHE.set(entry.key, line);
-                                    // console.log(CACHE.get(entry.key));
-                                }
-                            } catch (error) {
-                                console.log(`getDataComputed.WorkerThread.Message.Parsing.Error: ${line}`);
-                            }
-                        }
-                    });
+                const line = content.trim();
+                if (line && !entries.has(line)) {
+                    console.log(`!!!entries.has(line)\n`, line);
+                    fs.appendFileSync(PATH_RESULTS, line + '\n');
+                    entries.add(line);
                 }
+
+                // if (entries.has(line)) console.log(`entries.has(line)\n`, line)
             });
             
             workers.push(new Promise(resolve => worker.on('exit', resolve)));
@@ -462,7 +464,6 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
         
         await Promise.all(workers);
     } else {
-        const entries = [];
 
         // if (fs.existsSync(PATH_RESULTS)) { 
         //     let stat = fs.statSync(PATH_RESULTS);
@@ -490,8 +491,6 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
         // }
 
         getCacheLoaded();
-        console.log(CACHE.size);
-        // return
         
         for (let i = workerData.start; i < workerData.end; i++) {
             const deck = Object.values(DECK);
@@ -507,11 +506,10 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                 result.key = cacheResultKey;
                 const resultAsString = JSON.stringify(result);
                 CACHE.set(cacheResultKey, resultAsString);
-                entries.push(resultAsString);
+                parentPort.postMessage(resultAsString);
             }
         }
         
-        parentPort.postMessage(entries.join('\n') + '\n');
         process.exit(0);
     }
 }
@@ -554,7 +552,7 @@ const getCacheDuplicated = () => {
     // console.log(a);
     const timeStart = process.hrtime();
     const roundNumber = 1;
-    const simulationNumber = 1000;
+    const simulationNumber = 10;
     const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
     signals.forEach((signal) => {
         process.on(signal, async (error) => {
