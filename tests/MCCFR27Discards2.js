@@ -410,10 +410,11 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                if (line.trim()) {
+                const lineTrimmed = line.trim();
+                if (lineTrimmed) {
                     try {
-                        const entry = JSON.parse(line.trim());
-                        CACHE.set(entry.key, JSON.stringify(entry));
+                        const entry = JSON.parse(lineTrimmed);
+                        CACHE.set(entry.key, lineTrimmed);
                     } catch (error) {
                         console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
                     }
@@ -424,15 +425,19 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
 
     if (isMainThread) {
         const cpuCount = os.cpus().length;
-        const workers = [];
+        const workers = {
+            exit: [],
+            instance: []
+        };
         const entries = new Set();
         
         if (fs.existsSync(PATH_RESULTS)) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                if (line.trim()) {
-                    entries.add(line.trim());
+                const lineTrimmed = line.trim();
+                if (lineTrimmed) {
+                    entries.add(lineTrimmed);
                 }
             });
         }
@@ -447,50 +452,50 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                     PATH_RESULTS
                 }
             });
-            
-            worker.on('message', (content) => {
-                const line = content.trim();
-                if (line && !entries.has(line)) {
-                    console.log(`!!!entries.has(line)\n`, line);
-                    fs.appendFileSync(PATH_RESULTS, line + '\n');
-                    entries.add(line);
-                }
+            workers.instance.push(worker);
 
-                // if (entries.has(line)) console.log(`entries.has(line)\n`, line)
+            worker.on('message', (content) => {
+                // console.log(`[Worker ${worker.threadId}]`, content);
+                const type = content?.type;
+                const payload = content?.payload?.trim();
+                console.log(`_____`, type);
+                if (type === "DATA" && payload && !entries.has(payload)) {
+                    fs.appendFileSync(PATH_RESULTS, payload + '\n');
+                    entries.add(payload);
+
+                    workers.instance.forEach(w => {
+                        w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+                    });
+                    // worker.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+                }
             });
             
-            workers.push(new Promise(resolve => worker.on('exit', resolve)));
+            workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
         
-        await Promise.all(workers);
+        await Promise.all(workers.exit);
     } else {
-
-        // if (fs.existsSync(PATH_RESULTS)) { 
-        //     let stat = fs.statSync(PATH_RESULTS);
-        //     let statLastCheckDate = 0;
-        //     setInterval(() => {
-        //         if (Date.now() - statLastCheckDate > 5000) {
-        //             const statNew = fs.statSync(PATH_RESULTS);
-        //             if (stat === null || statNew.mtime > stat.mtime) {
-        //                 const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-        //                 content.split('\n').forEach(line => {
-        //                     if (line.trim()) {
-        //                         try {
-        //                             const entry = JSON.parse(line);
-        //                             CACHE.set(entry.key, JSON.stringify(entry));
-        //                         } catch (error) {
-        //                             console.log('Cache update error:', error);
-        //                         }
-        //                     }
-        //                 });
-        //                 stat = statNew;
-        //                 statLastCheckDate = Date.now();
-        //             }
-        //         }
-        //     }, 1000);
-        // }
-
         getCacheLoaded();
+
+        parentPort.on('message', (message) => {
+            const type = message?.type;
+            const payload = message?.payload;
+
+            if (type === 'CACHE_UPDATE') {
+                parentPort.postMessage({ type: 'LOG', payload: `LOG` });
+            }
+
+            if (type === 'CACHE_UPDATE') {
+                try {
+                    const entry = JSON.parse(payload);
+                    if (!CACHE.has(entry.key)) {
+                        CACHE.set(entry.key, payload);
+                    }
+                } catch (error) {
+                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${payload}`);
+                }
+            }
+        });
         
         for (let i = workerData.start; i < workerData.end; i++) {
             const deck = Object.values(DECK);
@@ -506,7 +511,8 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                 result.key = cacheResultKey;
                 const resultAsString = JSON.stringify(result);
                 CACHE.set(cacheResultKey, resultAsString);
-                parentPort.postMessage(resultAsString);
+                parentPort.postMessage({ type: 'DATA', payload: resultAsString });
+                // parentPort.postMessage({ type: 'LOG', payload: `LOG` });
             }
         }
         
@@ -552,7 +558,7 @@ const getCacheDuplicated = () => {
     // console.log(a);
     const timeStart = process.hrtime();
     const roundNumber = 1;
-    const simulationNumber = 10;
+    const simulationNumber = 20;
     const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
     signals.forEach((signal) => {
         process.on(signal, async (error) => {
