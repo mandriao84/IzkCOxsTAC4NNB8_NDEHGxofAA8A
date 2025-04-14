@@ -12,7 +12,6 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
-const allCombinationsPossibleCache = {};
 const CACHE = new LRU({
     max: 100000,
     maxSize: 100000000,
@@ -254,7 +253,7 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber) => 
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const result =  getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-    // console.log(hand, result);
+    console.log(hand, result);
     return result;
 };
 
@@ -331,111 +330,6 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber) => 
 //         cleanupHandler();
 //     }
 // };
-const getDataComputed = async (roundNumber, simulationNumber) => {
-    if (isMainThread) {
-        const cpuCount = os.cpus().length;
-        const workers = [];
-        
-        if (fs.existsSync(PATH_RESULTS)) {
-            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-            const lines = content.split('\n');
-            lines.forEach(line => {
-                if (line.trim()) {
-                    try {
-                        const entry = JSON.parse(line);
-                        CACHE.set(entry.key, JSON.stringify(entry));
-                    } catch (error) {
-                        console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
-                    }
-                }
-            });
-        }
-
-        for (let i = 0; i < cpuCount; i++) {
-            const worker = new Worker(__filename, {
-                workerData: { 
-                    start: Math.floor(i * simulationNumber / cpuCount),
-                    end: Math.floor((i + 1) * simulationNumber / cpuCount),
-                    roundNumber,
-                    simulationNumber,
-                    PATH_RESULTS
-                }
-            });
-            
-            worker.on('message', (content) => {
-                if (content) {
-                    fs.appendFileSync(PATH_RESULTS, content);
-                    const lines = content.split('\n');
-                    lines.forEach(line => {
-                        if (line.trim()) {
-                            try {
-                                const entry = JSON.parse(line);
-                                if (entry.key) {
-                                    CACHE.set(entry.key, line);
-                                }
-                            } catch (error) {
-                                console.log(`getDataComputed.WorkerThread.Message.Parsing.Error: ${line}`);
-                            }
-                        }
-                    });
-                }
-            });
-            
-            workers.push(new Promise(resolve => worker.on('exit', resolve)));
-        }
-        
-        await Promise.all(workers);
-    } else {
-        const entries = [];
-
-        if (workerData.roundNumber > 1) {
-            if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
-                fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
-            }
-
-            if (fs.existsSync(PATH_RESULTS)) {
-                const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-                const lines = content.split('\n');
-                lines.forEach(line => {
-                    if (line.trim()) {
-                        try {
-                            const entry = JSON.parse(line);
-                            if (entry.key.endsWith(`:R${workerData.roundNumber - 1}`)) {
-                                CACHE.set(entry.key, JSON.stringify(entry));
-                            }
-                        } catch (error) {
-                            console.log(`getDataComputed.WorkerThread.Parsing.Error: ${line}`);
-                        }
-                    }
-                });
-            }
-        }
-        
-        for (let i = workerData.start; i < workerData.end; i++) {
-            const deck = Object.values(DECK);
-            getArrayShuffled(deck);
-            const hands = getHandsDealed(deck, 5, 1);
-            const hand = hands[0];
-            const { key } = getHandSorted([...hand]);
-
-            const cacheResultKey = `${key}:R${workerData.roundNumber}`;
-            if (!CACHE.has(cacheResultKey)) {
-                const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
-                result.key = cacheResultKey;
-                const resultAsString = JSON.stringify(result);
-                CACHE.set(cacheResultKey, resultAsString);
-                entries.push(resultAsString);
-            }
-        }
-        
-        parentPort.postMessage(entries.join('\n') + '\n');
-        process.exit(0);
-    }
-}
-
-
-
 const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
     const results = {};
     let scoreFinal = Infinity;
@@ -462,6 +356,7 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
 
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
+                        console.log('helHELLLLOOOOOOOOlo')
                         const entry = JSON.parse(CACHE.get(cacheResultKey));
                         scorePerDiscardIndices += entry.score;
                     } else {
@@ -469,7 +364,7 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
                             handNew,
                             deck, 
                             roundNumber - 1,
-                            simulationNumber, //Math.sqrt(simulationNumber)
+                            Math.sqrt(simulationNumber), //simulationNumber
                         );
                         scorePerDiscardIndices += roundNext.score;
                     }
@@ -501,8 +396,173 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
 
 
 
+
+
+const getDataComputed = async (roundNumber, simulationNumber) => {
+    const getCacheLoaded = () => {
+        CACHE.clear();
+
+        if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
+            fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
+        }
+
+        if (fs.existsSync(PATH_RESULTS)) {
+            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                if (line.trim()) {
+                    try {
+                        const entry = JSON.parse(line);
+                        CACHE.set(entry.key, JSON.stringify(entry));
+                    } catch (error) {
+                        console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                    }
+                }
+            });
+        }
+    }
+
+    if (isMainThread) {
+        const cpuCount = os.cpus().length;
+        const workers = [];
+
+        for (let i = 0; i < cpuCount; i++) {
+            const worker = new Worker(__filename, {
+                workerData: { 
+                    start: Math.floor(i * simulationNumber / cpuCount),
+                    end: Math.floor((i + 1) * simulationNumber / cpuCount),
+                    roundNumber,
+                    simulationNumber,
+                    PATH_RESULTS
+                }
+            });
+            
+            worker.on('message', (content) => {
+                if (content) {
+                    fs.appendFileSync(PATH_RESULTS, content);
+                    const lines = content.split('\n');
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            try {
+                                const entry = JSON.parse(line);
+                                if (entry.key) {
+                                    CACHE.set(entry.key, line);
+                                    // console.log(CACHE.get(entry.key));
+                                }
+                            } catch (error) {
+                                console.log(`getDataComputed.WorkerThread.Message.Parsing.Error: ${line}`);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            workers.push(new Promise(resolve => worker.on('exit', resolve)));
+        }
+        
+        await Promise.all(workers);
+    } else {
+        const entries = [];
+
+        // if (fs.existsSync(PATH_RESULTS)) { 
+        //     let stat = fs.statSync(PATH_RESULTS);
+        //     let statLastCheckDate = 0;
+        //     setInterval(() => {
+        //         if (Date.now() - statLastCheckDate > 5000) {
+        //             const statNew = fs.statSync(PATH_RESULTS);
+        //             if (stat === null || statNew.mtime > stat.mtime) {
+        //                 const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+        //                 content.split('\n').forEach(line => {
+        //                     if (line.trim()) {
+        //                         try {
+        //                             const entry = JSON.parse(line);
+        //                             CACHE.set(entry.key, JSON.stringify(entry));
+        //                         } catch (error) {
+        //                             console.log('Cache update error:', error);
+        //                         }
+        //                     }
+        //                 });
+        //                 stat = statNew;
+        //                 statLastCheckDate = Date.now();
+        //             }
+        //         }
+        //     }, 1000);
+        // }
+
+        getCacheLoaded();
+        console.log(CACHE.size);
+        // return
+        
+        for (let i = workerData.start; i < workerData.end; i++) {
+            const deck = Object.values(DECK);
+            getArrayShuffled(deck);
+            const hands = getHandsDealed(deck, 5, 1);
+            const hand = hands[0];
+            const { key } = getHandSorted([...hand]);
+
+            const cacheResultKey = `${key}:R${workerData.roundNumber}`;
+            if (!CACHE.has(cacheResultKey)) {
+                const deckLeft = deck.filter(card => !hand.includes(card));
+                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
+                result.key = cacheResultKey;
+                const resultAsString = JSON.stringify(result);
+                CACHE.set(cacheResultKey, resultAsString);
+                entries.push(resultAsString);
+            }
+        }
+        
+        parentPort.postMessage(entries.join('\n') + '\n');
+        process.exit(0);
+    }
+}
+
+
+
+
+const getTimeElapsed = (timeStart, signal, error) => {
+    const timeElapsed = process.hrtime(timeStart);
+    const timeElapsedAsMs = timeElapsed[0] * 1000 + timeElapsed[1] / 1e6;
+    console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
+}
+
+// const getCacheDuplicated = () => {
+//     const result = Array.from(CACHE).reduce((acc, [key, value]) => {
+//         if (key.endsWith(':R1')) {
+//             acc.push({
+//                 key,
+//                 value: JSON.parse(value)
+//             });
+//         }
+//         return acc;
+//     }, []);
+//     return result;
+// }
+const getCacheDuplicated = () => {
+    const result = Array.from(CACHE).reduce((acc, [key, value]) => {
+        acc.push({ key, value: JSON.parse(value) });
+        return acc;
+    }, []);
+    return result;
+}
+
+
+
+
+
 (async () => {
-    // getAllCombinationsHandsPossible();
-    await getDataComputed(1, 10);
-    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
+    // const a = getAllCombinationsPossible([...Array(5).keys()], 5);
+    // console.log(a);
+    const timeStart = process.hrtime();
+    const roundNumber = 1;
+    const simulationNumber = 1000;
+    const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
+    signals.forEach((signal) => {
+        process.on(signal, async (error) => {
+            getTimeElapsed(timeStart, signal, error);
+            process.exit(0);
+        });
+    });
+
+    await getDataComputed(roundNumber, simulationNumber);
+    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 2, 100);
 })();
