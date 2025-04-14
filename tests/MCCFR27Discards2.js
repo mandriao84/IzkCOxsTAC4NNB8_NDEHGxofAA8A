@@ -340,11 +340,13 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                try {
-                    const entry = JSON.parse(line.trim());
-                    CACHE.set(entry.key, JSON.stringify(entry));
-                } catch (error) {
-                    console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                if (line.trim()) {
+                    try {
+                        const entry = JSON.parse(line);
+                        CACHE.set(entry.key, JSON.stringify(entry));
+                    } catch (error) {
+                        console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                    }
                 }
             });
         }
@@ -360,12 +362,22 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                 }
             });
             
-            worker.on('message', (entries) => {
-                if (entries) {
-                    fs.appendFileSync(PATH_RESULTS, entries);
-                    // entriesBatch.split('\n').filter(l => l).forEach(line => {
-                    //     CACHE.add(JSON.parse(line).key);
-                    // });
+            worker.on('message', (content) => {
+                if (content) {
+                    fs.appendFileSync(PATH_RESULTS, content);
+                    const lines = content.split('\n');
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            try {
+                                const entry = JSON.parse(line);
+                                if (entry.key) {
+                                    CACHE.set(entry.key, line);
+                                }
+                            } catch (error) {
+                                console.log(`getDataComputed.WorkerThread.Message.Parsing.Error: ${line}`);
+                            }
+                        }
+                    });
                 }
             });
             
@@ -385,13 +397,15 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                 const content = fs.readFileSync(PATH_RESULTS, 'utf8');
                 const lines = content.split('\n');
                 lines.forEach(line => {
-                    try {
-                        const entry = JSON.parse(line.trim());
-                        if (entry.key.endsWith(`:R${workerData.roundNumber - 1}`)) {
-                            CACHE.set(entry.key, JSON.stringify(entry));
+                    if (line.trim()) {
+                        try {
+                            const entry = JSON.parse(line);
+                            if (entry.key.endsWith(`:R${workerData.roundNumber - 1}`)) {
+                                CACHE.set(entry.key, JSON.stringify(entry));
+                            }
+                        } catch (error) {
+                            console.log(`getDataComputed.WorkerThread.Parsing.Error: ${line}`);
                         }
-                    } catch (error) {
-                        console.log(`getDataComputed.WorkerThread.Parsing.Error: ${line}`);
                     }
                 });
             }
