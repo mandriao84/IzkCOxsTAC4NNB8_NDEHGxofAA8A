@@ -13,7 +13,7 @@ const DECK = {
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
 const allCombinationsPossibleCache = {};
-const handCache = new LRU({
+const CACHE = new LRU({
     max: 100000,
     maxSize: 100000000,
     sizeCalculation: (value, key) => key.length * 2 + 8,
@@ -81,9 +81,9 @@ const getHandSorted = (hand) => {
         }
         return cardValueA - cardValueB;
     });
-    const handKey = handCopy.join('|');
+    const key = handCopy.join('|');
 
-    return { hand: handCopy, handKey, cardsValue, cardsSuit };
+    return { hand: handCopy, key, cardsValue, cardsSuit };
 }
 
 const getHandScore = (hand) => {
@@ -113,11 +113,12 @@ const getHandScore = (hand) => {
         return score;
     }
 
-    var { hand: handSorted, handKey, cardsValue, cardsSuit } = getHandSorted([...hand]);
+    var { hand: handSorted, key, cardsValue, cardsSuit } = getHandSorted([...hand]);
 
-    if (handCache.has(handKey)) {
-        const handCached = handCache.get(handKey);
-        return handCached;
+    const cacheScoreKey = `${key}:S`;
+    if (CACHE.has(cacheScoreKey)) {
+        const score = CACHE.get(cacheScoreKey);
+        return score;
     }
 
     cardsValue = cardsValue.sort((a, b) => b - a);
@@ -158,7 +159,8 @@ const getHandScore = (hand) => {
         score = getHandScoreBelowPair(cardsValue);
     }
 
-    handCache.set(handKey, score);
+    CACHE.set(cacheScoreKey, score);
+
     return score;
 }
 
@@ -202,57 +204,57 @@ const getAllCombinationsPossible = (arr, k) => {
 
 
 
-function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber) {
-    const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-    const discardNumber = discardIndices.length;
+// function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber) {
+//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
+//     const discardNumber = discardIndices.length;
 
-    let score = 0;
-    for (let i = 0; i < simulationNumber; i++) {
-        const deck = [...deckLeft];
-        getArrayShuffled(deck);
-        const cardsReceived = deck.slice(0, discardNumber);
-        const handNew = [...handKept, ...cardsReceived];
-        score += getHandScore(handNew);
-    }
+//     let score = 0;
+//     for (let i = 0; i < simulationNumber; i++) {
+//         const deck = [...deckLeft];
+//         getArrayShuffled(deck);
+//         const cardsReceived = deck.slice(0, discardNumber);
+//         const handNew = [...handKept, ...cardsReceived];
+//         score += getHandScore(handNew);
+//     }
 
-    const scoreFinal = score / simulationNumber;
-    return scoreFinal.safe("ROUND", 3);
-}
-
-
-
-
-
-const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
-    const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-    const discardNumber = discardIndices.length;
-
-    if (discardNumber === 0) {
-        return getHandScore(hand);
-    }
-
-    const allCombinationsPossible = getAllCombinationsPossible(deckLeft, discardNumber);
-
-    let score = 0;
-    for (const cardsReceived of allCombinationsPossible) {
-        const handNew = [...handKept, ...cardsReceived];
-        score += getHandScore(handNew);
-    }
-
-    const scoreFinal = score / allCombinationsPossible.length;
-    return scoreFinal.safe("ROUND", 3);
-}
+//     const scoreFinal = score / simulationNumber;
+//     return scoreFinal.safe("ROUND", 3);
+// }
 
 
 
 
 
-const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = null) => {
+// const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
+//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
+//     const discardNumber = discardIndices.length;
+
+//     if (discardNumber === 0) {
+//         return getHandScore(hand);
+//     }
+
+//     const allCombinationsPossible = getAllCombinationsPossible(deckLeft, discardNumber);
+
+//     let score = 0;
+//     for (const cardsReceived of allCombinationsPossible) {
+//         const handNew = [...handKept, ...cardsReceived];
+//         score += getHandScore(handNew);
+//     }
+
+//     const scoreFinal = score / allCombinationsPossible.length;
+//     return scoreFinal.safe("ROUND", 3);
+// }
+
+
+
+
+
+const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const result =  getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-    console.log(hand, result);
+    // console.log(hand, result);
     return result;
 };
 
@@ -329,19 +331,23 @@ const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber = nu
 //         cleanupHandler();
 //     }
 // };
-async function getDataComputed(roundNumber, simulationNumber) {
+const getDataComputed = async (roundNumber, simulationNumber) => {
     if (isMainThread) {
         const cpuCount = os.cpus().length;
         const workers = [];
         
-        const existingHands = new Set(
-            fs.existsSync(PATH_RESULTS) 
-            ? fs.readFileSync(PATH_RESULTS, 'utf8')
-                .split('\n')
-                .filter(l => l)
-                .map(l => JSON.parse(l).handKey)
-            : []
-        );
+        if (fs.existsSync(PATH_RESULTS)) {
+            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                try {
+                    const entry = JSON.parse(line.trim());
+                    CACHE.set(entry.key, JSON.stringify(entry));
+                } catch (error) {
+                    console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                }
+            });
+        }
 
         for (let i = 0; i < cpuCount; i++) {
             const worker = new Worker(__filename, {
@@ -350,17 +356,16 @@ async function getDataComputed(roundNumber, simulationNumber) {
                     end: Math.floor((i + 1) * simulationNumber / cpuCount),
                     roundNumber,
                     simulationNumber,
-                    PATH_RESULTS,
-                    existingHands: [...existingHands] // Pass initial state
+                    PATH_RESULTS
                 }
             });
             
-            worker.on('message', (entriesBatch) => {
-                if (entriesBatch) {
-                    fs.appendFileSync(PATH_RESULTS, entriesBatch);
-                    entriesBatch.split('\n').filter(l => l).forEach(line => {
-                        existingHands.add(JSON.parse(line).handKey);
-                    });
+            worker.on('message', (entries) => {
+                if (entries) {
+                    fs.appendFileSync(PATH_RESULTS, entries);
+                    // entriesBatch.split('\n').filter(l => l).forEach(line => {
+                    //     CACHE.add(JSON.parse(line).key);
+                    // });
                 }
             });
             
@@ -369,26 +374,27 @@ async function getDataComputed(roundNumber, simulationNumber) {
         
         await Promise.all(workers);
     } else {
-        const existingHands = new Set(workerData.existingHands);
         const entries = [];
 
-        const dataSaved = new Map();
         if (workerData.roundNumber > 1) {
             if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
                 fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
             }
-            
-            const data = fs.existsSync(PATH_RESULTS) 
-                ? fs.readFileSync(PATH_RESULTS, 'utf8')
-                    .split('\n')
-                    .filter(l => l)
-                    .map(l => JSON.parse(l))
-                    .filter(entry => entry.round === workerData.roundNumber - 1)
-                : [];
-                
-            data.forEach(entry => {
-                dataSaved.set(entry.handKey, entry.score);
-            });
+
+            if (fs.existsSync(PATH_RESULTS)) {
+                const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+                const lines = content.split('\n');
+                lines.forEach(line => {
+                    try {
+                        const entry = JSON.parse(line.trim());
+                        if (entry.key.endsWith(`:R${workerData.roundNumber - 1}`)) {
+                            CACHE.set(entry.key, JSON.stringify(entry));
+                        }
+                    } catch (error) {
+                        console.log(`getDataComputed.WorkerThread.Parsing.Error: ${line}`);
+                    }
+                });
+            }
         }
         
         for (let i = workerData.start; i < workerData.end; i++) {
@@ -396,14 +402,15 @@ async function getDataComputed(roundNumber, simulationNumber) {
             getArrayShuffled(deck);
             const hands = getHandsDealed(deck, 5, 1);
             const hand = hands[0];
-            const { hand: handSorted, handKey } = getHandSorted([...hand]);
+            const { key } = getHandSorted([...hand]);
 
-            if (!existingHands.has(handKey)) {
+            const cacheResultKey = `${key}:R${workerData.roundNumber}`;
+            if (!CACHE.has(cacheResultKey)) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 100, dataSaved);
-                result.handKey = handKey;
+                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
+                result.key = cacheResultKey;
                 const resultAsString = JSON.stringify(result);
-                console.log(resultAsString);
+                CACHE.set(cacheResultKey, resultAsString);
                 entries.push(resultAsString);
             }
         }
@@ -415,7 +422,7 @@ async function getDataComputed(roundNumber, simulationNumber) {
 
 
 
-const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataSaved = new Map()) => {
+const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
     const results = {};
     let scoreFinal = Infinity;
     let indexFinal = null;
@@ -437,17 +444,18 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataS
                 let handNew = [...cardsKept, ...cardsReceived];
                 
                 if (roundNumber > 1 && deck.length >= 5) {
-                    const { handKey } = getHandSorted([...handNew]);
+                    const { key } = getHandSorted([...handNew]);
 
-                    if (dataSaved.has(handKey)) {
-                        scorePerDiscardIndices += dataSaved.get(handKey);
+                    let cacheResultKey = `${key}:R${roundNumber - 1}`
+                    if (CACHE.has(cacheResultKey)) {
+                        const entry = JSON.parse(CACHE.get(cacheResultKey));
+                        scorePerDiscardIndices += entry.score;
                     } else {
                         const roundNext = getDiscardsDetails(
                             handNew,
                             deck, 
                             roundNumber - 1,
                             simulationNumber, //Math.sqrt(simulationNumber)
-                            dataSaved
                         );
                         scorePerDiscardIndices += roundNext.score;
                     }
@@ -473,8 +481,7 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataS
     }
 
     results.score = scoreFinal;
-    results.cards = (indexFinal || []).map(idx => hand[idx]),
-    results.round = roundNumber;
+    results.cards = (indexFinal || []).map(idx => hand[idx]);
     return results;
 };
 
@@ -482,6 +489,6 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber, dataS
 
 (async () => {
     // getAllCombinationsHandsPossible();
-    await getDataComputed(1, 100);
+    await getDataComputed(1, 10);
     // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 1, 1000);
 })();
