@@ -557,7 +557,7 @@ const getCacheDuplicated = () => {
 
     const timeStart = process.hrtime();
     const roundNumber = 1;
-    const simulationNumber = 1000;
+    const simulationNumber = 100000;
     const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
     signals.forEach((signal) => {
         process.on(signal, async (error) => {
