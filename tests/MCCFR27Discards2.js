@@ -13,9 +13,14 @@ const DECK = {
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
 const CACHE = new LRUCache ({
-    max: 100000,
-    maxSize: 100000000,
-    sizeCalculation: (value, key) => key.length * 2 + 8,
+    max: 3000000, // ~2.6M >> 2,598,960 combinations of hands + hand score
+    maxSize: 3000000000, // ~3GB
+    sizeCalculation: (value, key) => {
+        if (key.endsWith(':S')) {
+            return key.length * 2 + 8;
+        }
+        return key.length * 2 + value.length * 2 + 8;
+    },
     allowStale: false
 });
 
@@ -566,8 +571,8 @@ const getCacheDuplicated = () => {
         });
     });
 
-    await getDataComputed(roundNumber, simulationNumber);
-    getTimeElapsed(timeStart, 'END', null);
+    // await getDataComputed(roundNumber, simulationNumber);
+    // getTimeElapsed(timeStart, 'END', null);
 
-    // getDiscardsDetailsForGivenHand(["5h", "6c", "7c", "8h", "9d"], 1, 500000);
+    getDiscardsDetailsForGivenHand(["5h", "6c", "7c", "8h", "9d"], 3, 100);
 })();
