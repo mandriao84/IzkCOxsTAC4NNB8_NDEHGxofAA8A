@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const os = require('os');
-const LRU = require('lru-cache');
+const { LRUCache } = require('lru-cache');
 const path = require('path');
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const DECK = {
@@ -12,7 +12,7 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
-const CACHE = new LRU({
+const CACHE = new LRUCache ({
     max: 100000,
     maxSize: 100000000,
     sizeCalculation: (value, key) => key.length * 2 + 8,
@@ -557,7 +557,7 @@ const getCacheDuplicated = () => {
 
     const timeStart = process.hrtime();
     const roundNumber = 1;
-    const simulationNumber = 100000;
+    const simulationNumber = 1000;
     const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
     signals.forEach((signal) => {
         process.on(signal, async (error) => {

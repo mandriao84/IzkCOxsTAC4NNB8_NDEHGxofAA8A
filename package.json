@@ -22,6 +22,7 @@
     "dotenv": "^16.3.1"
   },
   "dependencies": {
+    "lru-cache": "^11.1.0",
     "mathjs": "^13.0.2",
     "piscina": "^4.9.2",
     "random": "^4.1.0",
