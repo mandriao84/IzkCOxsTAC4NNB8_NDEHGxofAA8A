@@ -123,9 +123,9 @@ const getHandScore = (hand) => {
     cardsValue = cardsValue.sort((a, b) => b - a);
     const straightWithAs = [13, 1, 2, 3, 4];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
-    if (isStraightWithAs) { cardsValue = [0, 1, 2, 3, 4]; }
+    if (isStraightWithAs) { cardsValue = [4, 3, 2, 1, 0]; }
 
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] + 1)
+    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
     const isFlush = new Set(cardsSuit).size === 1
 
     const cardCounts = cardsValue.reduce((acc, rank) => {
@@ -455,18 +455,17 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             workers.instance.push(worker);
 
             worker.on('message', (content) => {
-                // console.log(`[Worker ${worker.threadId}]`, content);
                 const type = content?.type;
                 const payload = content?.payload?.trim();
-                console.log(`_____`, type);
                 if (type === "DATA" && payload && !entries.has(payload)) {
                     fs.appendFileSync(PATH_RESULTS, payload + '\n');
                     entries.add(payload);
 
                     workers.instance.forEach(w => {
-                        w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+                        if (w !== worker) {
+                            w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+                        }
                     });
-                    // worker.postMessage({ type: 'CACHE_UPDATE', payload: payload });
                 }
             });
             
@@ -481,9 +480,9 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             const type = message?.type;
             const payload = message?.payload;
 
-            if (type === 'CACHE_UPDATE') {
-                parentPort.postMessage({ type: 'LOG', payload: `LOG` });
-            }
+            // if (type === 'CACHE_UPDATE') {
+            //     parentPort.postMessage({ type: 'LOG', payload: `LOG` });
+            // }
 
             if (type === 'CACHE_UPDATE') {
                 try {
@@ -512,7 +511,6 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
                 const resultAsString = JSON.stringify(result);
                 CACHE.set(cacheResultKey, resultAsString);
                 parentPort.postMessage({ type: 'DATA', payload: resultAsString });
-                // parentPort.postMessage({ type: 'LOG', payload: `LOG` });
             }
         }
         
@@ -556,9 +554,10 @@ const getCacheDuplicated = () => {
 (async () => {
     // const a = getAllCombinationsPossible([...Array(5).keys()], 5);
     // console.log(a);
+
     const timeStart = process.hrtime();
     const roundNumber = 1;
-    const simulationNumber = 20;
+    const simulationNumber = 100000;
     const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'unhandledRejection'];
     signals.forEach((signal) => {
         process.on(signal, async (error) => {
@@ -568,5 +567,7 @@ const getCacheDuplicated = () => {
     });
 
     await getDataComputed(roundNumber, simulationNumber);
-    // getDiscardsDetailsForGivenHand(["2d", "3d", "4d", "10d", "Kh"], 2, 100);
+    getTimeElapsed(timeStart, 'END', null);
+
+    // getDiscardsDetailsForGivenHand(["5h", "6c", "7c", "8h", "9d"], 1, 500000);
 })();
