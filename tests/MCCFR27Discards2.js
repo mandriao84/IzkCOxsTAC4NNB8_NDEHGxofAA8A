@@ -221,7 +221,7 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
 
 
 
-const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
+const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
     const results = {};
     let scoreFinal = Infinity;
     let indexFinal = null;
@@ -253,7 +253,7 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
                         const entry = JSON.parse(CACHE.get(cacheResultKey));
                         scorePerDiscardIndices += entry.score;
                     } else {
-                        const roundNext = getDiscardsDetails(
+                        const roundNext = getMCSDiscardsDetails(
                             handNew,
                             deck, 
                             roundNumber - 1,
@@ -457,7 +457,7 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             const cacheResultKey = `${key}:R${workerData.roundNumber}`;
             if (!CACHE.has(cacheResultKey)) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
-                const result = getDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
+                const result = getMCSDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
                 result.key = cacheResultKey;
                 const resultAsString = JSON.stringify(result);
                 CACHE.set(cacheResultKey, resultAsString);
@@ -478,18 +478,6 @@ const getTimeElapsed = (timeStart, signal, error) => {
     console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
 }
 
-// const getCacheDuplicated = () => {
-//     const result = Array.from(CACHE).reduce((acc, [key, value]) => {
-//         if (key.endsWith(':R1')) {
-//             acc.push({
-//                 key,
-//                 value: JSON.parse(value)
-//             });
-//         }
-//         return acc;
-//     }, []);
-//     return result;
-// }
 const getCacheDuplicated = () => {
     const result = Array.from(CACHE).reduce((acc, [key, value]) => {
         acc.push({ key, value: JSON.parse(value) });
