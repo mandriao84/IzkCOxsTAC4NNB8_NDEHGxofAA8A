@@ -121,6 +121,7 @@ const getHandScore = (hand) => {
 
     const cacheScoreKey = `${key}:S`;
     if (CACHE.has(cacheScoreKey)) {
+        // console.log('SCORE_HIT')
         const score = CACHE.get(cacheScoreKey);
         return score;
     }
@@ -172,22 +173,8 @@ const getHandScore = (hand) => {
 
 
 
-function getAllCombinationsHandsPossible(deckCardsNumber = 52, handCardsNumber = 5) {
-    let result = 1;
-    for (let i = 1; i <= handCardsNumber; i++) {
-        result = result * (deckCardsNumber - i + 1) / i;
-    }
-    console.log(`getAllCombinationsHandsPossible.deckCardsNumber(${deckCardsNumber}).x.handCardsNumber(${handCardsNumber}) === ${result}`);
-    return result;
-}
 
 const getAllCombinationsPossible = (arr, k) => {
-    // const key = JSON.stringify({ arr, k });
-    
-    // if (allCombinationsPossibleCache.hasOwnProperty(key)) {
-    //     return allCombinationsPossibleCache[key];
-    // }
-
     let result;
     if (k === 0) {
         result = [[]];
@@ -200,141 +187,40 @@ const getAllCombinationsPossible = (arr, k) => {
         result = [...withFirst, ...withoutFirst];
     }
     
-    // allCombinationsPossibleCache[key] = result;
     return result;
 };
 
-
-
-
-
-// function getDiscardsMCSimulated(hand, discardIndices, deckLeft, simulationNumber) {
-//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-//     const discardNumber = discardIndices.length;
-
-//     let score = 0;
-//     for (let i = 0; i < simulationNumber; i++) {
-//         const deck = [...deckLeft];
-//         getArrayShuffled(deck);
-//         const cardsReceived = deck.slice(0, discardNumber);
-//         const handNew = [...handKept, ...cardsReceived];
-//         score += getHandScore(handNew);
-//     }
-
-//     const scoreFinal = score / simulationNumber;
-//     return scoreFinal.safe("ROUND", 3);
-// }
+const getAllHandsPossible = (handCardsNumber = 5) => {
+    const deck = Object.values(DECK);
+    const results = getAllCombinationsPossible(deck, handCardsNumber);
+    return results;
+}
 
 
 
 
 
-// const getDiscardsEnumerated = (hand, discardIndices, deckLeft) => {
-//     const handKept = hand.filter((_, index) => !discardIndices.includes(index));
-//     const discardNumber = discardIndices.length;
-
-//     if (discardNumber === 0) {
-//         return getHandScore(hand);
-//     }
-
-//     const allCombinationsPossible = getAllCombinationsPossible(deckLeft, discardNumber);
-
-//     let score = 0;
-//     for (const cardsReceived of allCombinationsPossible) {
-//         const handNew = [...handKept, ...cardsReceived];
-//         score += getHandScore(handNew);
-//     }
-
-//     const scoreFinal = score / allCombinationsPossible.length;
-//     return scoreFinal.safe("ROUND", 3);
-// }
-
-
-
-
-
-const getDiscardsDetailsForGivenHand = (hand, roundNumber, simulationNumber) => {
+const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 10000) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
-    const result =  getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-    console.log(hand, result);
-    return result;
+    if (type === "MCS") {
+        const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
+        console.log(type)
+        console.log(result)
+        return result;
+    } else if (type === "ENUM") {
+        const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
+        console.log(type)
+        console.log(result)
+        return result;
+    }
 };
 
 
 
 
 
-// const getDataComputed = async (roundNumber = 1, simulationNumber = 1000) => {
-//     let fd;
-//     let exit = false;
-
-//     const cleanupHandler = () => {
-//         if (fd) {
-//             fs.closeSync(fd);
-//             fd = null;
-//         }
-//     };
-
-//     const exitHandler = (event, error) => {
-//         if (error) {
-//             console.error(`getDataComputed.Error.${event}:`, error);
-//         } else {
-//             console.log(`getDataComputed.Exit.${event}`);
-//         }
-//         exit = true;
-//     };
-
-//     ['SIGINT', 'SIGTERM', 'SIGQUIT', 'uncaughtException', 'unhandledRejection'].forEach((signal) => {
-//         process.once(signal, (error) => exitHandler(signal, error));
-//     });
-
-//     try {
-//         const isPathExists = fs.existsSync(PATH_RESULTS);
-//         const data = new Set();
-
-//         if (isPathExists) {
-//             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-//             content.split('\n').forEach((line) => {
-//                 if (line.trim()) {
-//                     const entry = JSON.parse(line);
-//                     data.add(entry.handKey);
-//                 }
-//             });
-//         }
-
-//         fd = fs.openSync(PATH_RESULTS, 'a+');
-
-//         for (let i = 0; i < simulationNumber; i++) {
-//             if (exit) {
-//                 console.log('getDataComputed.ExitEarly');
-//                 break;
-//             }
-
-//             const deck = Object.values(DECK);
-//             getArrayShuffled(deck);
-//             const hands = getHandsDealed(deck, 5, 1);
-//             const hand = hands[0];
-//             const { hand: handSorted } = getHandSorted([...hand]);
-//             const handKey = handSorted.join('|');
-
-//             if (!data.has(handKey)) {
-//                 const deckLeft = deck.filter(card => !hand.includes(card));
-//                 const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-//                 result.handKey = handKey;
-//                 const entry = JSON.stringify(result) + '\n';
-//                 data.add(handKey);
-//                 fs.appendFileSync(fd, entry);
-//                 console.log(`getDataComputed.Iteration.${i}.Done\n>> ${entry}`);
-//             }
-
-//             await new Promise((resolve) => setImmediate(resolve));
-//         }
-//     } finally {
-//         cleanupHandler();
-//     }
-// };
 const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
     const results = {};
     let scoreFinal = Infinity;
@@ -344,6 +230,8 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
         const discardCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
         let score = Infinity;
         let index = null;
+
+        // console.log(discardCombinations)
 
         for (const discardIndices of discardCombinations) {
             let scorePerDiscardIndices = 0;
@@ -361,7 +249,7 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
 
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
-                        console.log('helHELLLLOOOOOOOOlo')
+                        console.log('CACHE_HIT_RM1')
                         const entry = JSON.parse(CACHE.get(cacheResultKey));
                         scorePerDiscardIndices += entry.score;
                     } else {
@@ -388,6 +276,64 @@ const getDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
 
         results[discardNumber] = score
 
+        if (score < scoreFinal) {
+            scoreFinal = score;
+            indexFinal = index;
+        }
+    }
+
+    results.score = scoreFinal;
+    results.cards = (indexFinal || []).map(idx => hand[idx]);
+    return results;
+};
+
+
+
+
+const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
+    const results = {};
+    let scoreFinal = Infinity;
+    let indexFinal = null;
+
+    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
+        const discardCombinations = getAllCombinationsPossible([...Array(5).keys()], discardNumber);
+        let score = Infinity;
+        let index = null;
+
+        for (const discardIndices of discardCombinations) {
+            const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
+            const drawNumber = discardIndices.length;
+
+            const allDraws = getAllCombinationsPossible(deckLeft, drawNumber);
+            let scorePerDiscardIndices = 0;
+
+            for (const cardsReceived of allDraws) {
+                const handNew = [...cardsKept, ...cardsReceived];
+                const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
+                const { key } = getHandSorted([...handNew]);
+                const cacheResultKey = `${key}:R${roundNumber - 1}`;
+
+                if (roundNumber === 1) {
+                    scorePerDiscardIndices += getHandScore(handNew);
+                } else if (CACHE.has(cacheResultKey)) {
+                    const entry = JSON.parse(CACHE.get(cacheResultKey));
+                    scorePerDiscardIndices += entry.score;
+                } else {
+                    const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
+                    CACHE.set(cacheResultKey, JSON.stringify(roundNext));
+                    scorePerDiscardIndices += roundNext.score;
+                }
+            }
+
+            scorePerDiscardIndices /= allDraws.length;
+
+            if (scorePerDiscardIndices < score) {
+                score = scorePerDiscardIndices.safe("ROUND", 3);
+                index = discardIndices;
+            }
+        }
+
+        results[discardNumber] = score;
         if (score < scoreFinal) {
             scoreFinal = score;
             indexFinal = index;
@@ -574,5 +520,12 @@ const getCacheDuplicated = () => {
     // await getDataComputed(roundNumber, simulationNumber);
     // getTimeElapsed(timeStart, 'END', null);
 
-    getDiscardsDetailsForGivenHand(["5h", "6c", "7c", "8h", "9d"], 3, 100);
+    // const a = ["5h", "6c", "7c", "8h", "9d"]
+    // const t = ["4s", "4c", "8s", "8c", "Qs"]
+    // getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    // getDiscardsDetailsForGivenHand("MCS", a, 1);
+
+    const deck = Object.values(DECK);
+    const allHands = getAllCombinationsPossible(deck, 5);
+    console.log(allHands);
 })();
