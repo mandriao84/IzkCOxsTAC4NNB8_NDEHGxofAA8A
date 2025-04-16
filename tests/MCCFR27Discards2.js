@@ -3,6 +3,7 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 const os = require('os');
 const { LRUCache } = require('lru-cache');
 const path = require('path');
+const { all } = require('mathjs');
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
@@ -349,31 +350,112 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 
 
 
-const getDataComputed = async (roundNumber, simulationNumber) => {
-    const getCacheLoaded = () => {
-        CACHE.clear();
 
-        if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
-            fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
-        }
-
+const getEnumDataComputed = async (roundNumber = 1) => {
+    if (isMainThread) {
+        const entries = new Map();
+        
         if (fs.existsSync(PATH_RESULTS)) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                const lineTrimmed = line.trim();
-                if (lineTrimmed) {
-                    try {
-                        const entry = JSON.parse(lineTrimmed);
-                        CACHE.set(entry.key, lineTrimmed);
-                    } catch (error) {
-                        console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                try {
+                    const lineTrimmed = line.trim();
+                    const entry = JSON.parse(lineTrimmed);
+                    if (entry.key) {
+                        entries.set(entry.key, lineTrimmed);
                     }
+                } catch (error) {
+                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
                 }
             });
         }
-    }
 
+        const allHandsRaw = getAllHandsPossible();
+        const allHands = allHandsRaw.reduce((acc, hand) => {
+            const { key } = getHandSorted(hand);
+            const entryKey = `${key}:R${roundNumber}`;
+            if (!entries.has(entryKey)) {
+                acc.push({ hand, entryKey });
+            }
+            return acc;
+        }, []);
+
+        const cpuCount = os.cpus().length;
+        const workers = { exit: [], instance: [] };
+        const allHandsPerWorker = Math.ceil(allHands.length / cpuCount);
+
+        for (let i = 0; i < cpuCount; i++) {
+            const workerStart = i * allHandsPerWorker;
+            const workerEnd = Math.min(workerStart + allHandsPerWorker, allHands.length);
+            const workerHands = allHands.slice(workerStart, workerEnd);
+
+            const worker = new Worker(__filename, {
+                workerData: {
+                    handsDetails: workerHands,
+                    roundNumber,
+                    PATH_RESULTS
+                }
+            });
+            workers.instance.push(worker);
+
+            worker.on('message', (content) => {
+                const type = content?.type;
+                const payload = content?.payload?.trim();
+                const entry = JSON.parse(payload);
+                if (type === "DATA" && !entries.has(entry.key)) {
+                    fs.appendFileSync(PATH_RESULTS, payload + '\n');
+                    entries.set(entry.key, payload);
+                    workers.instance.forEach(w => {
+                        if (w !== worker) {
+                            w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+                        }
+                    });
+                }
+            });
+            
+            workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
+        }
+        
+        await Promise.all(workers.exit);
+    } else {
+        getCacheLoaded();
+
+        parentPort.on('message', (message) => {
+            const type = message?.type;
+            const payload = message?.payload;
+
+            if (type === 'CACHE_UPDATE') {
+                try {
+                    const entry = JSON.parse(payload);
+                    if (!CACHE.has(entry.key)) {
+                        CACHE.set(entry.key, payload);
+                    }
+                } catch (error) {
+                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${payload}`);
+                }
+            }
+        });
+
+        const { handsDetails, roundNumber } = workerData;
+        for (const { hand, key } of handsDetails) {
+            const deck = Object.values(DECK);
+            const deckLeft = deck.filter(card => !hand.includes(card));
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber, 0);
+            result.key = key;
+            const resultAsString = JSON.stringify(result);
+            CACHE.set(key, resultAsString);
+            parentPort.postMessage({ type: 'DATA', payload: resultAsString });
+        }
+        
+        process.exit(0);
+    }
+};
+
+
+
+
+const getMCSDataComputed = async (roundNumber, simulationNumber) => {
     if (isMainThread) {
         const cpuCount = os.cpus().length;
         const workers = {
@@ -431,10 +513,6 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
             const type = message?.type;
             const payload = message?.payload;
 
-            // if (type === 'CACHE_UPDATE') {
-            //     parentPort.postMessage({ type: 'LOG', payload: `LOG` });
-            // }
-
             if (type === 'CACHE_UPDATE') {
                 try {
                     const entry = JSON.parse(payload);
@@ -472,6 +550,31 @@ const getDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
+
+const getCacheLoaded = () => {
+    CACHE.clear();
+
+    if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
+        fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
+    }
+
+    if (fs.existsSync(PATH_RESULTS)) {
+        const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+        const lines = content.split('\n');
+        lines.forEach(line => {
+            const lineTrimmed = line.trim();
+            if (lineTrimmed) {
+                try {
+                    const entry = JSON.parse(lineTrimmed);
+                    CACHE.set(entry.key, lineTrimmed);
+                } catch (error) {
+                    console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+                }
+            }
+        });
+    }
+}
+
 const getTimeElapsed = (timeStart, signal, error) => {
     const timeElapsed = process.hrtime(timeStart);
     const timeElapsedAsMs = timeElapsed[0] * 1000 + timeElapsed[1] / 1e6;
@@ -508,12 +611,14 @@ const getCacheDuplicated = () => {
     // await getDataComputed(roundNumber, simulationNumber);
     // getTimeElapsed(timeStart, 'END', null);
 
+    await getEnumDataComputed(1);
+
     // const a = ["5h", "6c", "7c", "8h", "9d"]
     // const t = ["4s", "4c", "8s", "8c", "Qs"]
     // getDiscardsDetailsForGivenHand("ENUM", a, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
 
-    const deck = Object.values(DECK);
-    const allHands = getAllCombinationsPossible(deck, 5);
-    console.log(allHands);
+    // const deck = Object.values(DECK);
+    // const allHands = getAllCombinationsPossible(deck, 5);
+    // console.log(allHands);
 })();
