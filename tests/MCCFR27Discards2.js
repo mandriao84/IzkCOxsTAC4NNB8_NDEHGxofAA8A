@@ -376,7 +376,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             const { key } = getHandSorted(hand);
             const entryKey = `${key}:R${roundNumber}`;
             if (!entries.has(entryKey)) {
-                acc.push({ hand, entryKey });
+                acc.push({ hand, key: entryKey });
             }
             return acc;
         }, []);
