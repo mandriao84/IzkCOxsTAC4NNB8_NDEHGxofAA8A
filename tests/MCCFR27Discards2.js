@@ -628,9 +628,6 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    // const a = getAllCombinationsPossible([...Array(5).keys()], 5);
-    // console.log(a);
-
     // const timeStart = process.hrtime();
     // const roundNumber = 1;
     // const simulationNumber = 1000;
@@ -642,14 +639,12 @@ const getCacheDuplicated = () => {
     //     });
     // });
 
-    // await getDataComputed(roundNumber, simulationNumber);
-    // getTimeElapsed(timeStart, 'END', null);
-
+    // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
 
-    const a = ["5h", "6c", "7c", "8h", "9d"]
-    // const t = ["4s", "4c", "8s", "8c", "Qs"]
+    // const a = ["5h", "6c", "7c", "8h", "9d"]
     // getDiscardsDetailsForGivenHand("ENUM", a, 2);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
     getAllHandsPossibleScoreSaved()
+    // getTimeElapsed(timeStart, 'END', null);
 })();
