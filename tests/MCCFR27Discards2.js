@@ -215,7 +215,7 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
             return;
         }
         try {
-            const entry = JSON.parse(line.trim());
+            const entry = JSON.parse(trimmed);
             if (entry.key) { data.add(entry.key); }
         } catch (error) {
             console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
@@ -244,6 +244,35 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
 
 
 const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 10000) => {
+    if (fs.existsSync(PATH_RESULTS)) {
+        const data = fs.readFileSync(PATH_RESULTS, 'utf8');
+        const lines = data.split('\n');
+        lines.forEach(line => {
+            try {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    console.log(`getDiscardsDetailsForGivenHand.LineEmpty`);
+                    return;
+                }
+                const entry = JSON.parse(trimmed);
+                if (entry.key) {
+                    CACHE.set(entry.key, trimmed);
+                }
+            } catch (error) {
+                console.log(`getDiscardsDetailsForGivenHand.Error: ${error}`);
+            }
+        });
+    }
+
+    const { key } = getHandKey([...hand]);
+    let cacheKey = `${key}:R${roundNumber}`;
+    if (CACHE.has(cacheKey)) {
+        console.log(`getDiscardsDetailsForGivenHand.CacheHit`);
+        const result = JSON.parse(CACHE.get(cacheKey));
+        console.log(result)
+        return result;
+    }
+
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
@@ -401,13 +430,17 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             const lines = content.split('\n');
             lines.forEach(line => {
                 try {
-                    const lineTrimmed = line.trim();
-                    const entry = JSON.parse(lineTrimmed);
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                        console.log(`getEnumDataComputed.LineEmpty`);
+                        return;
+                    }
+                    const entry = JSON.parse(trimmed);
                     if (entry.key) {
-                        entries.set(entry.key, lineTrimmed);
+                        entries.set(entry.key, trimmed);
                     }
                 } catch (error) {
-                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
+                    console.log(`getEnumDataComputed.Error: ${error}`);
                 }
             });
         }
@@ -510,13 +543,17 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             const lines = content.split('\n');
             lines.forEach(line => {
                 try {
-                    const lineTrimmed = line.trim();
-                    const entry = JSON.parse(lineTrimmed);
+                    const trimmed = line.trim();
+                    if (!trimmed) {
+                        console.log(`getMCSDataComputed.LineEmpty`);
+                        return;
+                    }
+                    const entry = JSON.parse(trimmed);
                     if (entry.key) {
-                        entries.set(entry.key, lineTrimmed);
+                        entries.set(entry.key, trimmed);
                     }
                 } catch (error) {
-                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
+                    console.log(`getMCSDataComputed.Error: ${error}`);
                 }
             });
         }
@@ -601,23 +638,21 @@ const getCacheLoaded = () => {
     CACHE.clear();
 
     const paths = [PATH_SCORES, PATH_RESULTS];
-    paths.forEach(p => {
-        if (!fs.existsSync(path.dirname(p))) {
-            fs.mkdirSync(path.dirname(p), { recursive: true });
-        }
-    
+    paths.forEach(p => {    
         if (fs.existsSync(p)) {
             const content = fs.readFileSync(p, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                const lineTrimmed = line.trim();
-                if (lineTrimmed) {
-                    try {
-                        const entry = JSON.parse(lineTrimmed);
-                        CACHE.set(entry.key, lineTrimmed);
-                    } catch (error) {
-                        console.log(`getCacheLoaded.${p}.Parsing.Error: ${line}`);
-                    }
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    console.log(`getCacheLoaded.LineEmpty`);
+                    return;
+                }
+                try {
+                    const entry = JSON.parse(trimmed);
+                    CACHE.set(entry.key, trimmed);
+                } catch (error) {
+                    console.log(`getCacheLoaded.${p}.Error: ${line}`);
                 }
             });
         }
@@ -657,9 +692,10 @@ const getCacheDuplicated = () => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
 
-    // const a = ["5h", "6c", "7c", "8h", "9d"]
-    // getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    // const a = ["5c", "6h", "7c", "8c", "9c"]
+    // const b = ["2h", "3h", "5h", "6h", "Kc"]
+    // getDiscardsDetailsForGivenHand("ENUM", b, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
-    getAllHandsPossibleScoreSaved()
+    // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
