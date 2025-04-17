@@ -202,18 +202,39 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
 }
 
 const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
-    if (!fs.existsSync(path.dirname(PATH_SCORES))) {
-        fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
+    const dir = path.dirname(PATH_SCORES);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
 
+    const data = new Set();
     if (fs.existsSync(PATH_SCORES)) {
+        const content = fs.readFileSync(PATH_SCORES, 'utf8');
+        const lines = content.split('\n');
+        lines.forEach(line => {
+            try {
+                const entry = JSON.parse(line.trim());
+                if (entry.key) { data.add(entry.key); }
+            } catch (error) {
+                console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
+            }
+        });
+
         const hands = getAllHandsPossible(handCardsNumber);
+        const file = fs.openSync(PATH_SCORES, 'a');
+
         for (let i = 0; i < hands.length; i++) {
             const hand = hands[i];
-            const { key, score } = getHandScore(hand);
-            const payload = JSON.stringify({ key, score });
-            fs.appendFileSync(PATH_SCORES, payload + '\n');
+            const { key } = getHandKey(hand);
+            if (!data.has(key)) {
+                const { score } = getHandScore(hand);
+                const value = JSON.stringify({ key, score });
+                fs.appendFileSync(PATH_SCORES, value + '\n');
+                data.add(key);
+            }
         }
+
+        fs.closeSync(file);
     }
 }
 
