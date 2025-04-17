@@ -68,14 +68,16 @@ const getHandsDealed = (deck, cardsNumberPerHand, handsNumber) => {
     return hands;
 };
 
-const getHandSorted = (hand) => {
+const getHandKey = (hand) => {
     let handCopy = [...hand];
     const getCardRank = (card) => card.slice(0, -1);
     const getCardValue = (card) => CARDS[getCardRank(card)];
     const getCardSuit = (card) => card.slice(-1);
+    const cardsRank = handCopy.map(getCardRank).sort((a, b) => CARDS[a] - CARDS[b]);
     const cardsValue = handCopy.map(getCardValue).sort((a, b) => a - b);
     const cardsSuit = handCopy.map(getCardSuit).sort((a, b) => a - b);
-    const straightWithAs = [13, 1, 2, 3, 4];
+    const cardsSuitSize = new Set(cardsSuit).size;
+    const straightWithAs = [1, 2, 3, 4, 13];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
 
     handCopy.sort((a, b) => {
@@ -87,9 +89,10 @@ const getHandSorted = (hand) => {
         }
         return cardValueA - cardValueB;
     });
-    const key = handCopy.join('|');
 
-    return { hand: handCopy, key, cardsValue, cardsSuit };
+    const key = `${cardsRank.join('|')}:${cardsSuitSize}`;
+
+    return { key, sort: handCopy, cardsValue, cardsSuit };
 }
 
 const getHandScore = (hand) => {
@@ -119,7 +122,7 @@ const getHandScore = (hand) => {
         return score;
     }
 
-    var { hand: handSorted, key, cardsValue, cardsSuit } = getHandSorted([...hand]);
+    var { key, hand: handSorted, cardsValue, cardsSuit } = getHandKey([...hand]);
 
     const cacheScoreKey = `${key}:S`;
     if (CACHE.has(cacheScoreKey)) {
@@ -261,7 +264,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                 let handNew = [...cardsKept, ...cardsReceived];
                 
                 if (roundNumber > 1 && deck.length >= 5) {
-                    const { key } = getHandSorted([...handNew]);
+                    const { key } = getHandKey([...handNew]);
 
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
@@ -326,7 +329,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             for (const cardsReceived of allDraws) {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
-                const { key } = getHandSorted([...handNew]);
+                const { key } = getHandKey([...handNew]);
                 const cacheResultKey = `${key}:R${roundNumber - 1}`;
 
                 if (roundNumber === 1) {
@@ -389,7 +392,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 
         const allHandsRaw = getAllHandsPossible();
         const allHands = allHandsRaw.reduce((acc, hand) => {
-            const { key } = getHandSorted(hand);
+            const { key } = getHandKey(hand);
             const entryKey = `${key}:R${roundNumber}`;
             if (!entries.has(entryKey)) {
                 acc.push({ hand, key: entryKey });
@@ -551,7 +554,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             getArrayShuffled(deck);
             const hands = getHandsDealed(deck, 5, 1);
             const hand = hands[0];
-            const { key } = getHandSorted([...hand]);
+            const { key } = getHandKey([...hand]);
 
             const cacheResultKey = `${key}:R${workerData.roundNumber}`;
             if (!CACHE.has(cacheResultKey)) {
