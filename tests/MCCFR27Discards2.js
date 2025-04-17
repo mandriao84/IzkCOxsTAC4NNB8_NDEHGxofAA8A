@@ -123,7 +123,6 @@ const getHandScore = (hand) => {
 
     const cacheScoreKey = `${key}:S`;
     if (CACHE.has(cacheScoreKey)) {
-        // console.log('SCORE_HIT')
         const score = CACHE.get(cacheScoreKey);
         return score;
     }
@@ -168,7 +167,7 @@ const getHandScore = (hand) => {
 
     CACHE.set(cacheScoreKey, score);
 
-    return { key: cacheScoreKey, score};
+    return { key: cacheScoreKey, score };
 }
 
 
@@ -278,7 +277,8 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                     }
 
                 } else {
-                    scorePerDiscardIndices += getHandScore(handNew);
+                    const { score } = getHandScore(handNew);
+                    scorePerDiscardIndices += score;
                 }
             }
             
@@ -329,7 +329,8 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                 const cacheResultKey = `${key}:R${roundNumber - 1}`;
 
                 if (roundNumber === 1) {
-                    scorePerDiscardIndices += getHandScore(handNew);
+                    const { score } = getHandScore(handNew);
+                    scorePerDiscardIndices += score;
                 } else if (CACHE.has(cacheResultKey)) {
                     const entry = JSON.parse(CACHE.get(cacheResultKey));
                     scorePerDiscardIndices += entry.score;
@@ -493,15 +494,20 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             exit: [],
             instance: []
         };
-        const entries = new Set();
+        const entries = new Map();
         
         if (fs.existsSync(PATH_RESULTS)) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
-                const lineTrimmed = line.trim();
-                if (lineTrimmed) {
-                    entries.add(lineTrimmed);
+                try {
+                    const lineTrimmed = line.trim();
+                    const entry = JSON.parse(lineTrimmed);
+                    if (entry.key) {
+                        entries.set(entry.key, lineTrimmed);
+                    }
+                } catch (error) {
+                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
                 }
             });
         }
@@ -521,10 +527,10 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             worker.on('message', (content) => {
                 const type = content?.type;
                 const payload = content?.payload?.trim();
-                if (type === "DATA" && payload && !entries.has(payload)) {
+                const entry = JSON.parse(payload);
+                if (type === "DATA" && !entries.has(entry.key)) {
                     fs.appendFileSync(PATH_RESULTS, payload + '\n');
-                    entries.add(payload);
-
+                    entries.set(entry.key, payload);
                     workers.instance.forEach(w => {
                         if (w !== worker) {
                             w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
