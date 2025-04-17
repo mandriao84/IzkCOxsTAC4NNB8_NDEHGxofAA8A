@@ -5,6 +5,7 @@ const { LRUCache } = require('lru-cache');
 const path = require('path');
 const { all } = require('mathjs');
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
+const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -167,7 +168,7 @@ const getHandScore = (hand) => {
 
     CACHE.set(cacheScoreKey, score);
 
-    return score;
+    return { key: cacheScoreKey, score};
 }
 
 
@@ -195,6 +196,22 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
     const deck = Object.values(DECK);
     const results = getAllCombinationsPossible(deck, handCardsNumber);
     return results;
+}
+
+const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
+    if (!fs.existsSync(path.dirname(PATH_SCORES))) {
+        fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
+    }
+
+    if (fs.existsSync(PATH_SCORES)) {
+        const hands = getAllHandsPossible(handCardsNumber);
+        for (let i = 0; i < hands.length; i++) {
+            const hand = hands[i];
+            const { key, score } = getHandScore(hand);
+            const payload = JSON.stringify({ key, score });
+            fs.appendFileSync(PATH_SCORES, payload + '\n');
+        }
+    }
 }
 
 
@@ -232,8 +249,6 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
         let score = Infinity;
         let index = null;
 
-        // console.log(discardCombinations)
-
         for (const discardIndices of discardCombinations) {
             let scorePerDiscardIndices = 0;
             
@@ -250,7 +265,6 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
-                        console.log('CACHE_HIT_RM1')
                         const entry = JSON.parse(CACHE.get(cacheResultKey));
                         scorePerDiscardIndices += entry.score;
                     } else {
@@ -354,6 +368,23 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 const getEnumDataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
         const entries = new Map();
+        const scores = new Map();
+
+        if (fs.existsSync(PATH_SCORES)) {
+            const content = fs.readFileSync(PATH_SCORES, 'utf8');
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                try {
+                    const lineTrimmed = line.trim();
+                    const entry = JSON.parse(lineTrimmed);
+                    if (entry.key) {
+                        scores.set(entry.key, lineTrimmed);
+                    }
+                } catch (error) {
+                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
+                }
+            });
+        }
         
         if (fs.existsSync(PATH_RESULTS)) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
@@ -554,25 +585,28 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 const getCacheLoaded = () => {
     CACHE.clear();
 
-    if (!fs.existsSync(path.dirname(PATH_RESULTS))) {
-        fs.mkdirSync(path.dirname(PATH_RESULTS), { recursive: true });
-    }
-
-    if (fs.existsSync(PATH_RESULTS)) {
-        const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-        const lines = content.split('\n');
-        lines.forEach(line => {
-            const lineTrimmed = line.trim();
-            if (lineTrimmed) {
-                try {
-                    const entry = JSON.parse(lineTrimmed);
-                    CACHE.set(entry.key, lineTrimmed);
-                } catch (error) {
-                    console.log(`getDataComputed.MainThread.Parsing.Error: ${line}`);
+    const paths = [PATH_SCORES, PATH_RESULTS];
+    paths.forEach(p => {
+        if (!fs.existsSync(path.dirname(p))) {
+            fs.mkdirSync(path.dirname(p), { recursive: true });
+        }
+    
+        if (fs.existsSync(p)) {
+            const content = fs.readFileSync(p, 'utf8');
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                const lineTrimmed = line.trim();
+                if (lineTrimmed) {
+                    try {
+                        const entry = JSON.parse(lineTrimmed);
+                        CACHE.set(entry.key, lineTrimmed);
+                    } catch (error) {
+                        console.log(`getCacheLoaded.${p}.Parsing.Error: ${line}`);
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
+    })
 }
 
 const getTimeElapsed = (timeStart, signal, error) => {
@@ -611,14 +645,11 @@ const getCacheDuplicated = () => {
     // await getDataComputed(roundNumber, simulationNumber);
     // getTimeElapsed(timeStart, 'END', null);
 
-    await getEnumDataComputed(1);
+    // await getEnumDataComputed(1);
 
-    // const a = ["5h", "6c", "7c", "8h", "9d"]
+    const a = ["5h", "6c", "7c", "8h", "9d"]
     // const t = ["4s", "4c", "8s", "8c", "Qs"]
-    // getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    // getDiscardsDetailsForGivenHand("ENUM", a, 2);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
-
-    // const deck = Object.values(DECK);
-    // const allHands = getAllCombinationsPossible(deck, 5);
-    // console.log(allHands);
+    getAllHandsPossibleScoreSaved()
 })();
