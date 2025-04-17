@@ -209,6 +209,11 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
     const content = fs.readFileSync(PATH_SCORES, 'utf8');
     const lines = content.split('\n');
     lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            console.log(`getAllHandsPossibleScoreSaved.LineEmpty`);
+            return;
+        }
         try {
             const entry = JSON.parse(line.trim());
             if (entry.key) { data.add(entry.key); }
