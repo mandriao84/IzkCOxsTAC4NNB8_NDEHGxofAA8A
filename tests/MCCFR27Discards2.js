@@ -124,7 +124,8 @@ const getHandScore = (hand) => {
     const cacheScoreKey = `${key}:S`;
     if (CACHE.has(cacheScoreKey)) {
         const score = CACHE.get(cacheScoreKey);
-        return score;
+        const scoreAsJson = JSON.parse(score);
+        return scoreAsJson;
     }
 
     cardsValue = cardsValue.sort((a, b) => b - a);
@@ -165,9 +166,9 @@ const getHandScore = (hand) => {
         score = getHandScoreBelowPair(cardsValue);
     }
 
-    CACHE.set(cacheScoreKey, score);
-
-    return { key: cacheScoreKey, score };
+    const result = { key, score };
+    CACHE.set(cacheScoreKey, JSON.stringify(result));
+    return result;
 }
 
 
@@ -222,7 +223,7 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     if (type === "MCS") {
-        const result = getDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
+        const result = getMCSDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
         console.log(type)
         console.log(result)
         return result;
@@ -648,9 +649,9 @@ const getCacheDuplicated = () => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
 
-    // const a = ["5h", "6c", "7c", "8h", "9d"]
-    // getDiscardsDetailsForGivenHand("ENUM", a, 2);
-    // getDiscardsDetailsForGivenHand("MCS", a, 1);
-    getAllHandsPossibleScoreSaved()
+    const a = ["5h", "6c", "7c", "8h", "9d"]
+    getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    getDiscardsDetailsForGivenHand("MCS", a, 1);
+    // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
