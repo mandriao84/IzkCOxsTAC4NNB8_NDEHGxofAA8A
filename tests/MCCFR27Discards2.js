@@ -202,40 +202,36 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
 }
 
 const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
-    const dir = path.dirname(PATH_SCORES);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
+    fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
+    fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
 
     const data = new Set();
-    if (fs.existsSync(PATH_SCORES)) {
-        const content = fs.readFileSync(PATH_SCORES, 'utf8');
-        const lines = content.split('\n');
-        lines.forEach(line => {
-            try {
-                const entry = JSON.parse(line.trim());
-                if (entry.key) { data.add(entry.key); }
-            } catch (error) {
-                console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
-            }
-        });
-
-        const hands = getAllHandsPossible(handCardsNumber);
-        const file = fs.openSync(PATH_SCORES, 'a');
-
-        for (let i = 0; i < hands.length; i++) {
-            const hand = hands[i];
-            const { key } = getHandKey(hand);
-            if (!data.has(key)) {
-                const { score } = getHandScore(hand);
-                const value = JSON.stringify({ key, score });
-                fs.appendFileSync(PATH_SCORES, value + '\n');
-                data.add(key);
-            }
+    const content = fs.readFileSync(PATH_SCORES, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach(line => {
+        try {
+            const entry = JSON.parse(line.trim());
+            if (entry.key) { data.add(entry.key); }
+        } catch (error) {
+            console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
         }
+    });
 
-        fs.closeSync(file);
+    const hands = getAllHandsPossible(handCardsNumber);
+    const file = fs.openSync(PATH_SCORES, 'a');
+
+    for (let i = 0; i < hands.length; i++) {
+        const hand = hands[i];
+        const { key } = getHandKey(hand);
+        if (!data.has(key)) {
+            const { score } = getHandScore(hand);
+            const value = JSON.stringify({ key, score });
+            fs.appendFileSync(PATH_SCORES, value + '\n');
+            data.add(key);
+        }
     }
+
+    fs.closeSync(file);
 }
 
 
@@ -656,9 +652,9 @@ const getCacheDuplicated = () => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
 
-    const a = ["5h", "6c", "7c", "8h", "9d"]
-    getDiscardsDetailsForGivenHand("ENUM", a, 1);
-    getDiscardsDetailsForGivenHand("MCS", a, 1);
-    // getAllHandsPossibleScoreSaved()
+    // const a = ["5h", "6c", "7c", "8h", "9d"]
+    // getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    // getDiscardsDetailsForGivenHand("MCS", a, 1);
+    getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
