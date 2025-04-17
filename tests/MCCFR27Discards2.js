@@ -370,23 +370,6 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 const getEnumDataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
         const entries = new Map();
-        const scores = new Map();
-
-        if (fs.existsSync(PATH_SCORES)) {
-            const content = fs.readFileSync(PATH_SCORES, 'utf8');
-            const lines = content.split('\n');
-            lines.forEach(line => {
-                try {
-                    const lineTrimmed = line.trim();
-                    const entry = JSON.parse(lineTrimmed);
-                    if (entry.key) {
-                        scores.set(entry.key, lineTrimmed);
-                    }
-                } catch (error) {
-                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${line}`);
-                }
-            });
-        }
         
         if (fs.existsSync(PATH_RESULTS)) {
             const content = fs.readFileSync(PATH_RESULTS, 'utf8');
