@@ -531,6 +531,11 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         process.exit(0);
     }
 };
+
+
+
+
+
 const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
     getCacheLoaded();
     const allHandsRaw = getAllHandsPossible();
@@ -545,6 +550,7 @@ const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             result.key = roundKey;
+            console.log(result)
             const resultAsString = JSON.stringify(result);
             CACHE.set(key, resultAsString);
             fs.appendFileSync(PATH_RESULTS, resultAsString + '\n');
@@ -719,11 +725,11 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    // getSingleThreadEnumDataComputed(1);
+    getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
-    const b = ["2h", "3h", "5h", "4h", "7c"]
-    getDiscardsDetailsForGivenHand("ENUM", b, 1);
+    // const b = ["2h", "3h", "5h", "4h", "7c"]
+    // getDiscardsDetailsForGivenHand("ENUM", b, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
