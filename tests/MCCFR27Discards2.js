@@ -690,7 +690,7 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDataComputed(1);
+    await getEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
     // const b = ["2h", "3h", "5h", "6h", "Kc"]
