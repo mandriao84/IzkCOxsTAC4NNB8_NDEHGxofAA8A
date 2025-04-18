@@ -412,7 +412,8 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     }
 
     results.score = scoreFinal;
-    results.cards = (indexFinal || []).map(idx => hand[idx]);
+    // results.cards = (indexFinal || []).map(idx => hand[idx]);
+    results.cards = (indexFinal || []).map(idx => hand[idx].slice(0, -1));
     return results;
 };
 
