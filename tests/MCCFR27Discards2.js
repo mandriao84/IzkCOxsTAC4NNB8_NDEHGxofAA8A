@@ -216,7 +216,9 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
         }
         try {
             const entry = JSON.parse(trimmed);
-            if (entry.key) { data.add(entry.key); }
+            if (entry.key) { 
+                data.add(entry.key); 
+            }
         } catch (error) {
             console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
         }
@@ -228,11 +230,12 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
     for (let i = 0; i < hands.length; i++) {
         const hand = hands[i];
         const { key } = getHandKey(hand);
-        if (!data.has(key)) {
+        const scoreKey = `${key}:S`;
+        if (!data.has(scoreKey)) {
             const { score } = getHandScore(hand);
-            const value = JSON.stringify({ key, score });
+            const value = JSON.stringify({ key: scoreKey, score });
             fs.appendFileSync(PATH_SCORES, value + '\n');
-            data.add(key);
+            data.add(scoreKey);
         }
     }
 
@@ -278,11 +281,13 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
     const deckLeft = deck.filter(card => !hand.includes(card));
     if (type === "MCS") {
         const result = getMCSDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
+        result.key = key;
         console.log(type)
         console.log(result)
         return result;
     } else if (type === "ENUM") {
         const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
+        result.key = key;
         console.log(type)
         console.log(result)
         return result;
@@ -526,6 +531,28 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         process.exit(0);
     }
 };
+const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
+    getCacheLoaded();
+    const allHandsRaw = getAllHandsPossible();
+    const file = fs.openSync(PATH_RESULTS, 'a');
+
+    for (let i = 0; i < allHandsRaw.length; i++) {
+        const hand = allHandsRaw[i];
+        const { key } = getHandKey(hand);
+        const roundKey = `${key}:R${roundNumber}`;
+        if (!CACHE.has(roundKey)) {
+            const deck = Object.values(DECK);
+            const deckLeft = deck.filter(card => !hand.includes(card));
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
+            result.key = roundKey;
+            const resultAsString = JSON.stringify(result);
+            CACHE.set(key, resultAsString);
+            fs.appendFileSync(PATH_RESULTS, resultAsString + '\n');
+        }
+    }
+
+    fs.closeSync(file);
+};
 
 
 
@@ -691,11 +718,12 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    await getEnumDataComputed(1);
+    // await getEnumDataComputed(1);
+    // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
-    // const b = ["2h", "3h", "5h", "6h", "Kc"]
-    // getDiscardsDetailsForGivenHand("ENUM", b, 1);
+    const b = ["2h", "3h", "5h", "4h", "7c"]
+    getDiscardsDetailsForGivenHand("ENUM", b, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
