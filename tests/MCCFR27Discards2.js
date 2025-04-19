@@ -128,6 +128,7 @@ const getHandScore = (hand) => {
     if (CACHE.has(cacheScoreKey)) {
         const score = CACHE.get(cacheScoreKey);
         const scoreAsJson = JSON.parse(score);
+        // console.log(scoreAsJson)
         return scoreAsJson;
     }
 
@@ -173,6 +174,57 @@ const getHandScore = (hand) => {
     CACHE.set(cacheScoreKey, JSON.stringify(result));
     return result;
 }
+
+
+
+
+const getHandExpectedValue = (hand) => {
+    const deck = Object.values(DECK);
+    getArrayShuffled(deck);
+    const deckLeft = deck.filter(card => !hand.includes(card));
+    const handsOpp = getAllCombinationsPossible(deckLeft, handCardsNumber = 5);
+    const { score } = getHandScore(hand);
+
+    let wins = 0, ties = 0, total = 0;
+    for (const handOpp of handsOpp) {
+        total++;
+        const { score: scoreOpp } = getHandScore(handOpp);
+        if (score < scoreOpp) wins++;
+        else if (score === scoreOpp) ties++;
+    }
+  
+    const result = ((wins + 0.5 * ties) / total).safe("ROUND", 3);
+    console.log(result);
+    return result;
+}
+const getDiscardsExpectedValue = (hand, discards) => {
+    const deck = Object.values(DECK);
+    getArrayShuffled(deck);
+    const deckLeft = deck.filter(card => !hand.includes(card));
+    const cardsKept = hand.filter(card => !discards.includes(card));
+    const allCardsReceived = getAllCombinationsPossible(deckLeft, discards.length);
+
+    let sumEV = 0, count = 0;
+    for (const cardsReceived of allCardsReceived) {
+        const handNew = [...cardsKept,...cardsReceived];
+        sumEV += getHandExpectedValue(handNew);
+        count++;
+    }
+
+    const result = sumEV / count;
+    console.log(result);
+    return result;
+}
+function evDiscardCall(myHand, keepIdx, Pot) {
+    const ed = getDiscardsExpectedValue(myHand, keepIdx);
+    return ed*(Pot+1) - 1;
+}
+function shouldPlay(hand, pot = 3, bet = 1) {
+    const evHand = getHandExpectedValue(hand);
+    const evPot = bet / (pot + bet);    // = 1/(3+1) = 0.25
+    return evHand >= evPot;
+  }
+
 
 
 
@@ -233,7 +285,8 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
         const scoreKey = `${key}:S`;
         if (!data.has(scoreKey)) {
             const { score } = getHandScore(hand);
-            const value = JSON.stringify({ key: scoreKey, score });
+            const ev = getHandExpectedValue(hand);
+            const value = JSON.stringify({ key: scoreKey, score, ev });
             fs.appendFileSync(PATH_SCORES, value + '\n');
             data.add(scoreKey);
         }
@@ -707,11 +760,16 @@ const getCacheDuplicated = () => {
     return result;
 }
 
-
-
+// pgrep -fl "caffeinate|MCCFR27Discards2.js"
+// sudo pkill -9 -f "MCCFR27Discards2.js"
+// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
 (async () => {
+    // getCacheLoaded();
+    // getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'])
+
+    // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
     // const roundNumber = 1;
     // const simulationNumber = 1000;
@@ -725,12 +783,12 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    getSingleThreadEnumDataComputed(1);
+    // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
     // const b = ["2h", "3h", "5h", "4h", "7c"]
     // getDiscardsDetailsForGivenHand("ENUM", b, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
-    // getAllHandsPossibleScoreSaved()
+    getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
