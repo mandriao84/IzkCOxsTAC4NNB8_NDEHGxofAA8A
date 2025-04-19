@@ -810,6 +810,7 @@ const getCacheDuplicated = () => {
 
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
 // sudo pkill -9 -f "MCCFR27Discards2.js"
+// sudo pmset -a sleep 0 displaysleep 0 disksleep 0 powernap 0 standby 0 autopoweroff 0 hibernatemode 0
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
