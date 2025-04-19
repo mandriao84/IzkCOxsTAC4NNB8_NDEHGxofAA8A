@@ -317,45 +317,30 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
     fs.closeSync(file);
 }
 const getAllHandsPossibleEvSaved = (handCardsNumber = 5) => {
-    fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
-    fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
-
-    const data = new Set();
+    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsPossibleScoreSaved())
     const content = fs.readFileSync(PATH_SCORES, 'utf8');
     const lines = content.split('\n');
+    const linesNew = [];
     lines.forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) {
-            console.log(`getAllHandsPossibleScoreSaved.LineEmpty`);
+            console.log(`getAllHandsPossibleEvSaved.LineEmpty`);
             return;
         }
         try {
             const entry = JSON.parse(trimmed);
-            if (entry.key) { 
-                data.add(entry.key); 
+            if (entry.key) {
+                const hand = getHandFromKey(entry.key);
+                const ev = getHandExpectedValue(hand);
+                entry.ev = ev;
+                const lineNew = JSON.stringify(entry);
+                linesNew.push(lineNew);
             }
         } catch (error) {
-            console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
+            console.log(`getAllHandsPossibleEvSaved.Error: ${error}`)
         }
     });
-
-    const hands = getAllHandsPossible(handCardsNumber);
-    const file = fs.openSync(PATH_SCORES, 'a');
-
-    for (let i = 0; i < hands.length; i++) {
-        const hand = hands[i];
-        const { key } = getHandKey(hand);
-        const scoreKey = `${key}:S`;
-        if (!data.has(scoreKey)) {
-            const { score } = getHandScore(hand);
-            // const ev = getHandExpectedValue(hand);
-            const value = JSON.stringify({ key: scoreKey, score });
-            fs.appendFileSync(PATH_SCORES, value + '\n');
-            data.add(scoreKey);
-        }
-    }
-
-    fs.closeSync(file);
+    fs.writeFileSync(PATH_SCORES, linesNew.join('\n'));
 }
 
 
