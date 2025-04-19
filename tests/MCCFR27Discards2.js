@@ -95,6 +95,30 @@ const getHandKey = (hand) => {
     return { key, sort: handCopy, cardsValue, cardsSuit };
 }
 
+const getHandFromKey = (key) => {
+    const [ranksPart, suitCount] = key.split(':');
+    const suits = ['c', 'd', 'h', 's'];
+    getArrayShuffled(suits);
+    const suitsPool = suits.slice(0, parseInt(suitCount));
+    
+    const ranks = {};
+    const suitIndices = {};
+    
+    return ranksPart.split('|').map(rankValue => {
+        if (!ranks[rankValue]) {
+            ranks[rankValue] = 0;
+            suitIndices[rankValue] = 0;
+        }
+        
+        const suitIndex = ranks[rankValue] % suitsPool.length;
+        const suit = suitsPool[suitIndex];
+        ranks[rankValue]++;
+        
+        const result =  rankValue + (suitIndex === 0 ? suit : suitsPool[suitIndices[rankValue]++ % suitsPool.length]);
+        return result;
+    });
+}
+
 const getHandScore = (hand) => {
     function getHandScoreBelowPair(cardsValueDesc, cardsValueMax = [6, 4, 3, 2, 1], cardsValueMin = [13, 12, 11, 10, 8]) {
         const multiplier = cardsLength + 1
