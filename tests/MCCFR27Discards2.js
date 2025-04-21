@@ -352,6 +352,25 @@ const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
 }
 const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
     // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
+    const data = new Set();
+    const content = fs.readFileSync(PATH_SCORES2, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            console.log(`getAllHandsScoreSaved.LineEmpty`);
+            return;
+        }
+        try {
+            const entry = JSON.parse(trimmed);
+            if (entry.key) { 
+                data.add(entry.key); 
+            }
+        } catch (error) {
+            console.log(`getAllHandsScoreSaved.Error: ${error}`)
+        }
+    });
+
     const hands = getAllHandsPossible(handCardsNumber);
     const file = fs.openSync(PATH_SCORES2, 'a');
 
@@ -361,7 +380,7 @@ const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
         const scoreKey = `${key}:S`;
         const entry = CACHE.get(scoreKey);
         const entryAsJson = JSON.parse(entry);
-        if (!entryAsJson.ev) {
+        if (!data.has(scoreKey) && !entryAsJson.ev) {
             const ev = getHandExpectedValue(hand);
             entryAsJson.ev = ev;
             const value = JSON.stringify(entryAsJson);
@@ -940,8 +959,8 @@ const getCacheDuplicated = () => {
 
 (async () => {
     getCacheLoaded();
-    // getAllHandsExpectedValueSaved();
-    await getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'], getCacheData);
+    getAllHandsExpectedValueSaved();
+    // await getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'], getCacheData);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
