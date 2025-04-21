@@ -599,6 +599,7 @@ const getEnumDiscardsDetails = async (hand, deckLeft, roundNumber, getCacheData)
 
 const getEnumDataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
+        requestsList.clear();
         getCacheLoaded();
         // const entries = new Map();
         
@@ -705,8 +706,6 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         //     }
         // });
 
-        const requestsList = new Map();
-
         parentPort.on('message', (message) => {
             if (message.type === 'CACHE_GET_RESPONSE') {
                 const { value, requestId } = message;
@@ -776,6 +775,7 @@ const getSingleThreadEnumDataComputed = async (roundNumber = 1) => {
 
 const getMCSDataComputed = async (roundNumber, simulationNumber) => {
     if (isMainThread) {
+        requestsList.clear();
         const cpuCount = os.cpus().length;
         const workers = {
             exit: [],
@@ -903,6 +903,7 @@ const getCacheLoaded = () => {
         }
     })
 }
+const requestsList = new Map();
 const getCacheData = async (key) => {
     if (parentPort) {
         const requestId = randomUUID();
