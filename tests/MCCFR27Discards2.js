@@ -179,7 +179,7 @@ const getHandScore = async (hand, getCacheData) => {
     const cacheScoreKey = `${key}:S`;
     const cacheScore = typeof getCacheData === 'function' ? await getCacheData(cacheScoreKey) : null;
     if (cacheScore?.key === cacheScoreKey) {
-        console.log(cacheScore)
+        // console.log(cacheScore)
         return cacheScore;
     }
     // if (CACHE.has(cacheScoreKey)) {
@@ -350,7 +350,7 @@ const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
 
     fs.closeSync(file);
 }
-const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
+const getAllHandsExpectedValueSaved = async (handCardsNumber = 5, getCacheData) => {
     // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
     const data = new Set();
     const content = fs.readFileSync(PATH_SCORES2, 'utf8');
@@ -381,7 +381,7 @@ const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
         const entry = CACHE.get(scoreKey);
         const entryAsJson = JSON.parse(entry);
         if (!data.has(scoreKey) && !entryAsJson.ev) {
-            const ev = getHandExpectedValue(hand);
+            const ev = await getHandExpectedValue(hand, getCacheData);
             entryAsJson.ev = ev;
             const value = JSON.stringify(entryAsJson);
             fs.appendFileSync(PATH_SCORES2, value + '\n');
@@ -959,7 +959,7 @@ const getCacheDuplicated = () => {
 
 (async () => {
     getCacheLoaded();
-    getAllHandsExpectedValueSaved();
+    await getAllHandsExpectedValueSaved(5, getCacheData);
     // await getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'], getCacheData);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
