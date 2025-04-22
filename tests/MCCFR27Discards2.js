@@ -200,43 +200,43 @@ const getHandScore = (hand) => {
 
 
 
-const getHandExpectedValue = (hand) => {
+const getHandExpectedValue = async (hand, getCacheData) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const handsOpp = getAllCombinationsPossible(deckLeft, handCardsNumber = 5);
-    const { score } = getHandScore(hand);
+    const { score } = await getHandScore(hand, getCacheData);
 
-    let wins = 0, ties = 0, total = 0;
+    let wins = 0, ties = 0, count = 0;
     for (const handOpp of handsOpp) {
-        total++;
-        const { score: scoreOpp } = getHandScore(handOpp);
+        count++;
+        const { score: scoreOpp } = await getHandScore(handOpp, getCacheData);
         if (score < scoreOpp) wins++;
         else if (score === scoreOpp) ties++;
     }
   
-    const result = ((wins + 0.5 * ties) / total).safe("ROUND", 5);
+    const result = ((wins + 0.5 * ties) / count).safe("ROUND", 5);
     return result;
 }
-const getDiscardsExpectedValue = (hand, discards) => {
+const getHandWithDiscardsExpectedValue = (hand, discards) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const cardsKept = hand.filter(card => !discards.includes(card));
     const allCardsReceived = getAllCombinationsPossible(deckLeft, discards.length);
 
-    let sumEV = 0, count = 0;
+    let evs = 0, count = 0;
     for (const cardsReceived of allCardsReceived) {
         const handNew = [...cardsKept,...cardsReceived];
-        sumEV += getHandExpectedValue(handNew);
+        evs += getHandExpectedValue(handNew);
         count++;
     }
 
-    const result = sumEV / count;
+    const result = (evs / count).safe("ROUND", 5);
     return result;
 }
 function evDiscardCall(myHand, keepIdx, Pot) {
-    const ed = getDiscardsExpectedValue(myHand, keepIdx);
+    const ed = getHandWithDiscardsExpectedValue(myHand, keepIdx);
     return ed*(Pot+1) - 1;
 }
 function shouldPlay(hand, pot = 3, bet = 1) {
