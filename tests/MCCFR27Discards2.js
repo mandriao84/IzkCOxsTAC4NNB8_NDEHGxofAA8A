@@ -622,7 +622,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                 if (!CACHE.has(key)) {
                     CACHE.set(entry.key, value);
                 }
-                parentPort.postMessage({ type: 'CACHE_POST', key: "key", value: "value" });
+                parentPort.postMessage({ type: 'TEST', key: "TEST", value: "TEST" });
             }
         });
 
