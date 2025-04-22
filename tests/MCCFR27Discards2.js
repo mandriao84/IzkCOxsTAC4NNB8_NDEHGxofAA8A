@@ -485,9 +485,9 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
                 const { key } = getHandKey([...handNew]);
-                const cacheResultKey = `${key}:R${roundNumber - 1}`;
+                const cacheResultKey = `${key}:R${roundNumber}`;
 
-                if (roundNumber === 1) {
+                if (roundNumber <= 1) {
                     const { score } = getHandScore(handNew);
                     scorePerDiscardIndices += score;
                 } else if (CACHE.has(cacheResultKey)) {
@@ -495,7 +495,6 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                     scorePerDiscardIndices += entry.score;
                 } else {
                     const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
-                    CACHE.set(cacheResultKey, JSON.stringify(roundNext));
                     scorePerDiscardIndices += roundNext.score;
                 }
             }
@@ -601,8 +600,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         getCacheLoaded();
 
         parentPort.on('message', (message) => {
-            const type = message?.type;
-            const payload = message?.payload;
+            const { type, payload } = message;
 
             if (type === 'CACHE_UPDATE') {
                 try {
