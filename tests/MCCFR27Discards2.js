@@ -340,7 +340,7 @@ const getAllHandsScoreSaved = (handCardsNumber = 5) => {
     fs.closeSync(file);
 }
 const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
-    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
+    // MUST ALWAYS BE CALLED AFTER (getCacheLoadedFromNDJSON() > getAllHandsScoreSaved())
     fs.mkdirSync(path.dirname(PATH_SCORES2), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES2, 'a'));
 
@@ -383,7 +383,7 @@ const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
     fs.closeSync(file);
 }
 const getAllHandsWithDiscardsExpectedValueSaved = (handCardsNumber = 5) => {
-    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved()> getAllHandsExpectedValueSaved())
+    // MUST ALWAYS BE CALLED AFTER (getCacheLoadedFromNDJSON() > getAllHandsScoreSaved()> getAllHandsExpectedValueSaved())
     const content = fs.readFileSync(PATH_SCORES, 'utf8');
     const lines = content.split('\n');
     const linesNew = [];
@@ -642,7 +642,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoaded();
+        getCacheLoadedFromNDJSON();
 
         parentPort.on('message', (message) => {
             const { type, key, value } = message;
@@ -685,7 +685,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 
 
 const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
-    getCacheLoaded();
+    getCacheLoadedFromNDJSON();
     const allHandsRaw = getAllHandsPossible();
     const file = fs.openSync(PATH_RESULTS, 'a');
 
@@ -772,7 +772,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoaded();
+        getCacheLoadedFromNDJSON();
 
         parentPort.on('message', (message) => {
             const type = message?.type;
@@ -816,26 +816,21 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
-const getCacheLoaded = () => {
+const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
     CACHE.clear();
-
-    const paths = [PATH_SCORES, PATH_RESULTS];
-    paths.forEach(p => {    
-        if (fs.existsSync(p)) {
-            const content = fs.readFileSync(p, 'utf8');
-            const lines = content.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const trimmed = line.trim();
-                if (!trimmed) {
-                    console.log(`getCacheLoaded.LineEmpty`);
-                    return;
-                }
-                const entry = JSON.parse(trimmed);
+    for (let i = 0; i < paths.length; i++) {
+        const path = paths[i];
+        const content = fs.readFileSync(path, 'utf8');
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            const entry = trimmed ? JSON.parse(trimmed) : null;
+            if (entry?.key) {
                 CACHE.set(entry.key, trimmed);
             }
         }
-    })
+    }
 }
 
 const getTimeElapsed = (timeStart, signal, error) => {
@@ -859,7 +854,7 @@ const getCacheDuplicated = () => {
 
 (async () => {
     getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
-    // getCacheLoaded();
+    // getCacheLoadedFromNDJSON();
     // getAllHandsPossibleEvSaved();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
