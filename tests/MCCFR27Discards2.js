@@ -414,8 +414,8 @@ const getAllHandsWithDiscardsExpectedValueSaved = (handCardsNumber = 5) => {
 
 
 const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 10000) => {
-    if (fs.existsSync(PATH_RESULTS)) {
-        const data = fs.readFileSync(PATH_RESULTS, 'utf8');
+    if (fs.existsSync(PATH_STRATEGIES)) {
+        const data = fs.readFileSync(PATH_STRATEGIES, 'utf8');
         const lines = data.split('\n');
         lines.forEach(line => {
             try {
@@ -619,7 +619,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                 workerData: {
                     handsDetails: workerHands,
                     roundNumber,
-                    PATH_RESULTS
+                    PATH_STRATEGIES
                 }
             });
             workers.instance.push(worker);
@@ -627,7 +627,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             worker.on('message', (message) => {
                 const { type, key, value, } = message;
                 if (type === "CACHE_POST") {
-                    fs.appendFileSync(PATH_RESULTS, value + '\n');
+                    fs.appendFileSync(PATH_STRATEGIES, value + '\n');
                     for (let j = 0; j < workers.instance.length; j++) {
                         const instance = workers.instance[j];
                         if (instance !== worker) {
@@ -687,7 +687,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
     getCacheLoadedFromNDJSON();
     const allHandsRaw = getAllHandsPossible();
-    const file = fs.openSync(PATH_RESULTS, 'a');
+    const file = fs.openSync(PATH_STRATEGIES, 'a');
 
     for (let i = 0; i < allHandsRaw.length; i++) {
         const hand = allHandsRaw[i];
@@ -701,7 +701,7 @@ const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
             console.log(result)
             const resultAsString = JSON.stringify(result);
             CACHE.set(key, resultAsString);
-            fs.appendFileSync(PATH_RESULTS, resultAsString + '\n');
+            fs.appendFileSync(PATH_STRATEGIES, resultAsString + '\n');
         }
     }
 
@@ -720,8 +720,8 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
         };
         const entries = new Map();
         
-        if (fs.existsSync(PATH_RESULTS)) {
-            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
+        if (fs.existsSync(PATH_STRATEGIES)) {
+            const content = fs.readFileSync(PATH_STRATEGIES, 'utf8');
             const lines = content.split('\n');
             lines.forEach(line => {
                 try {
@@ -747,7 +747,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
                     end: Math.floor((i + 1) * simulationNumber / cpuCount),
                     roundNumber,
                     simulationNumber,
-                    PATH_RESULTS
+                    PATH_STRATEGIES
                 }
             });
             workers.instance.push(worker);
@@ -757,7 +757,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
                 const payload = content?.payload?.trim();
                 const entry = JSON.parse(payload);
                 if (type === "DATA" && !entries.has(entry.key)) {
-                    fs.appendFileSync(PATH_RESULTS, payload + '\n');
+                    fs.appendFileSync(PATH_STRATEGIES, payload + '\n');
                     entries.set(entry.key, payload);
                     workers.instance.forEach(w => {
                         if (w !== worker) {
