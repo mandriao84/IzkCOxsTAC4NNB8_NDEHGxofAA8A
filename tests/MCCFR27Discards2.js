@@ -594,15 +594,17 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 
 const getEnumDataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
+        const entries = getNDJSONRead(PATH_STRATEGIES);
         const allHandsRaw = getAllHandsPossible();
         const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
             const { key } = getHandKey(hand);
             const entryKey = `${key}:R${roundNumber}`;
-            if (key && !map.has(entryKey)) {
+            if (key && !map.has(entryKey) && !entries.has(entryKey)) {
                 map.set(entryKey, { key: entryKey, hand });
             }
             return map;
         }, new Map());
+        console.log(`getEnumDataComputed.EntriesMissing: ${allHandsAsMap.size}`);
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
@@ -625,9 +627,9 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 
             worker.on('message', (message) => {
                 const { type, key, value } = message;
-                if (type === "CACHE_POST" && !allHandsAsMap.has(key)) {
+                if (type === "CACHE_POST" && !entries.has(key)) {
                     fs.appendFileSync(PATH_STRATEGIES, value + '\n');
-                    allHandsAsMap.set(key, { hand: "NEW" });
+                    entries.set(key, { hand: "NEW" });
                     for (let j = 0; j < workers.instance.length; j++) {
                         const instance = workers.instance[j];
                         if (instance !== worker) {
