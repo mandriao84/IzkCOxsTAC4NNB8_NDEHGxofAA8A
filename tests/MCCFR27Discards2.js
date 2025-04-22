@@ -199,17 +199,17 @@ const getHandScore = (hand) => {
 
 
 
-const getHandExpectedValue = (hand, getCacheData) => {
+const getHandExpectedValue = (hand) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const handsOpp = getAllCombinationsPossible(deckLeft, handCardsNumber = 5);
-    const { score } = getHandScore(hand, getCacheData);
+    const { score } = getHandScore(hand);
 
     let wins = 0, ties = 0, count = 0;
     for (const handOpp of handsOpp) {
         count++;
-        const { score: scoreOpp } = getHandScore(handOpp, getCacheData);
+        const { score: scoreOpp } = getHandScore(handOpp);
         if (score < scoreOpp) wins++;
         else if (score === scoreOpp) ties++;
     }
@@ -270,7 +270,7 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
     const results = getAllCombinationsPossible(deck, handCardsNumber);
     return results;
 }
-const getAllHandsScoreSaved = async (handCardsNumber = 5) => {
+const getAllHandsScoreSaved = (handCardsNumber = 5) => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
 
@@ -301,7 +301,7 @@ const getAllHandsScoreSaved = async (handCardsNumber = 5) => {
         const { key } = getHandKey(hand);
         const scoreKey = `${key}:S`;
         if (!data.has(scoreKey)) {
-            const { score } = await getHandScore(hand, getCacheData);
+            const { score } = getHandScore(hand);
             const value = JSON.stringify({ key: scoreKey, score });
             fs.appendFileSync(PATH_SCORES, value + '\n');
             data.add(scoreKey);
@@ -344,7 +344,7 @@ const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
         const entry = CACHE.get(scoreKey);
         const entryAsJson = JSON.parse(entry);
         if (!data.has(scoreKey) && !entryAsJson.ev) {
-            const ev = getHandExpectedValue(hand, getCacheData);
+            const ev = getHandExpectedValue(hand);
             entryAsJson.ev = ev;
             const value = JSON.stringify(entryAsJson);
             fs.appendFileSync(PATH_SCORES2, value + '\n');
@@ -631,7 +631,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             const { hand, key } = handsDetails[i];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber, getCacheData);
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             result.key = key;
             const value = JSON.stringify(result);
             CACHE.set(key, resultAsString);
