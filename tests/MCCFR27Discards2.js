@@ -595,18 +595,17 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             });
             workers.instance.push(worker);
 
-            worker.on('message', (content) => {
-                const type = content?.type;
-                const payload = content?.payload?.trim();
-                const entry = JSON.parse(payload);
-                if (type === "CACHE_POST" && !entries.has(entry.key)) {
-                    fs.appendFileSync(PATH_RESULTS, payload + '\n');
-                    entries.set(entry.key, payload);
-                    workers.instance.forEach(w => {
-                        if (w !== worker) {
-                            w.postMessage({ type: 'CACHE_UPDATE', payload: payload });
+            worker.on('message', (message) => {
+                const { type, key, value } = message;
+                console.log(type, key, value);
+                if (type === "CACHE_POST") {
+                    fs.appendFileSync(PATH_RESULTS, value + '\n');
+                    for (let i = 0; i < workers.instance.length; i++) {
+                        const instance = workers.instance[i];
+                        if (instance !== worker) {
+                            instance.postMessage({ type: 'CACHE_POST', key: key, value: value });
                         }
-                    });
+                    }
                 }
             });
             
@@ -618,29 +617,25 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         getCacheLoaded();
 
         parentPort.on('message', (message) => {
-            const { type, payload } = message;
-
-            if (type === 'CACHE_UPDATE') {
-                try {
-                    const entry = JSON.parse(payload);
-                    if (!CACHE.has(entry.key)) {
-                        CACHE.set(entry.key, payload);
-                    }
-                } catch (error) {
-                    console.log(`Process.Message.FromMainThreadToWorkerThread.Parsing.Error: ${payload}`);
+            const { type, key, value } = message;
+            if (type === 'CACHE_POST') {
+                if (!CACHE.has(key)) {
+                    CACHE.set(entry.key, value);
                 }
+                parentPort.postMessage({ type: 'CACHE_POST', key: "key", value: "value" });
             }
         });
 
         const { handsDetails, roundNumber } = workerData;
-        for (const { hand, key } of handsDetails) {
+        for (let i = 0; i < handsDetails.length; i++) {
+            const { hand, key } = handsDetails[i];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber, getCacheData);
             result.key = key;
-            const resultAsString = JSON.stringify(result);
+            const value = JSON.stringify(result);
             CACHE.set(key, resultAsString);
-            parentPort.postMessage({ type: 'CACHE_POST', payload: resultAsString });
+            parentPort.postMessage({ type: 'CACHE_POST', key: key, value: value });
         }
         
         process.exit(0);
