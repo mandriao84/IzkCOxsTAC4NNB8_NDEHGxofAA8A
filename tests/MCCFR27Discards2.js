@@ -15,14 +15,12 @@ const DECK = {
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
 const CACHE = new LRUCache ({
-    max: 3000000, // ~2.6M >> 2,598,960 combinations of hands + hand score
-    maxSize: 3000000000, // ~3GB
-    sizeCalculation: (value, key) => {
-        if (key.endsWith(':S')) {
-            return key.length * 2 + 8;
-        }
-        return key.length * 2 + value.length * 2 + 8;
-    },
+    max: 10000000,
+    // maxSize: 5000000000, // ~5GB
+    // sizeCalculation: (value, key) => {
+    //     return key.length * 2 + value.length * 2 + 8;
+    // },
+    // ttl: 0,
     allowStale: false
 });
 
@@ -307,7 +305,6 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
         const scoreKey = `${key}:S`;
         if (!data.has(scoreKey)) {
             const { score } = getHandScore(hand);
-            // const ev = getHandExpectedValue(hand);
             const value = JSON.stringify({ key: scoreKey, score });
             fs.appendFileSync(PATH_SCORES, value + '\n');
             data.add(scoreKey);
@@ -333,6 +330,7 @@ const getAllHandsPossibleEvSaved = (handCardsNumber = 5) => {
                 const hand = getHandFromKey(entry.key);
                 const ev = getHandExpectedValue(hand);
                 entry.ev = ev;
+                console.log(hand, ev)
                 const lineNew = JSON.stringify(entry);
                 linesNew.push(lineNew);
             }
@@ -814,8 +812,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    getCacheLoaded();
-    // getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'])
+    // getCacheLoaded();
+    // getAllHandsPossibleEvSaved();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -830,13 +828,13 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDataComputed(1);
+    await getEnumDataComputed(1);
     // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
     // const b = ["2h", "3h", "5h", "4h", "7c"]
     // getDiscardsDetailsForGivenHand("ENUM", b, 1);
     // getDiscardsDetailsForGivenHand("MCS", a, 1);
-    getAllHandsPossibleScoreSaved()
+    // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
