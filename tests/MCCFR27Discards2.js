@@ -146,9 +146,9 @@ const getHandScore = (hand) => {
 
     var { key, hand: handSorted, cardsValue, cardsSuit } = getHandKey([...hand]);
 
-    const cacheScoreKey = `${key}:S`;
-    if (CACHE.has(cacheScoreKey)) {
-        const score = CACHE.get(cacheScoreKey);
+    const scoreKey = `${key}:S`;
+    if (CACHE.has(scoreKey)) {
+        const score = CACHE.get(scoreKey);
         const scoreAsJson = JSON.parse(score);
         // console.log(scoreAsJson)
         return scoreAsJson;
@@ -193,24 +193,23 @@ const getHandScore = (hand) => {
     }
 
     const result = { key, score };
-    CACHE.set(cacheScoreKey, JSON.stringify(result));
     return result;
 }
 
 
 
 
-const getHandExpectedValue = async (hand, getCacheData) => {
+const getHandExpectedValue = (hand, getCacheData) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const handsOpp = getAllCombinationsPossible(deckLeft, handCardsNumber = 5);
-    const { score } = await getHandScore(hand, getCacheData);
+    const { score } = getHandScore(hand, getCacheData);
 
     let wins = 0, ties = 0, count = 0;
     for (const handOpp of handsOpp) {
         count++;
-        const { score: scoreOpp } = await getHandScore(handOpp, getCacheData);
+        const { score: scoreOpp } = getHandScore(handOpp, getCacheData);
         if (score < scoreOpp) wins++;
         else if (score === scoreOpp) ties++;
     }
@@ -271,7 +270,7 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
     const results = getAllCombinationsPossible(deck, handCardsNumber);
     return results;
 }
-const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
+const getAllHandsScoreSaved = async (handCardsNumber = 5) => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
 
@@ -311,7 +310,7 @@ const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
 
     fs.closeSync(file);
 }
-const getAllHandsExpectedValueSaved = async (handCardsNumber = 5, getCacheData) => {
+const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
     // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
     fs.mkdirSync(path.dirname(PATH_SCORES2), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES2, 'a'));
@@ -345,7 +344,7 @@ const getAllHandsExpectedValueSaved = async (handCardsNumber = 5, getCacheData) 
         const entry = CACHE.get(scoreKey);
         const entryAsJson = JSON.parse(entry);
         if (!data.has(scoreKey) && !entryAsJson.ev) {
-            const ev = await getHandExpectedValue(hand, getCacheData);
+            const ev = getHandExpectedValue(hand, getCacheData);
             entryAsJson.ev = ev;
             const value = JSON.stringify(entryAsJson);
             fs.appendFileSync(PATH_SCORES2, value + '\n');
