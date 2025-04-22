@@ -352,6 +352,9 @@ const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
 }
 const getAllHandsExpectedValueSaved = async (handCardsNumber = 5, getCacheData) => {
     // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
+    fs.mkdirSync(path.dirname(PATH_SCORES2), { recursive: true });
+    fs.closeSync(fs.openSync(PATH_SCORES2, 'a'));
+
     const data = new Set();
     const content = fs.readFileSync(PATH_SCORES2, 'utf8');
     const lines = content.split('\n');
@@ -643,17 +646,18 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         // }
 
         const allHandsRaw = getAllHandsPossible();
-        const allHands = allHandsRaw.reduce((acc, hand) => {
+        const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
             const { key } = getHandKey(hand);
             const entryKey = `${key}:R${roundNumber}`;
-            if (!entries.has(entryKey)) {
-                acc.push({ hand, key: entryKey });
+            if (!map.has(entryKey)) {
+                map.set(entryKey, { hand, key: entryKey });
             }
-            return acc;
-        }, []);
+            return map;
+        }, new Map());
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
+        const allHands = Array.from(allHandsAsMap.values());
         const allHandsPerWorker = Math.ceil(allHands.length / cpuCount);
 
         for (let i = 0; i < cpuCount; i++) {
@@ -707,7 +711,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoaded();
+        // getCacheLoaded();
 
         // parentPort.on('message', (message) => {
         //     const type = message?.type;
@@ -740,7 +744,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         const deck = Object.values(DECK);
         for (const { hand, key } of handsDetails) {
             const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = await getEnumDiscardsDetails(hand, deckLeft, roundNumber, 0, getCacheData);
+            const result = await getEnumDiscardsDetails(hand, deckLeft, roundNumber, getCacheData);
             result.key = key;
             const value = JSON.stringify(result);
             parentPort.postMessage({ type: 'CACHE_POST', key: key, value: value });
@@ -959,7 +963,7 @@ const getCacheDuplicated = () => {
 
 (async () => {
     getCacheLoaded();
-    await getAllHandsExpectedValueSaved(5, getCacheData);
+    // await getAllHandsExpectedValueSaved(5, getCacheData);
     // await getHandExpectedValue(['2h', '2d', '2s', '8c', '8s'], getCacheData);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
