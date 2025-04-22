@@ -266,14 +266,12 @@ const getAllCombinationsPossible = (arr, k) => {
     
     return result;
 };
-
 const getAllHandsPossible = (handCardsNumber = 5) => {
     const deck = Object.values(DECK);
     const results = getAllCombinationsPossible(deck, handCardsNumber);
     return results;
 }
-
-const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
+const getAllHandsScoreSaved = async (handCardsNumber = 5, getCacheData) => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
 
@@ -283,7 +281,7 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
     lines.forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) {
-            console.log(`getAllHandsPossibleScoreSaved.LineEmpty`);
+            console.log(`getAllHandsScoreSaved.LineEmpty`);
             return;
         }
         try {
@@ -292,7 +290,7 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
                 data.add(entry.key); 
             }
         } catch (error) {
-            console.log(`getAllHandsPossibleScoreSaved.Error: ${error}`)
+            console.log(`getAllHandsScoreSaved.Error: ${error}`)
         }
     });
 
@@ -304,7 +302,7 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
         const { key } = getHandKey(hand);
         const scoreKey = `${key}:S`;
         if (!data.has(scoreKey)) {
-            const { score } = getHandScore(hand);
+            const { score } = await getHandScore(hand, getCacheData);
             const value = JSON.stringify({ key: scoreKey, score });
             fs.appendFileSync(PATH_SCORES, value + '\n');
             data.add(scoreKey);
@@ -313,29 +311,71 @@ const getAllHandsPossibleScoreSaved = (handCardsNumber = 5) => {
 
     fs.closeSync(file);
 }
-const getAllHandsPossibleEvSaved = (handCardsNumber = 5) => {
-    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsPossibleScoreSaved())
+const getAllHandsExpectedValueSaved = async (handCardsNumber = 5, getCacheData) => {
+    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved())
+    fs.mkdirSync(path.dirname(PATH_SCORES2), { recursive: true });
+    fs.closeSync(fs.openSync(PATH_SCORES2, 'a'));
+
+    const data = new Set();
+    const content = fs.readFileSync(PATH_SCORES2, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            console.log(`getAllHandsScoreSaved.LineEmpty`);
+            return;
+        }
+        try {
+            const entry = JSON.parse(trimmed);
+            if (entry.key) { 
+                data.add(entry.key); 
+            }
+        } catch (error) {
+            console.log(`getAllHandsScoreSaved.Error: ${error}`)
+        }
+    });
+
+    const hands = getAllHandsPossible(handCardsNumber);
+    const file = fs.openSync(PATH_SCORES2, 'a');
+
+    for (let i = 0; i < hands.length; i++) {
+        const hand = hands[i];
+        const { key } = getHandKey(hand);
+        const scoreKey = `${key}:S`;
+        const entry = CACHE.get(scoreKey);
+        const entryAsJson = JSON.parse(entry);
+        if (!data.has(scoreKey) && !entryAsJson.ev) {
+            const ev = await getHandExpectedValue(hand, getCacheData);
+            entryAsJson.ev = ev;
+            const value = JSON.stringify(entryAsJson);
+            fs.appendFileSync(PATH_SCORES2, value + '\n');
+        }
+    }
+
+    fs.closeSync(file);
+}
+const getAllHandsWithDiscardsExpectedValueSaved = (handCardsNumber = 5) => {
+    // MUST ALWAYS BE CALLED AFTER (getCacheLoaded() > getAllHandsScoreSaved()> getAllHandsExpectedValueSaved())
     const content = fs.readFileSync(PATH_SCORES, 'utf8');
     const lines = content.split('\n');
     const linesNew = [];
     lines.forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) {
-            console.log(`getAllHandsPossibleEvSaved.LineEmpty`);
+            console.log(`getAllHandsWithDiscardsExpectedValueSaved.LineEmpty`);
             return;
         }
         try {
             const entry = JSON.parse(trimmed);
             if (entry.key) {
                 const hand = getHandFromKey(entry.key);
-                const ev = getHandExpectedValue(hand);
+                const ev = getHandWithDiscardsExpectedValue(hand, );
                 entry.ev = ev;
-                console.log(hand, ev)
                 const lineNew = JSON.stringify(entry);
                 linesNew.push(lineNew);
             }
         } catch (error) {
-            console.log(`getAllHandsPossibleEvSaved.Error: ${error}`)
+            console.log(`getAllHandsWithDiscardsExpectedValueSaved.Error: ${error}`)
         }
     });
     fs.writeFileSync(PATH_SCORES, linesNew.join('\n'));
