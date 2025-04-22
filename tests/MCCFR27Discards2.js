@@ -4,6 +4,7 @@ const os = require('os');
 const { LRUCache } = require('lru-cache');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
 const DECK = {
@@ -45,6 +46,34 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
             return Math.ceil((value - Number.EPSILON) * factor) / factor;
     }
 };
+
+const getNDJSONRead = (filePath) => {
+    if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, 'utf8');
+        const lines = data.split('\n');
+
+        const results = lines.reduce((map, line) => {
+            const trimmed = line.trim();
+            const data = trimmed ? JSON.parse(trimmed) : {};
+            if (!map.has(data.key)) {
+                map.set(data.key, data);
+            }
+            return map;
+        }, new Map());
+
+        return results;
+    } else {
+        console.error(`getNDJSONRead.FileNotFound: ${filePath}`);
+    }
+}
+const getNDJSONKeysDuplicatedDeleted = (filePath) => {
+    const content = getNDJSONRead(filePath);
+    const data = Array.from(content.values());
+    data.sort((a, b) => a.score - b.score);
+    const parsed = path.parse(filePath);
+    const filePathNew = path.join(parsed.dir, `${parsed.name}_${parsed.ext}`);
+    fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+}
 
 const getArrayShuffled = (array) => {
     for (let c1 = array.length - 1; c1 > 0; c1--) {
@@ -626,7 +655,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 
         const { handsDetails, roundNumber } = workerData;
         let index = 0;
-        
+
         function getHandsProcessed() {
             if (index >= handsDetails.length) {
                 process.exit(0);
@@ -829,6 +858,7 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
+    getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
     // getCacheLoaded();
     // getAllHandsPossibleEvSaved();
 
@@ -845,7 +875,7 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    await getEnumDataComputed(1);
+    // await getEnumDataComputed(1);
     // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
@@ -855,12 +885,3 @@ const getCacheDuplicated = () => {
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
-
-const requestsList = new Map();
-const getCacheData = async (key) => {
-    const requestId = randomUUID();
-    parentPort.postMessage({ type: 'TEST', key, value, requestId });
-    return new Promise((resolve) => {
-        requestsList.set(requestId, resolve);
-    });
-}
