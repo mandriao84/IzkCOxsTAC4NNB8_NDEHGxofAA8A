@@ -619,10 +619,17 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         getCacheLoaded();
 
         parentPort.on('message', (message) => {
-            const { type, key, value } = message;
+            const { type, key, value, requestId } = message;
             if (type === 'CACHE_POST') {
                 if (!CACHE.has(key)) {
                     CACHE.set(entry.key, value);
+                }
+            }
+            if (type === 'CACHE_GET_RESPONSE') {
+                const resolve = requestsList.get(requestId);
+                if (resolve) {
+                    requestsList.delete(requestId);
+                    resolve(value ? JSON.parse(value) : null);
                 }
             }
         });
