@@ -847,3 +847,12 @@ const getCacheDuplicated = () => {
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
+
+const requestsList = new Map();
+const getCacheData = async (key) => {
+    const requestId = randomUUID();
+    parentPort.postMessage({ type: 'CACHE_GET', key, requestId });
+    return new Promise((resolve) => {
+        requestsList.set(requestId, resolve);
+    });
+}
