@@ -600,14 +600,16 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                 console.log(type, key, value);
                 if (type === "CACHE_POST") {
                     fs.appendFileSync(PATH_RESULTS, value + '\n');
-                    for (let i = 0; i < workers.instance.length; i++) {
-                        const instance = workers.instance[i];
+                    for (let j = 0; j < workers.instance.length; j++) {
+                        const instance = workers.instance[j];
                         if (instance !== worker) {
                             instance.postMessage({ type: 'CACHE_POST', key: key, value: value });
                         }
                     }
                 }
             });
+
+            worker.postMessage({ type: 'TEST', key: 'TEST', value: 'TEST' });
             
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
@@ -622,7 +624,6 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                 if (!CACHE.has(key)) {
                     CACHE.set(entry.key, value);
                 }
-                parentPort.postMessage({ type: 'TEST', key: "TEST", value: "TEST" });
             }
         });
 
