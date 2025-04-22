@@ -596,8 +596,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             workers.instance.push(worker);
 
             worker.on('message', (message) => {
-                const { type, key, value } = message;
-                console.log(type, key, value);
+                const { type, key, value, } = message;
                 if (type === "CACHE_POST") {
                     fs.appendFileSync(PATH_RESULTS, value + '\n');
                     for (let j = 0; j < workers.instance.length; j++) {
@@ -608,8 +607,6 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                     }
                 }
             });
-
-            worker.postMessage({ type: 'TEST', key: 'TEST', value: 'TEST' });
             
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
@@ -619,34 +616,38 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         getCacheLoaded();
 
         parentPort.on('message', (message) => {
-            const { type, key, value, requestId } = message;
+            const { type, key, value } = message;
             if (type === 'CACHE_POST') {
                 if (!CACHE.has(key)) {
-                    CACHE.set(entry.key, value);
-                }
-            }
-            if (type === 'CACHE_GET_RESPONSE') {
-                const resolve = requestsList.get(requestId);
-                if (resolve) {
-                    requestsList.delete(requestId);
-                    resolve(value ? JSON.parse(value) : null);
+                    CACHE.set(key, value);
                 }
             }
         });
 
         const { handsDetails, roundNumber } = workerData;
-        for (let i = 0; i < handsDetails.length; i++) {
-            const { hand, key } = handsDetails[i];
+        let index = 0;
+        
+        function getHandsProcessed() {
+            if (index >= handsDetails.length) {
+                process.exit(0);
+            }
+    
+            const { hand, key } = handsDetails[index];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
+    
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             result.key = key;
             const value = JSON.stringify(result);
+    
             CACHE.set(key, value);
             parentPort.postMessage({ type: 'CACHE_POST', key: key, value: value });
+    
+            index++;
+            setImmediate(getHandsProcessed);
         }
-        
-        process.exit(0);
+
+        setImmediate(getHandsProcessed);
     }
 };
 
@@ -858,7 +859,7 @@ const getCacheDuplicated = () => {
 const requestsList = new Map();
 const getCacheData = async (key) => {
     const requestId = randomUUID();
-    parentPort.postMessage({ type: 'CACHE_GET', key, requestId });
+    parentPort.postMessage({ type: 'TEST', key, value, requestId });
     return new Promise((resolve) => {
         requestsList.set(requestId, resolve);
     });
