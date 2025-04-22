@@ -855,7 +855,7 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    // getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
+    getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
     // getCacheLoadedFromNDJSON();
     // getAllHandsPossibleEvSaved();
 
@@ -872,7 +872,7 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    await getEnumDataComputed(1);
+    // await getEnumDataComputed(1);
     // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
