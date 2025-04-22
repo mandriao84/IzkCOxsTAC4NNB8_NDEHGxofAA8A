@@ -566,40 +566,19 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 
 const getEnumDataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
-        const entries = new Map();
-        
-        if (fs.existsSync(PATH_RESULTS)) {
-            const content = fs.readFileSync(PATH_RESULTS, 'utf8');
-            const lines = content.split('\n');
-            lines.forEach(line => {
-                try {
-                    const trimmed = line.trim();
-                    if (!trimmed) {
-                        console.log(`getEnumDataComputed.LineEmpty`);
-                        return;
-                    }
-                    const entry = JSON.parse(trimmed);
-                    if (entry.key) {
-                        entries.set(entry.key, trimmed);
-                    }
-                } catch (error) {
-                    console.log(`getEnumDataComputed.Error: ${error}`);
-                }
-            });
-        }
-
         const allHandsRaw = getAllHandsPossible();
-        const allHands = allHandsRaw.reduce((acc, hand) => {
+        const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
             const { key } = getHandKey(hand);
             const entryKey = `${key}:R${roundNumber}`;
-            if (!entries.has(entryKey)) {
-                acc.push({ hand, key: entryKey });
+            if (!map.has(entryKey)) {
+                map.set(entryKey, { hand, key: entryKey });
             }
-            return acc;
-        }, []);
+            return map;
+        }, new Map());
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
+        const allHands = Array.from(allHandsAsMap.values());
         const allHandsPerWorker = Math.ceil(allHands.length / cpuCount);
 
         for (let i = 0; i < cpuCount; i++) {
@@ -620,7 +599,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
                 const type = content?.type;
                 const payload = content?.payload?.trim();
                 const entry = JSON.parse(payload);
-                if (type === "DATA" && !entries.has(entry.key)) {
+                if (type === "CACHE_POST" && !entries.has(entry.key)) {
                     fs.appendFileSync(PATH_RESULTS, payload + '\n');
                     entries.set(entry.key, payload);
                     workers.instance.forEach(w => {
@@ -657,11 +636,11 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         for (const { hand, key } of handsDetails) {
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber, 0);
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             result.key = key;
             const resultAsString = JSON.stringify(result);
             CACHE.set(key, resultAsString);
-            parentPort.postMessage({ type: 'DATA', payload: resultAsString });
+            parentPort.postMessage({ type: 'CACHE_POST', payload: resultAsString });
         }
         
         process.exit(0);
@@ -812,19 +791,16 @@ const getCacheLoaded = () => {
         if (fs.existsSync(p)) {
             const content = fs.readFileSync(p, 'utf8');
             const lines = content.split('\n');
-            lines.forEach(line => {
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
                 const trimmed = line.trim();
                 if (!trimmed) {
                     console.log(`getCacheLoaded.LineEmpty`);
                     return;
                 }
-                try {
-                    const entry = JSON.parse(trimmed);
-                    CACHE.set(entry.key, trimmed);
-                } catch (error) {
-                    console.log(`getCacheLoaded.${p}.Error: ${line}`);
-                }
-            });
+                const entry = JSON.parse(trimmed);
+                CACHE.set(entry.key, trimmed);
+            }
         }
     })
 }
