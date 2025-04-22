@@ -107,7 +107,8 @@ const getHandKey = (hand) => {
         obj[suit] = (obj[suit] || 0) + 1;
         return obj;
     }, {});
-    const cardsSuitPattern = Object.values(cardsSuitCount).join('|');
+    const cardsSuitPattern = Object.values(cardsSuitCount).sort((a, b) => b - a).join('|');
+    const cardsSuitSize = Object.keys(cardsSuitCount).length;
     const straightWithAs = [1, 2, 3, 4, 13];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
 
@@ -121,8 +122,8 @@ const getHandKey = (hand) => {
         return cardValueA - cardValueB;
     });
 
-    // const key = `${cardsRankPattern}:${cardsSuitPattern.at(0)}`;
-    const key = `${cardsRankPattern}:${cardsSuitPattern}}`;
+    const key = `${cardsRankPattern}:${cardsSuitSize}`;
+    // const key = `${cardsRankPattern}:${cardsSuitPattern}`;
 
     return { key, sort: handCopy, cardsValue, cardsSuit };
 }
