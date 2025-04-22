@@ -5,7 +5,6 @@ const { LRUCache } = require('lru-cache');
 const path = require('path');
 const { randomUUID } = require('crypto');
 const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
-const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
@@ -853,7 +852,7 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
+    // getNDJSONKeysDuplicatedDeleted(PATH_STRATEGIES);
     // getCacheLoadedFromNDJSON();
     // getAllHandsPossibleEvSaved();
 
@@ -870,7 +869,7 @@ const getCacheDuplicated = () => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDataComputed(1);
+    await getEnumDataComputed(1);
     // getSingleThreadEnumDataComputed(1);
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
