@@ -55,7 +55,7 @@ const getNDJSONRead = (filePath) => {
         const results = lines.reduce((map, line) => {
             const trimmed = line.trim();
             const data = trimmed ? JSON.parse(trimmed) : {};
-            if (!map.has(data.key)) {
+            if (data.key && !map.has(data.key)) {
                 map.set(data.key, data);
             }
             return map;
@@ -70,8 +70,8 @@ const getNDJSONKeysDuplicatedDeleted = (filePath) => {
     const content = getNDJSONRead(filePath);
     const data = Array.from(content.values());
     data.sort((a, b) => a.score - b.score);
-    const parsed = path.parse(filePath);
-    const filePathNew = path.join(parsed.dir, `${parsed.name}_${parsed.ext}`);
+    const filePathParsed = path.parse(filePath);
+    const filePathNew = path.join(filePathParsed.dir, `${filePathParsed.name}_${filePathParsed.ext}`);
     fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 
