@@ -598,8 +598,8 @@ const getEnumDataComputed = async (roundNumber = 1) => {
         const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
             const { key } = getHandKey(hand);
             const entryKey = `${key}:R${roundNumber}`;
-            if (!map.has(entryKey)) {
-                map.set(entryKey, { hand, key: entryKey });
+            if (key && !map.has(entryKey)) {
+                map.set(entryKey, { key: entryKey, hand });
             }
             return map;
         }, new Map());
@@ -624,9 +624,10 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             workers.instance.push(worker);
 
             worker.on('message', (message) => {
-                const { type, key, value, } = message;
-                if (type === "CACHE_POST") {
+                const { type, key, value } = message;
+                if (type === "CACHE_POST" && !allHandsAsMap.has(key)) {
                     fs.appendFileSync(PATH_STRATEGIES, value + '\n');
+                    allHandsAsMap.set(key, { hand: "NEW" });
                     for (let j = 0; j < workers.instance.length; j++) {
                         const instance = workers.instance[j];
                         if (instance !== worker) {
