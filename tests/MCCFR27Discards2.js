@@ -634,7 +634,7 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             result.key = key;
             const value = JSON.stringify(result);
-            CACHE.set(key, resultAsString);
+            CACHE.set(key, value);
             parentPort.postMessage({ type: 'CACHE_POST', key: key, value: value });
         }
         
