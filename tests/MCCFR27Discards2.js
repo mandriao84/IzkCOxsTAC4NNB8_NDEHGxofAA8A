@@ -234,7 +234,7 @@ const getHandScore = (hand) => {
     } else if (isStraight) {
         const ranks = [...cardCountsKey1]
         score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey3.length === 1 && cardCountsKey1.length === 1) {
+    } else if (cardCountsKey3.length === 1 && cardCountsKey1.length === 2) {
         const ranks = [...cardCountsKey3, ...cardCountsKey1]
         score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (cardCountsKey2.length === 2 && cardCountsKey1.length === 1) {
