@@ -77,11 +77,15 @@ const getNDJSONKeysDuplicatedDeleted = (filePath) => {
         scoresAsMap.set(entry.score, count + 1);
 
         if (count === 1) {
-            const keyNew = `${entry.key.slice(0, -4)}:2+:S`;
-            arr.push({
+           const j = arr.findIndex(e => e.score === entry.score)
+           const entryPast = arr[j];
+           let entryPastKeyParts = entryPast.key.split(':');
+           entryPastKeyParts[1] += "+"
+           const keyNew = entryPastKeyParts.join(':');
+           arr[j] = {
                 ...entry,
                 key: keyNew
-            });
+            };
         } if (count === 0) {
             arr.push(entry);
         }
@@ -968,9 +972,9 @@ const getCacheDuplicated = () => {
     // getExpectedValueDataComputed();
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
-    const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    const c = ["3s", "2s", "5c", "6s", "4c"]
-    getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
+    // const c = ["3s", "2s", "5c", "6s", "4c"]
+    // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
