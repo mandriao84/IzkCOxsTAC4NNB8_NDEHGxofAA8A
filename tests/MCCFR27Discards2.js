@@ -131,15 +131,14 @@ const getHandKey = (hand) => {
         return obj; 
     }, {});
     const cardsSuitSize = Object.keys(cardsSuitCount).length;
-    // const cardsSuitPattern = Object.values(cardsSuitCount).sort((a, b) => b - a).join('|');
     const cardsSuitPattern = function() {
         const cardsSuitCountValues = Object.values(cardsSuitCount).sort((a, b) => b - a);
         if (cardsSuitSize === 1) {
-            return '1';
+            return '-'; // flush
         } else if (cardsSuitSize === 2 && cardsSuitCountValues.at(0) === 4) {
-            return '*';
+            return '*'; // relevant
         } else {
-            return 'X';
+            return 'x'; // unrelevant
         }
     }()
     const straightWithAs = [13, 4, 3, 2, 1];
@@ -970,7 +969,7 @@ const getCacheDuplicated = () => {
 
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    getAllHandsScoreSaved();
+    // getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
@@ -990,10 +989,10 @@ const getCacheDuplicated = () => {
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
-    // const a = ["5c", "6h", "7c", "8c", "9c"]
+    const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
     // const c = ["3s", "2s", "5c", "6s", "4c"]
-    // getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM", a, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
