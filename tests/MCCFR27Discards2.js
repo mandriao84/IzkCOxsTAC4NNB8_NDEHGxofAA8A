@@ -70,9 +70,27 @@ const getNDJSONKeysDuplicatedDeleted = (filePath) => {
     const content = getNDJSONRead(filePath);
     const data = Array.from(content.values());
     data.sort((a, b) => a.score - b.score);
+
+    const scoresAsMap = new Map();
+    const dataWithoutScoresDuplicated = data.reduce((arr, entry) => {
+        const count = scoresAsMap.get(entry.score) || 0;
+        scoresAsMap.set(entry.score, count + 1);
+
+        if (count === 1) {
+            const keyNew = `${entry.key.slice(0, -4)}:2+:S`;
+            arr.push({
+                ...entry,
+                key: keyNew
+            });
+        } if (count === 0) {
+            arr.push(entry);
+        }
+        return arr;
+    }, []);
+
     const filePathParsed = path.parse(filePath);
     const filePathNew = path.join(filePathParsed.dir, `${filePathParsed.name}_${filePathParsed.ext}`);
-    fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+    fs.writeFileSync(filePathNew, dataWithoutScoresDuplicated.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 
 const getArrayShuffled = (array) => {
@@ -406,7 +424,7 @@ const getAllHandsWithDiscardsExpectedValueSaved = (handCardsNumber = 5) => {
 
 
 
-const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 10000) => {
+const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 100000) => {
     const { key } = getHandKey([...hand]);
     let cacheKey = `${key}:R${roundNumber}`;
     // if (CACHE.has(cacheKey)) {
@@ -930,7 +948,7 @@ const getCacheDuplicated = () => {
 (async () => {
     getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
     // getAllHandsScoreSaved();
-    // getCacheLoadedFromNDJSON();
+    // getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -950,9 +968,10 @@ const getCacheDuplicated = () => {
     // getExpectedValueDataComputed();
 
     // const a = ["5c", "6h", "7c", "8c", "9c"]
-    // const b = ["10c", "Js", "Qh", "Kd", "Kc"]
-    // getDiscardsDetailsForGivenHand("ENUM", b, 2);
-    // getDiscardsDetailsForGivenHand("MCS", a, 1);
+    const b = ["10s", "Js", "Qs", "Ks", "Kc"]
+    const c = ["3s", "2s", "5c", "6s", "4c"]
+    getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
