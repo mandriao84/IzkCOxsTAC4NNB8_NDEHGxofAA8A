@@ -231,11 +231,14 @@ const getHandScore = (hand) => {
     const result = { key, score };
     return result;
 }
+const getHandExpectedValue = (key, hand) => {
+    const scoreKey = `${key}:S`;
+    if (CACHE.has(scoreKey)) {
+        const line = CACHE.get(scoreKey);
+        const entry = JSON.parse(line);
+        return entry.ev;
+    }
 
-
-
-
-const getHandExpectedValue = (hand) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
@@ -253,7 +256,7 @@ const getHandExpectedValue = (hand) => {
     const result = ((wins + 0.5 * ties) / count).safe("ROUND", 5);
     return result;
 }
-const getHandWithDiscardsExpectedValue = (hand, discards) => {
+const getHandWithDiscardsExpectedValue = (key, hand, discards) => {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
@@ -263,7 +266,7 @@ const getHandWithDiscardsExpectedValue = (hand, discards) => {
     let evs = 0, count = 0;
     for (const cardsReceived of allCardsReceived) {
         const handNew = [...cardsKept,...cardsReceived];
-        evs += getHandExpectedValue(handNew);
+        evs += getHandExpectedValue(key, handNew);
         count++;
     }
 
@@ -715,7 +718,7 @@ const getExpectedValueDataComputed = async () => {
             }
     
             const { key, hand, score } = handsDetails[index];
-            const ev = getHandExpectedValue(hand);
+            const ev = getHandExpectedValue(key, hand);
             const result = {};
             result.key = key;
             result.ev = ev;
