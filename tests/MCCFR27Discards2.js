@@ -369,7 +369,7 @@ const getAllHandsPossible = (handCardsNumber = 5) => {
 const getAllHandsScoreSaved = (handCardsNumber = 5) => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
-    const file = fs.openSync(PATH_SCORES, 'a');
+    // const file = fs.openSync(PATH_SCORES, 'a');
 
     const entries = getNDJSONRead(PATH_SCORES);
     const allHandsRaw = getAllHandsPossible();
@@ -378,14 +378,18 @@ const getAllHandsScoreSaved = (handCardsNumber = 5) => {
         const fileKey = `${key}:S`;
         if (key && !map.has(fileKey) && !entries.has(fileKey)) {
             const { score } = getHandScore(hand);
-            const entry = JSON.stringify({ key: fileKey, score });
-            fs.appendFileSync(PATH_SCORES, entry + '\n');
+            // const entry = JSON.stringify({ key: fileKey, score });
+            // fs.appendFileSync(PATH_SCORES, entry + '\n');
             map.set(fileKey, { key: fileKey, score: score });
         }
         return map;
     }, new Map());
 
-    fs.closeSync(file);
+    // fs.closeSync(file);
+
+    const data = Array.from(allHandsAsMap.values());
+    data.sort((a, b) => a.score - b.score);
+    fs.writeFileSync(PATH_SCORES, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
     // MUST ALWAYS BE CALLED AFTER (getCacheLoadedFromNDJSON() > getAllHandsScoreSaved())
@@ -965,8 +969,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    // getAllHandsScoreSaved();
+    // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
+    getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
