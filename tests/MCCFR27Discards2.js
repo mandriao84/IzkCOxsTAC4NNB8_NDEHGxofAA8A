@@ -146,26 +146,25 @@ const getHandKey = (hand) => {
     const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
     const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
 
-    const isStraightFlush = isStraight && isFlush;
-    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
-    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
-    const isFlush = new Set(cardsSuit).size === 1
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
-    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
-    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
     const isHigh = cardCountsKey1.length === 5;
+    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
+    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
+    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
+    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = new Set(cardsSuit).size === 1
+    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
+    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
+    const isStraightFlush = isStraight && isFlush;
     const details = function () {
         if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardCountsKey1] };
-        if (isFour) return { type: 'four', ranks: [...cardCountsKey4,...cardCountsKey1] };
-        if (isFull) return { type: 'full', ranks: [...cardCountsKey3,...cardCountsKey2] };
-        if (isFlush) return { type: 'flush', ranks: [...cardCountsKey1] };
-        if (isStraight) return { type: 'straight', ranks: [...cardCountsKey1] };
-        if (isThree) return { type: 'three', ranks: [...cardCountsKey3,...cardCountsKey1] };
-        if (isPairs) return { type: 'pairs', ranks: [...cardCountsKey2,...cardCountsKey1] };
-        if (isPair) return { type: 'pair', ranks: [...cardCountsKey2,...cardCountsKey1] };
-        if (isHigh) return { type: 'high', ranks: [...cardCountsKey1] };
-        return null;
+        else if (isFour) return { type: 'four', ranks: [...cardCountsKey4,...cardCountsKey1] };
+        else if (isFull) return { type: 'full', ranks: [...cardCountsKey3,...cardCountsKey2] };
+        else if (isFlush) return { type: 'flush', ranks: [...cardCountsKey1] };
+        else if (isStraight) return { type: 'straight', ranks: [...cardCountsKey1] };
+        else if (isThree) return { type: 'three', ranks: [...cardCountsKey3,...cardCountsKey1] };
+        else if (isPairs) return { type: 'pairs', ranks: [...cardCountsKey2,...cardCountsKey1] };
+        else if (isPair) return { type: 'pair', ranks: [...cardCountsKey2,...cardCountsKey1] };
+        else return { type: 'high', ranks: [...cardCountsKey1] };
     }();
 
     handCopy.sort((a, b) => {
@@ -956,8 +955,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    // getAllHandsScoreSaved();
+    // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
+    getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
