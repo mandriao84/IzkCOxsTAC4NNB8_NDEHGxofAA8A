@@ -719,7 +719,7 @@ const getExpectedValueDataComputed = async () => {
     fs.closeSync(fs.openSync(PATH_SCORES_EVS, 'a'));
 
     if (isMainThread) {
-        getCacheLoadedFromNDJSON();
+        getCacheLoadedFromNDJSON([PATH_SCORES]);
         const entries = getNDJSONRead(PATH_SCORES_EVS);
         const allHandsRaw = getAllHandsPossible();
         const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
@@ -771,7 +771,7 @@ const getExpectedValueDataComputed = async () => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoadedFromNDJSON();
+        getCacheLoadedFromNDJSON([PATH_SCORES]);
 
         parentPort.on('message', (message) => {
             const { type, key, value } = message;
@@ -997,7 +997,7 @@ const getCacheDuplicated = () => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
     // getSingleThreadEnumDataComputed(1);
-    // getExpectedValueDataComputed();
+    getExpectedValueDataComputed();
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
