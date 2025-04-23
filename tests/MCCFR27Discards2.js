@@ -122,18 +122,39 @@ const getHandKey = (hand) => {
     const getCardRank = (card) => card.slice(0, -1);
     const getCardValue = (card) => CARDS[getCardRank(card)];
     const getCardSuit = (card) => card.slice(-1);
-    const cardsRank = handCopy.map(getCardRank).sort((a, b) => CARDS[a] - CARDS[b]);
+    const cardsRank = handCopy.map(getCardRank).sort((a, b) => CARDS[b] - CARDS[a]);
     const cardsRankPattern = cardsRank.join('|');
-    const cardsValue = handCopy.map(getCardValue).sort((a, b) => a - b);
-    const cardsSuit = handCopy.map(getCardSuit).sort((a, b) => a - b);
+    let cardsValue = handCopy.map(getCardValue).sort((a, b) => b - a);
+    const cardsSuit = handCopy.map(getCardSuit).sort((a, b) => b - a);
     const cardsSuitCount = cardsSuit.reduce((obj, suit) => {
         obj[suit] = (obj[suit] || 0) + 1;
-        return obj;
+        return obj; 
     }, {});
     const cardsSuitPattern = Object.values(cardsSuitCount).sort((a, b) => b - a).join('|');
     const cardsSuitSize = Object.keys(cardsSuitCount).length;
-    const straightWithAs = [1, 2, 3, 4, 13];
+    const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
+    if (isStraightWithAs) { cardsValue = [4, 3, 2, 1, 0]; }
+
+    const cardCounts = cardsValue.reduce((obj, rank) => {
+        obj[rank] = (obj[rank] || 0) + 1;
+        return obj
+    }, {})
+    const cardCountsKeys = Object.keys(cardCounts);
+    const cardCountsKey1 = cardCountsKeys.filter(r => cardCounts[r] === 1).sort((a, b) => b - a);
+    const cardCountsKey2 = cardCountsKeys.filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
+    const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
+    const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
+
+    const isHigh = cardCountsKey1.length === 5;
+    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
+    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
+    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
+    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = new Set(cardsSuit).size === 1
+    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
+    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
+    const isStraightFlush = isStraight && isFlush;
 
     handCopy.sort((a, b) => {
         const cardValueA = getCardValue(a);
@@ -142,13 +163,13 @@ const getHandKey = (hand) => {
             if (cardValueA === 13) return -1;
             if (cardValueB === 13) return 1;
         }
-        return cardValueA - cardValueB;
+        return cardValueB - cardValueA;
     });
 
     const key = `${cardsRankPattern}:${cardsSuitSize}`;
     // const key = `${cardsRankPattern}:${cardsSuitPattern}`;
 
-    return { key, sort: handCopy, cardsValue, cardsSuit };
+    return { key, hand: handCopy, cardsValue, cardsSuit };
 }
 
 const getHandFromKey = (key, discards = []) => {
