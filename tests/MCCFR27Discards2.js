@@ -146,15 +146,27 @@ const getHandKey = (hand) => {
     const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
     const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
 
-    const isHigh = cardCountsKey1.length === 5;
-    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
-    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
-    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = new Set(cardsSuit).size === 1
-    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
-    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
+    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
+    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
+    const isFlush = new Set(cardsSuit).size === 1
+    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
+    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
+    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
+    const isHigh = cardCountsKey1.length === 5;
+    const details = function () {
+        if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardCountsKey1] };
+        if (isFour) return { type: 'four', ranks: [...cardCountsKey4,...cardCountsKey1] };
+        if (isFull) return { type: 'full', ranks: [...cardCountsKey3,...cardCountsKey2] };
+        if (isFlush) return { type: 'flush', ranks: [...cardCountsKey1] };
+        if (isStraight) return { type: 'straight', ranks: [...cardCountsKey1] };
+        if (isThree) return { type: 'three', ranks: [...cardCountsKey3,...cardCountsKey1] };
+        if (isPairs) return { type: 'pairs', ranks: [...cardCountsKey2,...cardCountsKey1] };
+        if (isPair) return { type: 'pair', ranks: [...cardCountsKey2,...cardCountsKey1] };
+        if (isHigh) return { type: 'high', ranks: [...cardCountsKey1] };
+        return null;
+    }();
 
     handCopy.sort((a, b) => {
         const cardValueA = getCardValue(a);
@@ -169,7 +181,7 @@ const getHandKey = (hand) => {
     const key = `${cardsRankPattern}:${cardsSuitSize}`;
     // const key = `${cardsRankPattern}:${cardsSuitPattern}`;
 
-    return { key, hand: handCopy, cardsValue, cardsSuit };
+    return { key, hand: handCopy, cardsValue, cardsSuit, type: details.type, ranks: details.ranks };
 }
 
 const getHandFromKey = (key, discards = []) => {
@@ -233,7 +245,7 @@ const getHandFromKey = (key, discards = []) => {
 };
 
 const getHandScore = (hand) => {
-    var { key, hand: handSorted, cardsValue, cardsSuit } = getHandKey([...hand]);
+    var { key, hand: handSorted, cardsValue, cardsSuit, type, ranks } = getHandKey([...hand]);
 
     const scoreKey = `${key}:S`;
     if (CACHE.has(scoreKey)) {
@@ -242,52 +254,25 @@ const getHandScore = (hand) => {
         return entry;
     }
 
-    cardsValue = cardsValue.sort((a, b) => b - a);
-    const straightWithAs = [13, 1, 2, 3, 4];
-    const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
-    if (isStraightWithAs) { cardsValue = [4, 3, 2, 1, 0]; }
-
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = new Set(cardsSuit).size === 1
-
-    const cardCounts = cardsValue.reduce((obj, rank) => {
-        obj[rank] = (obj[rank] || 0) + 1;
-        return obj
-    }, {})
-    const cardCountsKeys = Object.keys(cardCounts);
-    const cardCountsKey1 = cardCountsKeys.filter(r => cardCounts[r] === 1).sort((a, b) => b - a);
-    const cardCountsKey2 = cardCountsKeys.filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
-    const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
-    const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
-
     let score = 0
     const multiplier = cardsLength + 1
-    if (isStraight && isFlush) {
-        const ranks = [...cardCountsKey1]
+    if (type === 'straightFlush') {
         score = 8000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey4.length === 1 && cardCountsKey1.length === 1) {
-        const ranks = [...cardCountsKey4, ...cardCountsKey1]
+    } else if (type === 'four') {
         score = 7000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey3.length === 1 && cardCountsKey2.length === 1) {
-        const ranks = [...cardCountsKey3, ...cardCountsKey2]
+    } else if (type === 'full') {
         score = 6000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (isFlush) {
-        const ranks = [...cardCountsKey1]
+    } else if (type === 'flush') {
         score = 5000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (isStraight) {
-        const ranks = [...cardCountsKey1]
+    } else if (type === 'straight') {
         score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey3.length === 1 && cardCountsKey1.length === 2) {
-        const ranks = [...cardCountsKey3, ...cardCountsKey1]
+    } else if (type === 'three') {
         score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey2.length === 2 && cardCountsKey1.length === 1) {
-        const ranks = [...cardCountsKey2, ...cardCountsKey1]
+    } else if (type === 'pairs') {
         score = 2000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (cardCountsKey2.length === 1 && cardCountsKey1.length === 3) {
-        const ranks = [...cardCountsKey2, ...cardCountsKey1]
+    } else if (type === 'pair') {
         score = 1000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else {
-        const ranks = [...cardCountsKey1]
         score = ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     }
 
