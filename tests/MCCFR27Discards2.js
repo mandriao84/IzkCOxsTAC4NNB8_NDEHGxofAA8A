@@ -130,50 +130,41 @@ const getHandKey = (hand) => {
         obj[suit] = (obj[suit] || 0) + 1;
         return obj; 
     }, {});
-    const cardsSuitSize = Object.keys(cardsSuitCount).length;
-    const cardsSuitPattern = function() {
-        const cardsSuitCountValues = Object.values(cardsSuitCount).sort((a, b) => b - a);
-        if (cardsSuitSize === 1) {
-            return '-'; // flush
-        } else if (cardsSuitSize === 2 && cardsSuitCountValues.at(0) === 4) {
-            return '*'; // relevant
-        } else {
-            return 'x'; // unrelevant
-        }
-    }()
+    const cardsSuitCountKeys = Object.keys(cardsSuitCount);
+    const cardsSuitCountSize = cardsSuitCountKeys.length;
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
     if (isStraightWithAs) { cardsValue = [4, 3, 2, 1, 0]; }
 
-    const cardCounts = cardsValue.reduce((obj, rank) => {
+    const cardsCount = cardsValue.reduce((obj, rank) => {
         obj[rank] = (obj[rank] || 0) + 1;
         return obj
     }, {})
-    const cardCountsKeys = Object.keys(cardCounts);
-    const cardCountsKey1 = cardCountsKeys.filter(r => cardCounts[r] === 1).sort((a, b) => b - a);
-    const cardCountsKey2 = cardCountsKeys.filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
-    const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
-    const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
+    const cardsCountKeys = Object.keys(cardsCount);
+    const cardsCountKey1 = cardsCountKeys.filter(r => cardsCount[r] === 1).sort((a, b) => b - a);
+    const cardsCountKey2 = cardsCountKeys.filter(r => cardsCount[r] === 2).sort((a, b) => b - a);
+    const cardsCountKey3 = cardsCountKeys.filter(r => cardsCount[r] === 3).sort((a, b) => b - a);
+    const cardsCountKey4 = cardsCountKeys.filter(r => cardsCount[r] === 4).sort((a, b) => b - a);
 
-    const isHigh = cardCountsKey1.length === 5;
-    const isPair = cardCountsKey2.length === 1 && cardCountsKey1.length === 3;
-    const isPairs = cardCountsKey2.length === 2 && cardCountsKey1.length === 1;
-    const isThree = cardCountsKey3.length === 1 && cardCountsKey1.length === 2;
+    const isHigh = cardsCountKey1.length === 5;
+    const isPair = cardsCountKey2.length === 1 && cardsCountKey1.length === 3;
+    const isPairs = cardsCountKey2.length === 2 && cardsCountKey1.length === 1;
+    const isThree = cardsCountKey3.length === 1 && cardsCountKey1.length === 2;
     const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
     const isFlush = new Set(cardsSuit).size === 1
-    const isFull = cardCountsKey3.length === 1 && cardCountsKey2.length === 1;
-    const isFour = cardCountsKey4.length === 1 && cardCountsKey1.length === 1;
+    const isFull = cardsCountKey3.length === 1 && cardsCountKey2.length === 1;
+    const isFour = cardsCountKey4.length === 1 && cardsCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
     const details = function () {
-        if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardCountsKey1] };
-        else if (isFour) return { type: 'four', ranks: [...cardCountsKey4,...cardCountsKey1] };
-        else if (isFull) return { type: 'full', ranks: [...cardCountsKey3,...cardCountsKey2] };
-        else if (isFlush) return { type: 'flush', ranks: [...cardCountsKey1] };
-        else if (isStraight) return { type: 'straight', ranks: [...cardCountsKey1] };
-        else if (isThree) return { type: 'three', ranks: [...cardCountsKey3,...cardCountsKey1] };
-        else if (isPairs) return { type: 'pairs', ranks: [...cardCountsKey2,...cardCountsKey1] };
-        else if (isPair) return { type: 'pair', ranks: [...cardCountsKey2,...cardCountsKey1] };
-        else return { type: 'high', ranks: [...cardCountsKey1] };
+        if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardsCountKey1] };
+        else if (isFour) return { type: 'four', ranks: [...cardsCountKey4,...cardsCountKey1] };
+        else if (isFull) return { type: 'full', ranks: [...cardsCountKey3,...cardsCountKey2] };
+        else if (isFlush) return { type: 'flush', ranks: [...cardsCountKey1] };
+        else if (isStraight) return { type: 'straight', ranks: [...cardsCountKey1] };
+        else if (isThree) return { type: 'three', ranks: [...cardsCountKey3,...cardsCountKey1] };
+        else if (isPairs) return { type: 'pairs', ranks: [...cardsCountKey2,...cardsCountKey1] };
+        else if (isPair) return { type: 'pair', ranks: [...cardsCountKey2,...cardsCountKey1] };
+        else return { type: 'high', ranks: [...cardsCountKey1] };
     }();
 
     handCopy.sort((a, b) => {
@@ -185,6 +176,26 @@ const getHandKey = (hand) => {
         }
         return cardValueB - cardValueA;
     });
+
+    const cardsSuitPattern = function() {
+        // const cardsSuitCountValues = Object.values(cardsSuitCount).sort((a, b) => b - a);
+        // const special1 = cardsSuitCountSize === 2 && cardsSuitCountValues.at(0) === 4 && details.type === "high";
+        // if (cardsSuitCountSize === 1) {
+        //     return '-'; // flush
+        // } else if (special1) {
+        //     // const cardsSuitCountKey1 = cardsSuitCountKeys.find(key => cardsSuitCount[key] === 1);
+        //     // const i = handCopy.findIndex(card => card.slice(-1) === cardsSuitCountKey1);
+        //     // return `p${i}`
+        //     return 's';
+        // } else {
+        //     return '*'; // unrelevant
+        // }
+        if (cardsSuitCountSize === 1) {
+            return '-';
+        } else {
+            return '*';
+        }
+    }()
 
 
     const key = `${cardsRankPattern}:${cardsSuitPattern}`;
@@ -252,8 +263,8 @@ const getHandFromKey = (key, discards = []) => {
     return { hand, discards: getCardsDiscarded(hand, suitsUniq, discards) };
 };
 
-const getHandScore = (hand) => {
-    var { key, hand: handSorted, cardsValue, cardsSuit, type, ranks } = getHandKey([...hand]);
+const getHandScore = (keyDetails) => {
+    var { key, type, ranks } = keyDetails;
 
     const scoreKey = `${key}:S`;
     if (CACHE.has(scoreKey)) {
@@ -287,7 +298,9 @@ const getHandScore = (hand) => {
     const result = { key, score };
     return result;
 }
-const getHandExpectedValue = (key, hand) => {
+const getHandExpectedValue = (keyDetails) => {
+    var { key, hand } = keyDetails;
+
     const scoreKey = `${key}:S`;
     if (CACHE.has(scoreKey)) {
         const line = CACHE.get(scoreKey);
@@ -299,12 +312,13 @@ const getHandExpectedValue = (key, hand) => {
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
     const handsOpp = getAllCombinationsPossible(deckLeft, handCardsNumber = 5);
-    const { score } = getHandScore(hand);
+    const { score } = getHandScore(keyDetails);
 
     let wins = 0, ties = 0, count = 0;
     for (const handOpp of handsOpp) {
         count++;
-        const { score: scoreOpp } = getHandScore(handOpp);
+        const keyDetailsOpp = getHandKey(handOpp);
+        const { score: scoreOpp } = getHandScore(keyDetailsOpp);
         if (score < scoreOpp) wins++;
         else if (score === scoreOpp) ties++;
     }
@@ -322,7 +336,8 @@ const getHandWithDiscardsExpectedValue = (key, hand, discards) => {
     let evs = 0, count = 0;
     for (const cardsReceived of allCardsReceived) {
         const handNew = [...cardsKept,...cardsReceived];
-        evs += getHandExpectedValue(key, handNew);
+        const keyDetails = getHandKey(handNew);
+        evs += getHandExpectedValue(keyDetails);
         count++;
     }
 
@@ -373,10 +388,11 @@ const getAllHandsScoreSaved = (handCardsNumber = 5) => {
     const entries = getNDJSONRead(PATH_SCORES);
     const allHandsRaw = getAllHandsPossible();
     const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
-        const { key } = getHandKey(hand);
+        const keyDetails = getHandKey(hand);
+        const { key } = keyDetails;
         const fileKey = `${key}:S`;
         if (key && !map.has(fileKey) && !entries.has(fileKey)) {
-            const { score } = getHandScore(hand);
+            const { score } = getHandScore(keyDetails);
             // const entry = JSON.stringify({ key: fileKey, score });
             // fs.appendFileSync(PATH_SCORES, entry + '\n');
             map.set(fileKey, { key: fileKey, score: score });
@@ -388,6 +404,7 @@ const getAllHandsScoreSaved = (handCardsNumber = 5) => {
 
     const data = Array.from(allHandsAsMap.values());
     data.sort((a, b) => a.score - b.score);
+    data.forEach((entry, index) => { entry.score = index + 1 });
     fs.writeFileSync(PATH_SCORES, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
@@ -399,12 +416,13 @@ const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
     const entries = getNDJSONRead(PATH_SCORES_EVS);
     const allHandsRaw = getAllHandsPossible();
     const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
-        const { key } = getHandKey(hand);
+        const keyDetails = getHandKey(hand);
+        const { key } = keyDetails;
         const fileKey = `${key}:S`;
         const valueAsString = CACHE.get(fileKey);
         const value = valueAsString ? JSON.parse(valueAsString) : null;
         if (key && !map.has(fileKey) && !entries.has(fileKey) && value?.score) {
-            const ev = getHandExpectedValue(hand);
+            const ev = getHandExpectedValue(keyDetails);
             value.ev = ev;
             const entry = JSON.stringify(value);
             fs.appendFileSync(PATH_SCORES, entry + '\n');
@@ -447,14 +465,6 @@ const getAllHandsWithDiscardsExpectedValueSaved = (handCardsNumber = 5) => {
 
 
 const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumber = 100000) => {
-    const { key } = getHandKey([...hand]);
-    let cacheKey = `${key}:R${roundNumber}`;
-    // if (CACHE.has(cacheKey)) {
-    //     console.log(`getDiscardsDetailsForGivenHand.CacheHit`);
-    //     const line = CACHE.get(cacheKey);
-    //     const entry = JSON.parse(line);
-    //     return entry;
-    // }
 
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
@@ -498,10 +508,10 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                 const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
                 const cardsReceived = deck.splice(0, discardNumber);
                 let handNew = [...cardsKept, ...cardsReceived];
+                const keyDetails = getHandKey(handNew);
+                const { key } = keyDetails;
                 
                 if (roundNumber > 1 && deck.length >= 5) {
-                    const { key } = getHandKey([...handNew]);
-
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
                         const entry = JSON.parse(CACHE.get(cacheResultKey));
@@ -517,7 +527,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                     }
 
                 } else {
-                    const { score } = getHandScore(handNew);
+                    const { score } = getHandScore(keyDetails);
                     scorePerDiscardIndices += score;
                 }
             }
@@ -565,7 +575,8 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             for (const cardsReceived of allDraws) {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
-                const { key } = getHandKey([...handNew]);
+                const keyDetails = getHandKey(handNew);
+                const { key } = keyDetails;
                 const strategyKey = `${key}:R${roundNumber}`;
 
                  if (CACHE.has(strategyKey)) {
@@ -573,7 +584,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                     const entry = JSON.parse(line);
                     scorePerDiscardIndices += entry.score;
                 } else if (roundNumber <= 1) {
-                    const { score } = getHandScore(handNew);
+                    const { score } = getHandScore(keyDetails);
                     scorePerDiscardIndices += score;
                 } else {
                     const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
@@ -711,12 +722,13 @@ const getExpectedValueDataComputed = async () => {
         const entries = getNDJSONRead(PATH_SCORES_EVS);
         const allHandsRaw = getAllHandsPossible();
         const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
-            const { key } = getHandKey(hand);
+            const keyDetails = getHandKey(hand);
+            const { key, hand } = keyDetails;
             const entryKey = `${key}:S`;
             const valueAsString = CACHE.get(entryKey);
             const value = valueAsString ? JSON.parse(valueAsString) : null;
             if (key && !map.has(entryKey) && !entries.has(entryKey)) {
-                map.set(entryKey, { key: entryKey, hand, score: value.score  });
+                map.set(entryKey, { key: entryKey, hand, score: value.score, keyDetails });
             }
             return map;
         }, new Map());
@@ -777,8 +789,8 @@ const getExpectedValueDataComputed = async () => {
                 process.exit(0);
             }
     
-            const { key, hand, score } = handsDetails[index];
-            const ev = getHandExpectedValue(key, hand);
+            const { key, hand, score, keyDetails } = handsDetails[index];
+            const ev = getHandExpectedValue(keyDetails);
             const result = {};
             result.key = key;
             result.ev = ev;
@@ -910,7 +922,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             getArrayShuffled(deck);
             const hands = getHandsDealed(deck, 5, 1);
             const hand = hands[0];
-            const { key } = getHandKey([...hand]);
+            const { key } = getHandKey(hand);
 
             const cacheResultKey = `${key}:R${workerData.roundNumber}`;
             if (!CACHE.has(cacheResultKey)) {
@@ -970,7 +982,7 @@ const getCacheDuplicated = () => {
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
     // getAllHandsScoreSaved();
-    // getCacheLoadedFromNDJSON([PATH_SCORES]);
+    getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -989,10 +1001,16 @@ const getCacheDuplicated = () => {
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
-    const a = ["Kh", "10h", "9h", "9s", "8h"]
+    // 10|6|5|4|3:p0
+    // 10|6|5|4|3:p1
+    // 10|6|5|4|3:p2
+    // 10|6|5|4|3:p3
+    // 10|6|5|4|3:p4
+    // const a = ["10h", "6s", "5h", "4h", "3h"]
+    // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // const c = ["3s", "2s", "5c", "6s", "4c"]
-    getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    // const c = ["3s", "2s", "5s", "4c", "5c"]
+    getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
