@@ -207,9 +207,9 @@ const getHandScore = (hand) => {
     const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
     const isFlush = new Set(cardsSuit).size === 1
 
-    const cardCounts = cardsValue.reduce((acc, rank) => {
-        acc[rank] = (acc[rank] || 0) + 1;
-        return acc
+    const cardCounts = cardsValue.reduce((obj, rank) => {
+        obj[rank] = (obj[rank] || 0) + 1;
+        return obj
     }, {})
     const cardCountsKeys = Object.keys(cardCounts);
     const cardCountsKey1 = cardCountsKeys.filter(r => cardCounts[r] === 1).sort((a, b) => b - a);
