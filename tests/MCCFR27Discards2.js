@@ -71,30 +71,30 @@ const getNDJSONKeysDuplicatedDeleted = (filePath) => {
     const data = Array.from(content.values());
     data.sort((a, b) => a.score - b.score);
 
-    const scoresAsMap = new Map();
-    const dataWithoutScoresDuplicated = data.reduce((arr, entry) => {
-        const count = scoresAsMap.get(entry.score) || 0;
-        scoresAsMap.set(entry.score, count + 1);
+    // const scoresAsMap = new Map();
+    // const dataWithoutScoresDuplicated = data.reduce((arr, entry) => {
+    //     const count = scoresAsMap.get(entry.score) || 0;
+    //     scoresAsMap.set(entry.score, count + 1);
 
-        if (count === 1) {
-           const j = arr.findIndex(e => e.score === entry.score)
-           const entryPast = arr[j];
-           let entryPastKeyParts = entryPast.key.split(':');
-           entryPastKeyParts[1] += "+"
-           const keyNew = entryPastKeyParts.join(':');
-           arr[j] = {
-                ...entry,
-                key: keyNew
-            };
-        } if (count === 0) {
-            arr.push(entry);
-        }
-        return arr;
-    }, []);
+    //     if (count === 1) {
+    //        const j = arr.findIndex(e => e.score === entry.score)
+    //        const entryPast = arr[j];
+    //        let entryPastKeyParts = entryPast.key.split(':');
+    //        entryPastKeyParts[1] += "+"
+    //        const keyNew = entryPastKeyParts.join(':');
+    //        arr[j] = {
+    //             ...entry,
+    //             key: keyNew
+    //         };
+    //     } if (count === 0) {
+    //         arr.push(entry);
+    //     }
+    //     return arr;
+    // }, []);
 
     const filePathParsed = path.parse(filePath);
     const filePathNew = path.join(filePathParsed.dir, `${filePathParsed.name}_${filePathParsed.ext}`);
-    fs.writeFileSync(filePathNew, dataWithoutScoresDuplicated.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+    fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 
 const getArrayShuffled = (array) => {
