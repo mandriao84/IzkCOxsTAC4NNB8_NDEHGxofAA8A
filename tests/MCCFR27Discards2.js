@@ -190,39 +190,12 @@ const getHandFromKey = (key, discards = []) => {
 };
 
 const getHandScore = (hand) => {
-    function getHandScoreBelowPair(cardsValueDesc, cardsValueMax = [6, 4, 3, 2, 1], cardsValueMin = [13, 12, 11, 10, 8]) {
-        const multiplier = cardsLength + 1
-
-        let raw = 0;
-        for (let i = 0; i < cardsValueDesc.length; i++) {
-            raw = raw * multiplier + cardsValueDesc[i];
-        }
-
-        let bestRaw = 0, worstRaw = 0;
-        for (let i = 0; i < cardsValueDesc.length; i++) {
-            bestRaw = bestRaw * multiplier + cardsValueMax[i];
-            worstRaw = worstRaw * multiplier + cardsValueMin[i];
-        }
-
-        const range = worstRaw - bestRaw;
-        let score;
-        if (range === 0) {
-            score = 1;
-        } else {
-            score = 1 + Math.round((raw - bestRaw) * (9998 / range));
-            if (score < 1) { score = 1; }
-            if (score > 9999) { score = 9999; }
-        }
-        return score;
-    }
-
     var { key, hand: handSorted, cardsValue, cardsSuit } = getHandKey([...hand]);
 
     const scoreKey = `${key}:S`;
     if (CACHE.has(scoreKey)) {
         const line = CACHE.get(scoreKey);
         const entry = JSON.parse(line);
-        // console.log(entry)
         return entry;
     }
 
@@ -238,36 +211,42 @@ const getHandScore = (hand) => {
         acc[rank] = (acc[rank] || 0) + 1;
         return acc
     }, {})
-    const cardsCountAsArray = Object.entries(cardCounts)
+    const cardCountsKeys = Object.keys(cardCounts);
+    const cardCountsKey1 = cardCountsKeys.filter(r => cardCounts[r] === 1).sort((a, b) => b - a);
+    const cardCountsKey2 = cardCountsKeys.filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
+    const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
+    const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
+    const countValues = Object.values(cardCounts).sort((a, b) => b - a);
 
     let score = 0
     const multiplier = cardsLength + 1
-    const countValues = Object.values(cardCounts).sort((a, b) => b - a);
     if (isStraight && isFlush) {
-        score = 80000 + cardsValue.at(0);
+        const ranks = [...cardCountsKey1]
+        score = 8000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (countValues[0] === 4) {
-        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 4)?.at(0));
-        const cardValue2 = Number(cardsCountAsArray.find(([key, value]) => value === 1)?.at(0));
-        score = 70000 + (cardValue * multiplier) + cardValue2;
+        const ranks = [...cardCountsKey4, ...cardCountsKey1]
+        score = 7000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (countValues[0] === 3 && countValues[1] === 2) {
-        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
-        const cardValue2 = Number(cardsCountAsArray.find(([key, value]) => value === 2)?.at(0));
-        score = 60000 + (cardValue * multiplier) + cardValue2;
+        const ranks = [...cardCountsKey3, ...cardCountsKey2]
+        score = 6000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (isFlush) {
-        score = 50000 + cardsValue.at(0);
+        const ranks = [...cardCountsKey1]
+        score = 5000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (isStraight) {
-        score = 40000 + cardsValue.at(0);
+        const ranks = [...cardCountsKey1]
+        score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (countValues[0] === 3) {
-        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
-        score = 30000 + (cardValue * multiplier) + cardsValue.at(-1) + cardsValue.at(-2);
+        const ranks = [...cardCountsKey3, ...cardCountsKey1]
+        score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (countValues[0] === 2 && countValues[1] === 2) {
-        const rankMultiples = Object.keys(cardCounts).filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
-        score = 20000 + (Number(rankMultiples.at(0)) * multiplier * multiplier) + (Number(rankMultiples.at(1)) * multiplier) + cardsValue.at(-1);
+        const ranks = [...cardCountsKey2, ...cardCountsKey1]
+        score = 2000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (countValues[0] === 2) {
-        const rankMultiples = Object.keys(cardCounts).filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
-        score = 10000 + (Number(rankMultiples.at(0)) * multiplier) + cardsValue.at(-1) + cardsValue.at(-2) + cardsValue.at(-3);
+        const ranks = [...cardCountsKey2, ...cardCountsKey1]
+        score = 1000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else {
-        score = getHandScoreBelowPair(cardsValue);
+        const ranks = [...cardCountsKey1]
+        score = ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     }
 
     const result = { key, score };
@@ -950,8 +929,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    getAllHandsScoreSaved();
+    getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
+    // getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
