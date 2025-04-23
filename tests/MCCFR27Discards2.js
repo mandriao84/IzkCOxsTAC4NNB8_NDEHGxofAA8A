@@ -238,6 +238,7 @@ const getHandScore = (hand) => {
         acc[rank] = (acc[rank] || 0) + 1;
         return acc
     }, {})
+    const cardsCountAsArray = Object.entries(cardCounts)
 
     let score = 0
     const multiplier = cardsLength + 1
@@ -245,15 +246,18 @@ const getHandScore = (hand) => {
     if (isStraight && isFlush) {
         score = 80000 + cardsValue.at(0);
     } else if (countValues[0] === 4) {
-        score = 70000 + cardsValue.at(0);
+        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 4)?.at(0));
+        score = 70000 + cardValue;
     } else if (countValues[0] === 3 && countValues[1] === 2) {
-        score = 60000 + cardsValue.at(0);
+        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
+        score = 60000 + cardValue;
     } else if (isFlush) {
         score = 50000 + cardsValue.at(0);
     } else if (isStraight) {
         score = 40000 + cardsValue.at(0);
     } else if (countValues[0] === 3) {
-        score = 30000 + cardsValue.at(0);
+        const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
+        score = 30000 + cardValue;
     } else if (countValues[0] === 2 && countValues[1] === 2) {
         const rankMultiples = Object.keys(cardCounts).filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
         score = 20000 + (Number(rankMultiples.at(0)) * multiplier * multiplier) + (Number(rankMultiples.at(1)) * multiplier) + cardsValue.at(-1);
