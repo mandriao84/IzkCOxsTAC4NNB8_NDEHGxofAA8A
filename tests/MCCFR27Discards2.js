@@ -216,17 +216,16 @@ const getHandScore = (hand) => {
     const cardCountsKey2 = cardCountsKeys.filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
     const cardCountsKey3 = cardCountsKeys.filter(r => cardCounts[r] === 3).sort((a, b) => b - a);
     const cardCountsKey4 = cardCountsKeys.filter(r => cardCounts[r] === 4).sort((a, b) => b - a);
-    const countValues = Object.values(cardCounts).sort((a, b) => b - a);
 
     let score = 0
     const multiplier = cardsLength + 1
     if (isStraight && isFlush) {
         const ranks = [...cardCountsKey1]
         score = 8000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (countValues[0] === 4) {
+    } else if (cardCountsKey4.length === 1 && cardCountsKey1.length === 1) {
         const ranks = [...cardCountsKey4, ...cardCountsKey1]
         score = 7000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (countValues[0] === 3 && countValues[1] === 2) {
+    } else if (cardCountsKey3.length === 1 && cardCountsKey2.length === 1) {
         const ranks = [...cardCountsKey3, ...cardCountsKey2]
         score = 6000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else if (isFlush) {
@@ -235,13 +234,13 @@ const getHandScore = (hand) => {
     } else if (isStraight) {
         const ranks = [...cardCountsKey1]
         score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (countValues[0] === 3) {
+    } else if (cardCountsKey3.length === 1 && cardCountsKey1.length === 1) {
         const ranks = [...cardCountsKey3, ...cardCountsKey1]
         score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (countValues[0] === 2 && countValues[1] === 2) {
+    } else if (cardCountsKey2.length === 2 && cardCountsKey1.length === 1) {
         const ranks = [...cardCountsKey2, ...cardCountsKey1]
         score = 2000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (countValues[0] === 2) {
+    } else if (cardCountsKey2.length === 1 && cardCountsKey1.length === 3) {
         const ranks = [...cardCountsKey2, ...cardCountsKey1]
         score = 1000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     } else {
