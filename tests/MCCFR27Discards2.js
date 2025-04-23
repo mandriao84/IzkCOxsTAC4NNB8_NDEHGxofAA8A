@@ -999,15 +999,10 @@ const getCacheDuplicated = () => {
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
-    // 10|6|5|4|3:p0
-    // 10|6|5|4|3:p1
-    // 10|6|5|4|3:p2
-    // 10|6|5|4|3:p3
-    // 10|6|5|4|3:p4
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    const c = ["3s", "2s", "5s", "4c", "5c"]
+    const c = ["3s", "2s", "5s", "4h", "5c"]
     getCacheLoadedFromNDJSON([PATH_SCORES]);
     getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
