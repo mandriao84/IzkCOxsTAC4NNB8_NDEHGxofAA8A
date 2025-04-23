@@ -130,8 +130,18 @@ const getHandKey = (hand) => {
         obj[suit] = (obj[suit] || 0) + 1;
         return obj; 
     }, {});
-    const cardsSuitPattern = Object.values(cardsSuitCount).sort((a, b) => b - a).join('|');
     const cardsSuitSize = Object.keys(cardsSuitCount).length;
+    // const cardsSuitPattern = Object.values(cardsSuitCount).sort((a, b) => b - a).join('|');
+    const cardsSuitPattern = function() {
+        const cardsSuitCountValues = Object.values(cardsSuitCount).sort((a, b) => b - a);
+        if (cardsSuitSize === 1) {
+            return '1';
+        } else if (cardsSuitSize === 2 && cardsSuitCountValues.at(0) === 4) {
+            return '*';
+        } else {
+            return 'X';
+        }
+    }()
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsValue.includes(v));
     if (isStraightWithAs) { cardsValue = [4, 3, 2, 1, 0]; }
@@ -177,8 +187,8 @@ const getHandKey = (hand) => {
         return cardValueB - cardValueA;
     });
 
-    const key = `${cardsRankPattern}:${cardsSuitSize}`;
-    // const key = `${cardsRankPattern}:${cardsSuitPattern}`;
+
+    const key = `${cardsRankPattern}:${cardsSuitPattern}`;
 
     return { key, hand: handCopy, cardsValue, cardsSuit, type: details.type, ranks: details.ranks };
 }
@@ -955,8 +965,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    getAllHandsScoreSaved();
+    getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
+    // getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
