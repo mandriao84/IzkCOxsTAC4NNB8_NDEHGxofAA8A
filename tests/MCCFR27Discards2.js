@@ -471,13 +471,11 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
     const deckLeft = deck.filter(card => !hand.includes(card));
     if (type === "MCS") {
         const result = getMCSDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
-        result.key = key;
         console.log(type)
         console.log(result)
         return result;
     } else if (type === "ENUM") {
         const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-        result.key = key;
         console.log(type)
         console.log(result)
         return result;
@@ -489,7 +487,9 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
 
 
 const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) => {
+    const keyDetails = getHandKey(hand);
     const results = {};
+    results.key = keyDetails.key;
     let scoreFinal = Infinity;
     let indexFinal = null;
 
@@ -556,7 +556,9 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 
 
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
+    const keyDetails = getHandKey(hand);
     const results = {};
+    results.key = keyDetails.key;
     let scoreFinal = Infinity;
     let indexFinal = null;
 
@@ -695,7 +697,6 @@ const getEnumDataComputed = async (roundNumber = 1) => {
             const deckLeft = deck.filter(card => !hand.includes(card));
     
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-            result.key = key;
             const value = JSON.stringify(result);
     
             CACHE.set(key, value);
@@ -723,12 +724,12 @@ const getExpectedValueDataComputed = async () => {
         const allHandsRaw = getAllHandsPossible();
         const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
             const keyDetails = getHandKey(hand);
-            const { key, hand } = keyDetails;
+            const { key, hand: handSorted } = keyDetails;
             const entryKey = `${key}:S`;
             const valueAsString = CACHE.get(entryKey);
             const value = valueAsString ? JSON.parse(valueAsString) : null;
             if (key && !map.has(entryKey) && !entries.has(entryKey)) {
-                map.set(entryKey, { key: entryKey, hand, score: value.score, keyDetails });
+                map.set(entryKey, { key: entryKey, hand: handSorted, score: value.score, keyDetails });
             }
             return map;
         }, new Map());
@@ -825,7 +826,6 @@ const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-            result.key = roundKey;
             const resultAsString = JSON.stringify(result);
             CACHE.set(key, resultAsString);
             fs.appendFileSync(PATH_STRATEGIES, resultAsString + '\n');
@@ -928,7 +928,6 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             if (!CACHE.has(cacheResultKey)) {
                 const deckLeft = deck.filter(card => !hand.includes(card));
                 const result = getMCSDiscardsDetails(hand, deckLeft, workerData.roundNumber, 10000);
-                result.key = cacheResultKey;
                 const resultAsString = JSON.stringify(result);
                 CACHE.set(cacheResultKey, resultAsString);
                 parentPort.postMessage({ type: 'DATA', payload: resultAsString });
@@ -982,7 +981,6 @@ const getCacheDuplicated = () => {
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
     // getAllHandsScoreSaved();
-    getCacheLoadedFromNDJSON([PATH_SCORES]);
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1009,7 +1007,8 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // const c = ["3s", "2s", "5s", "4c", "5c"]
+    const c = ["3s", "2s", "5s", "4c", "5c"]
+    getCacheLoadedFromNDJSON([PATH_SCORES]);
     getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
