@@ -248,18 +248,18 @@ const getHandScore = (hand) => {
     } else if (countValues[0] === 4) {
         const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 4)?.at(0));
         const cardValue2 = Number(cardsCountAsArray.find(([key, value]) => value === 1)?.at(0));
-        score = 70000 + cardValue + cardValue2;
+        score = 70000 + (cardValue * multiplier) + cardValue2;
     } else if (countValues[0] === 3 && countValues[1] === 2) {
         const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
         const cardValue2 = Number(cardsCountAsArray.find(([key, value]) => value === 2)?.at(0));
-        score = 60000 + cardValue + cardValue2;
+        score = 60000 + (cardValue * multiplier) + cardValue2;
     } else if (isFlush) {
         score = 50000 + cardsValue.at(0);
     } else if (isStraight) {
         score = 40000 + cardsValue.at(0);
     } else if (countValues[0] === 3) {
         const cardValue = Number(cardsCountAsArray.find(([key, value]) => value === 3)?.at(0));
-        score = 30000 + cardValue + cardsValue.at(-1) + cardsValue.at(-2);
+        score = 30000 + (cardValue * multiplier) + cardsValue.at(-1) + cardsValue.at(-2);
     } else if (countValues[0] === 2 && countValues[1] === 2) {
         const rankMultiples = Object.keys(cardCounts).filter(r => cardCounts[r] === 2).sort((a, b) => b - a);
         score = 20000 + (Number(rankMultiples.at(0)) * multiplier * multiplier) + (Number(rankMultiples.at(1)) * multiplier) + cardsValue.at(-1);
@@ -950,8 +950,8 @@ const getCacheDuplicated = () => {
 
 
 (async () => {
-    getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
-    // getAllHandsScoreSaved();
+    // getNDJSONKeysDuplicatedDeleted(PATH_SCORES);
+    getAllHandsScoreSaved();
     // getCacheLoadedFromNDJSON();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
