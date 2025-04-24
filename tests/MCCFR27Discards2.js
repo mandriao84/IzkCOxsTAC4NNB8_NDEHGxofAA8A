@@ -4,8 +4,9 @@ const os = require('os');
 const { LRUCache } = require('lru-cache');
 const path = require('path');
 const { randomUUID } = require('crypto');
-const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
+const PATH_KEYS = path.join(process.cwd(), '.results/mccfr/keys.ndjson');
 const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
+const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_SCORES_EVS = path.join(process.cwd(), '.results/mccfr/scores-evs.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
@@ -24,6 +25,7 @@ const CACHE = new LRUCache ({
     // ttl: 0,
     allowStale: false
 });
+const keysMap = new Map();
 const scoresMap = new Map();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
@@ -439,7 +441,19 @@ const getAllHandsPossibleWithDiscards = (hand) => {
     
     return results;
 }
-const getAllHandsScoreSaved = (handCardsNumber = 5) => {
+const getAllHandsKeySaved = () => {
+    fs.mkdirSync(path.dirname(PATH_KEYS), { recursive: true });
+    fs.closeSync(fs.openSync(PATH_KEYS, 'a'));
+    const allHandsRaw = getAllHandsPossible();
+    const data = allHandsRaw.reduce((arr, hand) => {
+        const keyDetails = getHandKey(hand);
+        const { key } = keyDetails;
+        arr.push({ key: hand.sort().join(''), value: key });
+        return arr;
+    }, []);
+    fs.writeFileSync(PATH_KEYS, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+}
+const getAllHandsScoreSaved = () => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
 
@@ -676,9 +690,8 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 };
 const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
-    const keyDetails = getHandKey(hand);
     const results = {};
-    results.key = keyDetails.key + `:R${roundNumber}`;
+    results.key = keysMap.get(hand.sort().join(''));
     results.score = -Infinity;
     const allDiscards = getAllDiscardsPossible(hand);
     
@@ -689,8 +702,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
 
             const scoreAcc = allCardsReceived.reduce((score, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
-                const keyDetails = getHandKey(handNew);
-                const key = `${keyDetails.key}`;
+                const key = keysMap.get(handNew.sort().join(''));
                 const scoreCache = scoresMap.get(key);
                 score += scoreCache;
                 return score;
@@ -1062,7 +1074,11 @@ const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
             const trimmed = line.trim();
             const entry = trimmed ? JSON.parse(trimmed) : null;
             if (entry?.key) {
-                scoresMap.set(entry.key, entry.score);
+                if (path.includes("keys")) {
+                    keysMap.set(entry.key, entry.value);
+                } else if (path.includes("scores")) {
+                    scoresMap.set(entry.key, entry.score);
+                }
             }
         }
     }
@@ -1089,6 +1105,7 @@ const getCacheDuplicated = () => {
 
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_SCORES_EVS);
+    // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
@@ -1111,8 +1128,8 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    getCacheLoadedFromNDJSON([PATH_SCORES]);
-    const c = ["3s", "4s", "5s", "2s", "As"]
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+    const c = ["3s", "4s", "5s", "2s", "5c"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
