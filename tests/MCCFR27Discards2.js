@@ -343,6 +343,10 @@ const getHandWithDiscardsExpectedValue = (keyDetails, discards) => {
     const cardsKept = hand.filter(card => !discards.includes(card));
     const allCardsReceived = getAllCombinations(deckLeft, discards.length);
 
+    if (allCardsReceived.length === 0) {
+        return getHandExpectedValue(keyDetails);
+    }
+
     const evs = allCardsReceived.reduce((acc, cardsReceived) => {
         const handNew = [...cardsKept,...cardsReceived];
         const keyDetails = getHandKey(handNew);
@@ -351,7 +355,6 @@ const getHandWithDiscardsExpectedValue = (keyDetails, discards) => {
     }, 0);
 
     const result = (evs / allCardsReceived.length).safe("ROUND", 5);
-    console.log(result);
     return result;
 }
 function evDiscardCall(myHand, keepIdx, Pot) {
@@ -368,17 +371,6 @@ function shouldPlay(hand, pot = 3, bet = 1) {
 
 
 
-const factorial = (n) => {
-    if (n === 0 || n === 1) return 1;
-    return n * factorial(n - 1);
-};
-const hypergeometric = (success, population, sample) => {
-    return (factorial(success) * factorial(population - success)) / 
-           (factorial(sample) * factorial(success - sample) * factorial(population));
-};
-const getAllBinomials = (arr, k) => {
-    Array.from({ length: k }, (_, i) => n - i).reduce((a, b) => a * b, 1) / factorial(k);
-};
 const getAllCombinations = (arr, k) => {
     let result;
     if (k === 0) {
@@ -397,6 +389,53 @@ const getAllCombinations = (arr, k) => {
 const getAllHandsPossible = (handCardsNumber = 5) => {
     const deck = Object.values(DECK);
     const results = getAllCombinations(deck, handCardsNumber);
+    return results;
+}
+const getAllDiscardsPossible = (hand) => {
+    const n = hand.length;
+    const result = {
+        counts: Array(n + 1).fill(0),
+        combinations: Array(n + 1).fill().map(() => [])
+    };
+    
+    const totalCombinations = 1 << n; // 2^n
+    
+    for (let mask = 0; mask < totalCombinations; mask++) {
+        const subset = [];
+        let count = 0;
+        
+        for (let i = 0; i < n; i++) {
+            if ((mask & (1 << i)) !== 0) {
+                subset.push(hand[i]);
+                count++;
+            }
+        }
+        
+        result.combinations[count].push(subset);
+        result.counts[count]++;
+    }
+    
+    return result;
+}
+const getAllHandsPossibleWithDiscards = (hand) => {
+    const deck = Object.values(DECK);
+    const deckLeft = deck.filter(card => !hand.includes(card));
+    const allDiscards = getAllDiscardsPossible(hand);
+    const results = [];
+    for (const discards of allDiscards) {
+        const cardsKept = hand.filter(card => !discards.includes(card));
+        const allCardsReceived = getAllCombinations(deckLeft, discards.length);
+        const handsNew = allCardsReceived.map(cardsReceived => {
+            const hand = [...cardsKept, ...cardsReceived];
+            const keyDetails = getHandKey(hand);
+            return { hand, keyDetails };
+        });
+        
+        results.push(handsNew.length);
+    }
+    
+    // results.sort((a, b) => b.avgEV - a.avgEV);
+    
     return results;
 }
 const getAllHandsScoreSaved = (handCardsNumber = 5) => {
@@ -497,7 +536,7 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
         console.log(type)
         console.log(result)
         return result;
-    } else if (type === "BNML") {
+    } else if (type === "ENUM2") {
         const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
         console.log(type)
         console.log(result)
@@ -578,11 +617,11 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const keyDetails = getHandKey(hand);
     const results = {};
-    results.key = keyDetails.key;
+    results.key = keyDetails.key + `:R${roundNumber}`;
     let scoreFinal = Infinity;
     let indexFinal = null;
 
-    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) {
+    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) { 
         const discardCombinations = getAllCombinations([...Array(5).keys()], discardNumber);
         let score = Infinity;
         let index = null;
@@ -632,6 +671,53 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     results.score = scoreFinal;
     // results.cards = (indexFinal || []).map(idx => hand[idx]);
     results.cards = (indexFinal || []).map(idx => hand[idx].slice(0, -1));
+    return results;
+};
+const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
+    const keyDetails = getHandKey(hand);
+    const results = {};
+    results.key = keyDetails.key + `:R${roundNumber}`;
+    
+    // if (CACHE.has(results.key)) {
+    //     return JSON.parse(CACHE.get(results.key));
+    // }
+    const allDiscards = getAllDiscardsPossible(hand);
+    
+    for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
+        for (const discards of allDiscards.combinations[discardCount]) {
+            const cardsKept = hand.filter(card => !discards.includes(card));
+            const allCardsReceived = getAllCombinations(deckLeft, discardCount);
+
+            const cardsReceived = allCardsReceived.reduce(({ map, score }, cardsReceived) => {
+                const handNew = [...cardsKept, ...cardsReceived];
+                const keyDetails = getHandKey(handNew);
+                const key = `${keyDetails.key}`;
+                if (!map.has(key)) {
+                    const { score } = getHandScore(keyDetails);
+                    map.set(key, { hand: handNew, count: 0, score });
+                }
+                const hand = map.get(key);
+                hand.count++;
+                score += hand.score;
+                return { map, score };
+            }, { map: new Map(), score: 0 });
+
+             const scoreAverage = cardsReceived.score / allCardsReceived.length;
+             console.log(scoreAverage, discards)
+        }
+
+        // let totalCount = 0;
+        // const scorePerDiscard = handsAsMap.entries().reduce((acc, [key, value]) => {
+        //     totalCount += value.count;
+        //     acc += value.score * value.count;
+        //     return acc;
+        // }, 0)
+        
+        // results[discardCount] = (scorePerDiscard / totalCount).safe("ROUND", 3);
+    }
+    
+    // CACHE.set(strategyKey, JSON.stringify(results));
+    
     return results;
 };
 
@@ -1022,11 +1108,12 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    getCacheLoadedFromNDJSON([PATH_SCORES_EVS]);
+    // getCacheLoadedFromNDJSON([PATH_SCORES_EVS]);
     const c = ["3s", "4s", "5s", "2s", "As"]
-    getHandWithDiscardsExpectedValue({ hand: c }, ["As", "5s"]);
+
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
+    getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
