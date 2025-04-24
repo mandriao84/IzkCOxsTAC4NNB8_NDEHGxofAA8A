@@ -686,6 +686,13 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
     result.key = keysMap.get(hand.sort().join(''));
+    result.keyUniq = `${result.key}:R${roundNumber}`;
+
+    if (discardsMap.has(result.keyUniq)) {
+        result.score = discardsMap.get(result.keyUniq);
+        return result;
+    }
+
     result.score = -Infinity;
     const allDiscards = getAllDiscardsPossible(hand);
     
