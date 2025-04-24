@@ -24,6 +24,7 @@ const CACHE = new LRUCache ({
     // ttl: 0,
     allowStale: false
 });
+const scoresMap = new Map();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -441,28 +442,25 @@ const getAllHandsPossibleWithDiscards = (hand) => {
 const getAllHandsScoreSaved = (handCardsNumber = 5) => {
     fs.mkdirSync(path.dirname(PATH_SCORES), { recursive: true });
     fs.closeSync(fs.openSync(PATH_SCORES, 'a'));
-    // const file = fs.openSync(PATH_SCORES, 'a');
 
     const entries = getNDJSONRead(PATH_SCORES);
     const allHandsRaw = getAllHandsPossible();
-    const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
+    const handsMap = allHandsRaw.reduce((map, hand) => {
         const keyDetails = getHandKey(hand);
         const { key } = keyDetails;
-        const fileKey = `${key}:S`;
+        const fileKey = `${key}`;
         if (key && !map.has(fileKey) && !entries.has(fileKey)) {
             const { score } = getHandScore(keyDetails);
-            // const entry = JSON.stringify({ key: fileKey, score });
-            // fs.appendFileSync(PATH_SCORES, entry + '\n');
             map.set(fileKey, { key: fileKey, score: score });
         }
         return map;
     }, new Map());
 
-    // fs.closeSync(file);
-
-    const data = Array.from(allHandsAsMap.values());
+    const data = Array.from(handsMap.values());
     data.sort((a, b) => a.score - b.score);
-    data.forEach((entry, index) => { entry.score = index + 1 });
+    data.forEach((entry, index) => { 
+        entry.score = (1 - (index / (data.length - 1))).safe("ROUND", 5);
+    });
     fs.writeFileSync(PATH_SCORES, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
 const getAllHandsExpectedValueSaved = (handCardsNumber = 5) => {
@@ -615,6 +613,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 };
 
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
+    const timeStart = performance.now();
     const keyDetails = getHandKey(hand);
     const results = {};
     results.key = keyDetails.key + `:R${roundNumber}`;
@@ -671,16 +670,16 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     results.score = scoreFinal;
     // results.cards = (indexFinal || []).map(idx => hand[idx]);
     results.cards = (indexFinal || []).map(idx => hand[idx].slice(0, -1));
+    const timeEnd = performance.now();
+    console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     return results;
 };
 const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
+    const timeStart = performance.now();
     const keyDetails = getHandKey(hand);
     const results = {};
     results.key = keyDetails.key + `:R${roundNumber}`;
-    
-    // if (CACHE.has(results.key)) {
-    //     return JSON.parse(CACHE.get(results.key));
-    // }
+    results.score = -Infinity;
     const allDiscards = getAllDiscardsPossible(hand);
     
     for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
@@ -688,36 +687,25 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
             const cardsKept = hand.filter(card => !discards.includes(card));
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
 
-            const cardsReceived = allCardsReceived.reduce(({ map, score }, cardsReceived) => {
+            const scoreAcc = allCardsReceived.reduce((score, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const keyDetails = getHandKey(handNew);
                 const key = `${keyDetails.key}`;
-                if (!map.has(key)) {
-                    const { score } = getHandScore(keyDetails);
-                    map.set(key, { hand: handNew, count: 0, score });
-                }
-                const hand = map.get(key);
-                hand.count++;
-                score += hand.score;
-                return { map, score };
-            }, { map: new Map(), score: 0 });
+                const scoreCache = scoresMap.get(key);
+                score += scoreCache;
+                return score;
+            }, 0);
 
-             const scoreAverage = cardsReceived.score / allCardsReceived.length;
-             console.log(scoreAverage, discards)
+            const score = scoreAcc / allCardsReceived.length;
+            if (score > results.score) {
+                results.score = score.safe("ROUND", 5);
+                results.cards = discards;
+            }
         }
-
-        // let totalCount = 0;
-        // const scorePerDiscard = handsAsMap.entries().reduce((acc, [key, value]) => {
-        //     totalCount += value.count;
-        //     acc += value.score * value.count;
-        //     return acc;
-        // }, 0)
-        
-        // results[discardCount] = (scorePerDiscard / totalCount).safe("ROUND", 3);
     }
     
-    // CACHE.set(strategyKey, JSON.stringify(results));
-    
+    const timeEnd = performance.now();
+    console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     return results;
 };
 
@@ -1048,8 +1036,23 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
+// const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
+//     CACHE.clear();
+//     for (let i = 0; i < paths.length; i++) {
+//         const path = paths[i];
+//         const content = fs.readFileSync(path, 'utf8');
+//         const lines = content.split('\n');
+//         for (let i = 0; i < lines.length; i++) {
+//             const line = lines[i];
+//             const trimmed = line.trim();
+//             const entry = trimmed ? JSON.parse(trimmed) : null;
+//             if (entry?.key) {
+//                 CACHE.set(entry.key, trimmed);
+//             }
+//         }
+//     }
+// }
 const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
-    CACHE.clear();
     for (let i = 0; i < paths.length; i++) {
         const path = paths[i];
         const content = fs.readFileSync(path, 'utf8');
@@ -1059,7 +1062,7 @@ const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
             const trimmed = line.trim();
             const entry = trimmed ? JSON.parse(trimmed) : null;
             if (entry?.key) {
-                CACHE.set(entry.key, trimmed);
+                scoresMap.set(entry.key, entry.score);
             }
         }
     }
@@ -1108,12 +1111,12 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // getCacheLoadedFromNDJSON([PATH_SCORES_EVS]);
+    getCacheLoadedFromNDJSON([PATH_SCORES]);
     const c = ["3s", "4s", "5s", "2s", "As"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
-    getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM2", c, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
