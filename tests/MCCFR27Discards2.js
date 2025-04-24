@@ -27,6 +27,7 @@ const CACHE = new LRUCache ({
 });
 const keysMap = new Map();
 const scoresMap = new Map();
+const discardsMap = new Map();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -269,13 +270,6 @@ const getHandFromKey = (key, discards = []) => {
 const getHandScore = (keyDetails) => {
     var { key, type, ranks } = keyDetails;
 
-    const scoreKey = `${key}:S`;
-    if (CACHE.has(scoreKey)) {
-        const line = CACHE.get(scoreKey);
-        const entry = JSON.parse(line);
-        return entry;
-    }
-
     let score = 0
     const multiplier = cardsLength + 1
     if (type === 'straightFlush') {
@@ -462,10 +456,10 @@ const getAllHandsScoreSaved = () => {
     const handsMap = allHandsRaw.reduce((map, hand) => {
         const keyDetails = getHandKey(hand);
         const { key } = keyDetails;
-        const fileKey = `${key}`;
-        if (key && !map.has(fileKey) && !entries.has(fileKey)) {
+        const keyUniq = `${key}`;
+        if (key && !map.has(keyUniq) && !entries.has(keyUniq)) {
             const { score } = getHandScore(keyDetails);
-            map.set(fileKey, { key: fileKey, score: score });
+            map.set(keyUniq, { key: keyUniq, score });
         }
         return map;
     }, new Map());
@@ -473,7 +467,7 @@ const getAllHandsScoreSaved = () => {
     const data = Array.from(handsMap.values());
     data.sort((a, b) => a.score - b.score);
     data.forEach((entry, index) => { 
-        entry.score = (1 - (index / (data.length - 1))).safe("ROUND", 5);
+        entry.value = (1 - (index / (data.length - 1))).safe("ROUND", 5);
     });
     fs.writeFileSync(PATH_SCORES, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
@@ -690,9 +684,9 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 };
 const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
-    const results = {};
-    results.key = keysMap.get(hand.sort().join(''));
-    results.score = -Infinity;
+    const result = {};
+    result.key = keysMap.get(hand.sort().join(''));
+    result.score = -Infinity;
     const allDiscards = getAllDiscardsPossible(hand);
     
     for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
@@ -703,22 +697,32 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
             const scoreAcc = allCardsReceived.reduce((acc, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const key = keysMap.get(handNew.sort().join(''));
-                const score = scoresMap.get(key);
-                acc += score;
+                const keyUniq = `${key}:R${roundNumber}`;
+
+                if (discardsMap.has(keyUniq)) {
+                    acc += discardsMap.get(keyUniq);
+                } else if (roundNumber <= 1) {
+                    acc += scoresMap.get(key);
+                } else {
+                    const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
+                    const roundNext = getEnum2DiscardsDetails(handNew, deckNew, roundNumber - 1);
+                    acc += roundNext.score;
+                }
+
                 return acc;
             }, 0);
 
             const score = scoreAcc / allCardsReceived.length;
-            if (score > results.score) {
-                results.score = score.safe("ROUND", 5);
-                results.cards = discards;
+            if (score > result.score) {
+                result.score = score.safe("ROUND", 5);
+                result.cards = discards;
             }
         }
     }
     
     const timeEnd = performance.now();
     console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
-    return results;
+    return result;
 };
 
 
@@ -1077,7 +1081,7 @@ const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
                 if (path.includes("keys")) {
                     keysMap.set(entry.key, entry.value);
                 } else if (path.includes("scores")) {
-                    scoresMap.set(entry.key, entry.score);
+                    scoresMap.set(entry.key, entry.value);
                 }
             }
         }
