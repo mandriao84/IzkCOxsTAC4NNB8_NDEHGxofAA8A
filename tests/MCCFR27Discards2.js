@@ -700,12 +700,12 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
             const cardsKept = hand.filter(card => !discards.includes(card));
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
 
-            const scoreAcc = allCardsReceived.reduce((score, cardsReceived) => {
+            const scoreAcc = allCardsReceived.reduce((acc, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const key = keysMap.get(handNew.sort().join(''));
-                const scoreCache = scoresMap.get(key);
-                score += scoreCache;
-                return score;
+                const score = scoresMap.get(key);
+                acc += score;
+                return acc;
             }, 0);
 
             const score = scoreAcc / allCardsReceived.length;
