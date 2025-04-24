@@ -6,6 +6,7 @@ const path = require('path');
 const { randomUUID } = require('crypto');
 const PATH_KEYS = path.join(process.cwd(), '.results/mccfr/keys.ndjson');
 const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
+const PATH_DISCARDS = path.join(process.cwd(), '.results/mccfr/discards.ndjson');
 const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_SCORES_EVS = path.join(process.cwd(), '.results/mccfr/scores-evs.ndjson');
 const DECK = {
@@ -729,6 +730,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     
     const timeEnd = performance.now();
     console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
+    discardsMap.set(result.keyUniq, result.score);
     return result;
 };
 
@@ -1089,6 +1091,8 @@ const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
                     keysMap.set(entry.key, entry.value);
                 } else if (path.includes("scores")) {
                     scoresMap.set(entry.key, entry.value);
+                } else if (path.includes("discards")) {
+                    discardsMap.set(entry.key, entry.value);
                 }
             }
         }
