@@ -351,6 +351,7 @@ const getHandWithDiscardsExpectedValue = (keyDetails, discards) => {
     }, 0);
 
     const result = (evs / allCardsReceived.length).safe("ROUND", 5);
+    console.log(result);
     return result;
 }
 function evDiscardCall(myHand, keepIdx, Pot) {
@@ -1021,9 +1022,10 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
+    getCacheLoadedFromNDJSON([PATH_SCORES_EVS]);
     const c = ["3s", "4s", "5s", "2s", "As"]
-    getCacheLoadedFromNDJSON([PATH_SCORES]);
-    getDiscardsDetailsForGivenHand("BNML", c, 1);
+    getHandWithDiscardsExpectedValue({ hand: c }, ["As", "5s"]);
+    // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
