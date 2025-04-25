@@ -728,7 +728,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
                 if (discardsMap.has(keyUniq)) {
                     acc += discardsMap.get(keyUniq);
                 } else if (roundNumber <= 1) {
-                    acc += scoresMap.get(key);
+                    acc += scoresMap.get(key).value;
                 } else {
                     const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
                     const roundNext = getEnum2DiscardsDetails(handNew, deckNew, roundNumber - 1);
@@ -861,12 +861,12 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
-        const handsMissingPerWorker = Math.ceil(handsMissing.length / cpuCount);
+        const handsCountPerWorker = Math.ceil(handsMissing.length / cpuCount);
 
         for (let i = 0; i < cpuCount; i++) {
-            const workerStart = i * handsMissingPerWorker;
-            const workerEnd = Math.min(workerStart + handsMissingPerWorker, handsMissing.length);
-            const workerHands = allHands.slice(workerStart, workerEnd);
+            const workerStart = i * handsCountPerWorker;
+            const workerEnd = Math.min(workerStart + handsCountPerWorker, handsMissing.length);
+            const workerHands = handsMissing.slice(workerStart, workerEnd);
 
             const worker = new Worker(__filename, {
                 workerData: {
@@ -1189,7 +1189,7 @@ const getCacheLoadedFromNDJSON = (paths) => {
                 if (path.includes("keys.ndjson")) {
                     keysMap.set(entry.key, entry.value);
                 } else if (path.includes("scores.ndjson")) {
-                    scoresMap.set(entry.key, entry.value);
+                    scoresMap.set(entry.key, { hand: entry.hand, value: entry.value });
                 } else if (path.includes("discardsk.ndjson")) {
                     discardskMap.set(entry.key, entry.value);
                 } else if (path.includes("discards.ndjson")) {
@@ -1239,19 +1239,19 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    // await getEnum2DataComputed(1);
+    await getEnum2DataComputed(1);
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
-    const c = ["3s", "5s", "6s", "2s", "8s"]
+    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
+    // const c = ["3s", "5s", "6s", "2s", "8s"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
-    getDiscardsDetailsForGivenHand("ENUM2", c, 1);
+    // getDiscardsDetailsForGivenHand("ENUM2", c, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
