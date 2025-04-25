@@ -1231,7 +1231,7 @@ const getCacheDuplicated = () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDS);
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
-    getAllDiscardsKSaved();
+    // getAllDiscardsKSaved();
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1254,12 +1254,12 @@ const getCacheDuplicated = () => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-    // const c = ["3s", "5s", "6s", "2s", "8s"]
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
+    const c = ["3s", "5s", "6s", "2s", "8s"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
-    // getDiscardsDetailsForGivenHand("ENUM2", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM2", c, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
