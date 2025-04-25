@@ -716,7 +716,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     const discardsK = discardskMap.get(result.key);
     
     for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
-        for (const discards of discardsK.combinations[discardCount]) {
+        for (const discards of discardsK[discardCount]) {
             const cardsKept = hand.filter(card => !discards.includes(card));
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
 
