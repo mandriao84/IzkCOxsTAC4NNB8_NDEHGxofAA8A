@@ -848,43 +848,39 @@ const getEnumDataComputed = async (roundNumber = 1) => {
 };
 const getEnum2DataComputed = async (roundNumber = 1) => {
     if (isMainThread) {
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDS]);
-        const entries = getNDJSONRead(PATH_DISCARDS) ?? new Map();
-        const allHandsRaw = getAllHandsPossible();
-        const allHandsAsMap = allHandsRaw.reduce((map, hand) => {
-            const key = keysMap.get(hand.sort().join(''));
-            const keyUniq = `${key}:R${roundNumber}`;
-            if (key && !map.has(keyUniq) && !entries.has(keyUniq)) {
-                map.set(keyUniq, { key: keyUniq, hand });
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
+        const handsAll = Array.from(scoresMap.values());
+        const handsMissing = handsAll.reduce((arr, d) => {
+            const { key, hand } = d;
+            const keyDiscards = `${key}:R${roundNumber}`;
+            if (!discardsMap.has(keyDiscards)) {
+                arr.push({ hand })
             }
-            return map;
-        }, new Map());
-        console.log(`getEnum2DataComputed.EntriesMissing: ${allHandsAsMap.size}`);
+            return arr;
+        }, []);
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
-        const allHands = Array.from(allHandsAsMap.values());
-        const allHandsPerWorker = Math.ceil(allHands.length / cpuCount);
+        const handsMissingPerWorker = Math.ceil(handsMissing.length / cpuCount);
 
         for (let i = 0; i < cpuCount; i++) {
-            const workerStart = i * allHandsPerWorker;
-            const workerEnd = Math.min(workerStart + allHandsPerWorker, allHands.length);
+            const workerStart = i * handsMissingPerWorker;
+            const workerEnd = Math.min(workerStart + handsMissingPerWorker, handsMissing.length);
             const workerHands = allHands.slice(workerStart, workerEnd);
 
             const worker = new Worker(__filename, {
                 workerData: {
-                    handsDetails: workerHands,
-                    roundNumber,
-                    PATH_STRATEGIES
+                    hands: workerHands,
+                    roundNumber
                 }
             });
             workers.instance.push(worker);
 
             worker.on('message', (message) => {
                 const { type, key, value } = message;
-                if (type === "CACHE_POST" && !entries.has(key)) {
-                    fs.appendFileSync(PATH_DISCARDS, value + '\n');
-                    entries.set(key, { hand: "NEW" });
+                if (type === "CACHE_POST" && !discardsMap.has(key)) {
+                    fs.appendFileSync(PATH_DISCARDS, JSON.stringify(value) + '\n');
+                    discardsMap.set(key, value);
                     for (let j = 0; j < workers.instance.length; j++) {
                         const instance = workers.instance[j];
                         if (instance !== worker) {
@@ -899,7 +895,8 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDS]);
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
+        const { hands } = workerData;
 
         parentPort.on('message', (message) => {
             const { type, key, value } = message;
@@ -909,24 +906,19 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
                 }
             }
         });
-
-        const { handsDetails, roundNumber } = workerData;
+        
         let index = 0;
-
         function getHandsProcessed() {
-            if (index >= handsDetails.length) {
+            if (index >= hands.length) {
                 process.exit(0);
             }
     
-            const { hand, key } = handsDetails[index];
+            const { hand } = hands[index];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
-    
             const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
-            const value = JSON.stringify(result);
-    
-            discardsMap.set(key, value);
-            parentPort.postMessage({ type: 'CACHE_POST', key: key, value: value });
+            discardsMap.set(result.key, result.score);
+            parentPort.postMessage({ type: 'CACHE_POST', key: result.key, value: result.score });
     
             index++;
             setImmediate(getHandsProcessed);
