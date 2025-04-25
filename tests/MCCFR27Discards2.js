@@ -884,7 +884,7 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
                     for (let j = 0; j < workers.instance.length; j++) {
                         const instance = workers.instance[j];
                         if (instance !== worker) {
-                            instance.postMessage({ type: 'CACHE_POST', key: key, value: value });
+                            instance.postMessage({ type: 'CACHE_POST', key: key, value: value.value });
                         }
                     }
                 }
@@ -918,7 +918,7 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
             discardsMap.set(result.key, result.score);
-            parentPort.postMessage({ type: 'CACHE_POST', key: result.key, value: result.score });
+            parentPort.postMessage({ type: 'CACHE_POST', key: result.key, value: { key: result.key, cards: result.cards, value: result.score } });
     
             index++;
             setImmediate(getHandsProcessed);
