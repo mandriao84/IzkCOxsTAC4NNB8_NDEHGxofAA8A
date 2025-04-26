@@ -935,8 +935,9 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
         // });
 
         const pathParsed = path.parse(PATH_DISCARDS);
-        const pathNew = path.join(pathParsed.dir, `discards`, `${pathParsed.name}-${id}${pathParsed.ext}`);
+        const pathDir = path.join(pathParsed.dir, `discards`);
         fs.mkdirSync(pathNew, { recursive: true });
+        const pathNew = path.join(pathDir, `${pathParsed.name}-${id}${pathParsed.ext}`);
         const writeStream = fs.createWriteStream(pathNew, { flags: 'a' });
         
         let index = 0;
