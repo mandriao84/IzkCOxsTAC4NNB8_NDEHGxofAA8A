@@ -1276,20 +1276,20 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    await getEnum2DataComputed(1);
+    // await getEnum2DataComputed(1);
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
-    // const c = ["Ks","Kh","Qs","Js","9s"]
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
+    const c = ["Ks","Qs","Js","10s","7s"]
     // const d = ["As","Ks","Kh","6h","6s"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
-    // getDiscardsDetailsForGivenHand("ENUM2", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM2", c, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
