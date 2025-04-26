@@ -54,6 +54,34 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
+
+const getNDJSONDirRead = (dir) => {
+    if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir);
+        const results = files.reduce((map, filePath) => {
+            const filePathParsed = path.parse(filePath);
+            if (filePathParsed.ext === '.ndjson') {
+                const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
+                const lines = data.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+                    if (!data.key) continue;
+                    if (!map.has(data.key)) {
+                        map.set(data.key, data);
+                    }
+                }
+            }
+            return map;
+        }, new Map())
+
+        const filePathNew = path.join(path.dirname(dir), 'discards.ndjson');
+        const data = Array.from(results.values());
+        data.sort((a, b) => b.value - a.value);
+        fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+    }
+}
 const getNDJSONRead = (filePath) => {
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf8');
@@ -849,7 +877,7 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
         const handsAll = Array.from(scoresMap.entries());
         const handsMissing = handsAll.reduce((arr, [key, value]) => {
             const { hand } = value;
-            const keyDiscards = `${key}`;
+            const keyDiscards = `${key}:R${roundNumber}`;
             if (!discardsMap.has(keyDiscards)) {
                 arr.push({ hand })
             }
@@ -867,25 +895,26 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
 
             const worker = new Worker(__filename, {
                 workerData: {
+                    id: i,
                     hands: workerHands,
                     roundNumber
                 }
             });
-            workers.instance.push(worker);
+            // workers.instance.push(worker);
 
-            worker.on('message', (message) => {
-                const { type, key, value } = message;
-                if (type === "CACHE_POST" && !discardsMap.has(key)) {
-                    fs.appendFileSync(PATH_DISCARDS, JSON.stringify(value) + '\n');
-                    discardsMap.set(key, value.value);
-                    for (let j = 0; j < workers.instance.length; j++) {
-                        const instance = workers.instance[j];
-                        if (instance !== worker) {
-                            instance.postMessage({ type: 'CACHE_POST', key: key, value: value.value });
-                        }
-                    }
-                }
-            });
+            // worker.on('message', (message) => {
+            //     const { type, key, value } = message;
+            //     if (type === "CACHE_POST" && !discardsMap.has(key)) {
+            //         fs.appendFileSync(PATH_DISCARDS, JSON.stringify(value) + '\n');
+            //         discardsMap.set(key, value.value);
+            //         for (let j = 0; j < workers.instance.length; j++) {
+            //             const instance = workers.instance[j];
+            //             if (instance !== worker) {
+            //                 instance.postMessage({ type: 'CACHE_POST', key: key, value: value.value });
+            //             }
+            //         }
+            //     }
+            // });
             
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
@@ -893,16 +922,21 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
         await Promise.all(workers.exit);
     } else {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
-        const { hands } = workerData;
+        const { id, hands } = workerData;
 
-        parentPort.on('message', (message) => {
-            const { type, key, value } = message;
-            if (type === 'CACHE_POST') {
-                if (!discardsMap.has(key)) {
-                    discardsMap.set(key, value);
-                }
-            }
-        });
+        // parentPort.on('message', (message) => {
+        //     const { type, key, value } = message;
+        //     if (type === 'CACHE_POST') {
+        //         if (!discardsMap.has(key)) {
+        //             discardsMap.set(key, value);
+        //         }
+        //     }
+        // });
+
+        const pathParsed = path.parse(PATH_DISCARDS);
+        const pathNew = path.join(pathParsed.dir, `discards`, `${pathParsed.name}-${id}${pathParsed.ext}`);
+        fs.mkdirSync(pathNew, { recursive: true });
+        const writeStream = fs.createWriteStream(pathNew, { flags: 'a' });
         
         let index = 0;
         function getHandsProcessed() {
@@ -915,8 +949,9 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
             discardsMap.set(result.keyDiscards, result.score);
-            parentPort.postMessage({ type: 'CACHE_POST', key: result.keyDiscards, value: { key: result.keyDiscards, cards: result.cards, value: result.score } });
-    
+            // parentPort.postMessage({ type: 'CACHE_POST', key: result.keyDiscards, value: { key: result.keyDiscards, cards: result.cards, value: result.score } });
+            writeStream.write(JSON.stringify({ key: result.keyDiscards, cards: result.cards, value: result.score }) + '\n');
+
             index++;
             setImmediate(getHandsProcessed);
         }
@@ -1223,6 +1258,7 @@ const getCacheDuplicated = () => {
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
+    // getNDJSONDirRead('.results/mccfr/discards')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1246,7 +1282,8 @@ const getCacheDuplicated = () => {
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
     // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK]);
-    // const c = ["As","Ah","Ad","9s","8s"]
+    // const c = ["Ks","Kh","Qs","Js","9s"]
+    // const d = ["As","Ks","Kh","6h","6s"]
 
     // getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
