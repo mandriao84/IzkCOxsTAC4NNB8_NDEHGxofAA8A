@@ -883,6 +883,7 @@ const getEnum2DataComputed = async (roundNumber = 1) => {
             }
             return arr;
         }, []);
+        console.log(`getEnum2DataComputed.EntriesMissing: ${handsMissing.length}`);
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
