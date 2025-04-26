@@ -1276,7 +1276,7 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    await getEnum2DataComputed(1);
+    await getEnum2DataComputed(2);
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
