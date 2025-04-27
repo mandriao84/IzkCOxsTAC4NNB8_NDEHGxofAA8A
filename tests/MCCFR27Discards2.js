@@ -1260,7 +1260,7 @@ const getCacheDuplicated = () => {
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
-    // getNDJSONDirRead('.results/mccfr/discards')
+    getNDJSONDirRead('.results/mccfr/discards')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1276,7 +1276,7 @@ const getCacheDuplicated = () => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(1);
-    await getEnum2DataComputed(2);
+    // await getEnum2DataComputed(2);
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed();
 
