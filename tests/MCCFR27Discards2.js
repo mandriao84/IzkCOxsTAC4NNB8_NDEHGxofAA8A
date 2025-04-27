@@ -215,19 +215,11 @@ const getHandKey = (hand) => {
     });
 
     const cardsSuitPattern = function() {
-        // const cardsSuitCountValues = Object.values(cardsSuitCount).sort((a, b) => b - a);
-        // const special1 = cardsSuitCountSize === 2 && cardsSuitCountValues.at(0) === 4 && details.type === "high";
-        // if (cardsSuitCountSize === 1) {
-        //     return '-'; // flush
-        // } else if (special1) {
-        //     // const cardsSuitCountKey1 = cardsSuitCountKeys.find(key => cardsSuitCount[key] === 1);
-        //     // const i = handCopy.findIndex(card => card.slice(-1) === cardsSuitCountKey1);
-        //     // return `p${i}`
-        //     return 's';
-        // } else {
-        //     return '*'; // unrelevant
-        // }
-        if (cardsSuitCountSize === 1) {
+        const cardSuitMax = getCardSuit(handCopy.at(0));
+        const cardSuitMaxCount = cardsSuit.filter(suit => suit === cardSuitMax).length;
+        if (cardsCountKey1.length === 5 && cardsSuitCountSize === 2 && cardSuitMaxCount === 1) {
+            return '!';
+        } else if (cardsSuitCountSize === 1) {
             return '-';
         } else {
             return '*';
@@ -409,7 +401,7 @@ const getAllCombinations = (arr, k) => {
         const withoutFirst = getAllCombinations(rest, k);
         result = [...withFirst, ...withoutFirst];
     }
-    
+        	
     return result;
 };
 const getAllHandsPossible = (handCardsNumber = 5) => {
@@ -640,8 +632,8 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
-    const handEv = evsMap.get(result.key);
     result.key = keysMap.get(hand.sort().join(''));
+    const handEv = evsMap.get(result.key);
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
     if (discardsMap.has(result.keyDiscards)) {
@@ -672,8 +664,8 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                 return acc;
             }, 0);
 
-            // IF (allCardsReceived.length === 0) MEANING STAND PAT MEANING WE TAKE THE EV OF THE HAND
-            const ev = allCardsReceived.length === 0 ? handEv : scoreAcc / allCardsReceived.length;
+            // IF (discardCount === 0) MEANING STAND PAT MEANING WE TAKE THE EV OF THE HAND
+            const ev = discardCount === 0 ? handEv : scoreAcc / allCardsReceived.length;
             if (ev > result.ev) {
                 result.ev = ev.safe("ROUND", 5);
                 result.cards = discards;
@@ -995,7 +987,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
     // const c = ["Js","Jh","3s","3h","2s"]
-    const d = ["Qh","7s","4s","3s","2s"]
+    const d = ["Qh","10s","4s","3s","2s"]
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
 
     getDiscardsDetailsForGivenHand("ENUM", d, 1);
