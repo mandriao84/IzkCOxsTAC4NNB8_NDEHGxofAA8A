@@ -7,7 +7,7 @@ const { randomUUID } = require('crypto');
 const PATH_KEYS = path.join(process.cwd(), '.results/mccfr/keys.ndjson');
 const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
 const PATH_DISCARDSK = path.join(process.cwd(), '.results/mccfr/discardsk.ndjson');
-const PATH_DISCARDS = path.join(process.cwd(), '.results/mccfr/discards.ndjson');
+const PATH_DISCARDSEV = path.join(process.cwd(), '.results/mccfr/discardsev.ndjson');
 const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
 const PATH_EVS = path.join(process.cwd(), '.results/mccfr/evs.ndjson');
 const DECK = {
@@ -77,7 +77,7 @@ const getNDJSONDirRead = (dir) => {
             return map;
         }, new Map())
 
-        const filePathNew = path.join(path.dirname(dir), 'discards.ndjson');
+        const filePathNew = path.join(path.dirname(dir), 'discardsev.ndjson');
         const data = Array.from(results.values());
         data.sort((a, b) => b.value - a.value);
         fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
@@ -640,7 +640,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
-    const ev = evsMap.get(result.key);
+    const handEv = evsMap.get(result.key);
     result.key = keysMap.get(hand.sort().join(''));
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
@@ -673,7 +673,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             }, 0);
 
             // IF (allCardsReceived.length === 0) MEANING STAND PAT MEANING WE TAKE THE EV OF THE HAND
-            const ev = allCardsReceived.length === 0 ? ev : scoreAcc / allCardsReceived.length;
+            const ev = allCardsReceived.length === 0 ? handEv : scoreAcc / allCardsReceived.length;
             if (ev > result.ev) {
                 result.ev = ev.safe("ROUND", 5);
                 result.cards = discards;
@@ -692,7 +692,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 
 const getEnumDiscardsComputed = async (roundNumber) => {
     if (isMainThread) {
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
         const handsAll = Array.from(scoresMap.entries());
         const handsMissing = handsAll.reduce((arr, [key, value]) => {
             const { hand } = value;
@@ -726,10 +726,10 @@ const getEnumDiscardsComputed = async (roundNumber) => {
         
         await Promise.all(workers.exit);
     } else {
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
         const { id, hands } = workerData;
 
-        const pathParsed = path.parse(PATH_DISCARDS);
+        const pathParsed = path.parse(PATH_DISCARDSEV);
         const pathDir = path.join(pathParsed.dir, `discards`);
         fs.mkdirSync(pathDir, { recursive: true });
         const pathNew = path.join(pathDir, `${pathParsed.name}-${id}${pathParsed.ext}`);
@@ -745,8 +745,8 @@ const getEnumDiscardsComputed = async (roundNumber) => {
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-            discardsMap.set(result.keyDiscards, result.score);
-            writeStream.write(JSON.stringify({ key: result.keyDiscards, cards: result.cards, value: result.score }) + '\n');
+            discardsMap.set(result.keyDiscards, result.ev);
+            writeStream.write(JSON.stringify({ key: result.keyDiscards, cards: result.cards, value: result.ev }) + '\n');
 
             index++;
             setImmediate(getHandsProcessed);
@@ -948,7 +948,7 @@ const getCacheLoadedFromNDJSON = (paths) => {
                     scoresMap.set(entry.key, { hand: entry.hand, value: entry.value });
                 } else if (p.includes("discardsk.ndjson")) {
                     discardskMap.set(entry.key, entry.value);
-                } else if (p.includes("discards.ndjson")) {
+                } else if (p.includes("discardsev.ndjson")) {
                     discardsMap.set(entry.key, entry.value);
                 } else if (p.includes("evs.ndjson")) {
                     evsMap.set(entry.key, entry.value);
@@ -970,7 +970,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 
 
 (async () => {
-    // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDS);
+    // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDSEV);
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
@@ -990,13 +990,12 @@ const getTimeElapsed = (timeStart, signal, error) => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(3);
-    // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
+    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
     // const c = ["Js","Jh","3s","3h","2s"]
     // const d = ["As","Ks","Kh","6h","6s"]
 
