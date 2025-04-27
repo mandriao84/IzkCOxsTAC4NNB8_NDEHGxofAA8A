@@ -353,32 +353,35 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
         return acc;
     }, 0);
   
-    results.score = (scores / allHandsX.count).safe("ROUND", 5);
+    results.score = (scores / allHandsX.length).safe("ROUND", 5);
     const timeEnd = performance.now();
     console.log(`getHandExpectedValue (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     return results;
 }
-const getHandWithDiscardsExpectedValue = (keyDetails, discards) => {
-    var { hand } = keyDetails;
-    const deck = Object.values(DECK);
-    getArrayShuffled(deck);
-    const deckLeft = deck.filter(card => !hand.includes(card));
-    const cardsKept = hand.filter(card => !discards.includes(card));
-    const allCardsReceived = getAllCombinations(deckLeft, discards.length);
+const getHandWithDiscardsExpectedValue = (hand, discards, deckLeft, roundNumber) => {
+    const timeStart = performance.now();
+    const results = {};
+    results.key = keysMap.get(hand.sort().join(''));
 
-    if (allCardsReceived.length === 0) {
-        return getHandExpectedValue(keyDetails);
+    if (evsMap.has(results.key)) {
+        results.score = evsMap.get(results.key);
+        return results;
     }
 
-    const evs = allCardsReceived.reduce((acc, cardsReceived) => {
+    const allCardsReceived = getAllCombinations(deckLeft, discards.length);
+    const cardsKept = hand.filter(card => !discards.includes(card));
+
+    const scores = allCardsReceived.reduce((acc, cardsReceived) => {
         const handNew = [...cardsKept,...cardsReceived];
-        const keyDetails = getHandKey(handNew);
-        acc += getHandExpectedValue(keyDetails);
+        const deckLeftNew = deckLeft.filter(card => !handNew.includes(card));
+        acc += getHandExpectedValue(handNew, deckLeftNew, roundNumber).score;
         return acc;
     }, 0);
 
-    const result = (evs / allCardsReceived.length).safe("ROUND", 5);
-    return result;
+    results.score = (scores / allCardsReceived.length).safe("ROUND", 5);
+    const timeEnd = performance.now();
+    console.log(`getHandWithDiscardsExpectedValue (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
+    return results;
 }
 function evDiscardCall(myHand, keepIdx, Pot) {
     const ed = getHandWithDiscardsExpectedValue(myHand, keepIdx);
@@ -557,11 +560,6 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
         console.log(type)
         console.log(result)
         return result;
-    } else if (type === "ENUM2") {
-        const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
-        console.log(type)
-        console.log(result)
-        return result;
     }
 };
 
@@ -635,69 +633,11 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
     return results;
 };
 
+
+
+
+
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
-    const timeStart = performance.now();
-    const keyDetails = getHandKey(hand);
-    const results = {};
-    results.key = keyDetails.key + `:R${roundNumber}`;
-    let scoreFinal = Infinity;
-    let indexFinal = null;
-
-    for (let discardNumber = 0; discardNumber <= 5; discardNumber++) { 
-        const discardCombinations = getAllCombinations([...Array(5).keys()], discardNumber);
-        let score = Infinity;
-        let index = null;
-
-        for (const discardIndices of discardCombinations) {
-            const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
-            const drawNumber = discardIndices.length;
-
-            const allDraws = getAllCombinations(deckLeft, drawNumber);
-            let scorePerDiscardIndices = 0;
-
-            for (const cardsReceived of allDraws) {
-                const handNew = [...cardsKept, ...cardsReceived];
-                const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
-                const keyDetails = getHandKey(handNew);
-                const { key } = keyDetails;
-                const strategyKey = `${key}:R${roundNumber}`;
-
-                 if (CACHE.has(strategyKey)) {
-                    const line = CACHE.get(strategyKey);
-                    const entry = JSON.parse(line);
-                    scorePerDiscardIndices += entry.score;
-                } else if (roundNumber <= 1) {
-                    const { score } = getHandScore(keyDetails);
-                    scorePerDiscardIndices += score;
-                } else {
-                    const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
-                    scorePerDiscardIndices += roundNext.score;
-                }
-            }
-
-            scorePerDiscardIndices /= allDraws.length;
-
-            if (scorePerDiscardIndices < score) {
-                score = scorePerDiscardIndices.safe("ROUND", 3);
-                index = discardIndices;
-            }
-        }
-
-        results[discardNumber] = score;
-        if (score < scoreFinal) {
-            scoreFinal = score;
-            indexFinal = index;
-        }
-    }
-
-    results.score = scoreFinal;
-    // results.cards = (indexFinal || []).map(idx => hand[idx]);
-    results.cards = (indexFinal || []).map(idx => hand[idx].slice(0, -1));
-    const timeEnd = performance.now();
-    console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
-    return results;
-};
-const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
     result.key = keysMap.get(hand.sort().join(''));
@@ -724,7 +664,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
                     acc += scoresMap.get(key).value;
                 } else {
                     const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
-                    const roundNext = getEnum2DiscardsDetails(handNew, deckNew, roundNumber - 1);
+                    const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
                     acc += roundNext.score;
                 }
 
@@ -740,7 +680,7 @@ const getEnum2DiscardsDetails = (hand, deckLeft, roundNumber) => {
     }
     
     const timeEnd = performance.now();
-    console.log(`getEnum2DiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
+    console.log(`getEnumDiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     discardsMap.set(result.keyDiscards, result.score);
     return result;
 };
@@ -802,7 +742,7 @@ const getEnumDataComputed = async (roundNumber) => {
             const { hand } = hands[index];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getEnum2DiscardsDetails(hand, deckLeft, roundNumber);
+            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
             discardsMap.set(result.keyDiscards, result.score);
             writeStream.write(JSON.stringify({ key: result.keyDiscards, cards: result.cards, value: result.score }) + '\n');
 
@@ -1032,7 +972,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
-    // getNDJSONDirRead('.results/mccfr/discards')
+    getNDJSONDirRead('.results/mccfr/evs')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1049,7 +989,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(3);
     // getSingleThreadEnumDataComputed(1);
-    getExpectedValueDataComputed(1);
+    // getExpectedValueDataComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
