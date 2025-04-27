@@ -970,7 +970,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDSEV);
     // getAllHandsKeySaved();
-    getAllHandsScoreSaved();
+    // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
     // getNDJSONDirRead('.results/mccfr/evs')
 
@@ -988,7 +988,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(3);
-    // getExpectedValueDataComputed(1);
+    getExpectedValueDataComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
