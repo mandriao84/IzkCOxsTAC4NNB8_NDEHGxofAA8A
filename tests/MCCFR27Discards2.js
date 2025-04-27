@@ -487,8 +487,14 @@ const getAllHandsScoreSaved = () => {
 
     const data = Array.from(handsMap.values());
     data.sort((a, b) => a.score - b.score);
-    data.forEach((entry, index) => { 
-        entry.value = (1 - (index / (data.length - 1))).safe("ROUND", 5);
+    const dataNormalized = data.filter(entry => !entry.key.endsWith("!"))
+    dataNormalized.forEach((entry, index) => { 
+        entry.value = (1 - (index / (dataNormalized.length - 1))).safe("ROUND", 5);
+    });
+    data.forEach((entry, index) => {
+        const entrySearch = entry.key.endsWith("!") ? entry.key.slice(0, -1) + "*" : entry.key;
+        const entryEqual = dataNormalized.find(e => e.key === entrySearch);
+        entry.value = entryEqual.value;
     });
     fs.writeFileSync(PATH_SCORES, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 }
