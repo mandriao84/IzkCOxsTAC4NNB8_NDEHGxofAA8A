@@ -993,13 +993,12 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getExpectedValueDataComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
-    // const a = ["Kh", "10h", "9h", "9s", "8h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
     // const c = ["Js","Jh","3s","3h","2s"]
-    // const d = ["As","Ks","Kh","6h","6s"]
+    const d = ["Qh","7s","4s","3s","2s"]
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
 
-    getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM", d, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
