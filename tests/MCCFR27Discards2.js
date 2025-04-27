@@ -402,7 +402,7 @@ const getAllCombinations = (arr, k) => {
         result = [...withFirst, ...withoutFirst];
     }
         	
-    return result;
+    return result.sort();
 };
 const getAllHandsPossible = (handCardsNumber = 5) => {
     const deck = Object.values(DECK);
@@ -964,7 +964,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDSEV);
     // getAllHandsKeySaved();
-    // getAllHandsScoreSaved();
+    getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
     // getNDJSONDirRead('.results/mccfr/evs')
 
@@ -987,10 +987,10 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
     // const c = ["Js","Jh","3s","3h","2s"]
-    const d = ["Qh","10s","4s","3s","2s"]
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
+    // const d = ["Qh","10s","4s","3s","2s"]
+    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS, PATH_DISCARDSK, PATH_DISCARDSEV]);
 
-    getDiscardsDetailsForGivenHand("ENUM", d, 1);
+    // getDiscardsDetailsForGivenHand("ENUM", d, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
