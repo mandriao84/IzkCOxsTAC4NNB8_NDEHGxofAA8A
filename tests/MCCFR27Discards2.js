@@ -339,7 +339,7 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
     }
 
     const allHandsX = getAllCombinations(deckLeft, 5);
-    const score = scoresMap.get(key).value;
+    const score = scoresMap.get(results.key).value;
 
     const scores = allHandsX.reduce((acc, handX) => {
         const keyX = keysMap.get(handX.sort().join(''));
@@ -885,32 +885,6 @@ const getExpectedValueDataComputed = async (roundNumber) => {
 
 
 
-
-const getSingleThreadEnumDataComputed = (roundNumber = 1) => {
-    getCacheLoadedFromNDJSON();
-    const allHandsRaw = getAllHandsPossible();
-    const file = fs.openSync(PATH_STRATEGIES, 'a');
-
-    for (let i = 0; i < allHandsRaw.length; i++) {
-        const hand = allHandsRaw[i];
-        const { key } = getHandKey(hand);
-        const roundKey = `${key}:R${roundNumber}`;
-        if (!CACHE.has(roundKey)) {
-            const deck = Object.values(DECK);
-            const deckLeft = deck.filter(card => !hand.includes(card));
-            const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-            const resultAsString = JSON.stringify(result);
-            CACHE.set(key, resultAsString);
-            fs.appendFileSync(PATH_STRATEGIES, resultAsString + '\n');
-        }
-    }
-
-    fs.closeSync(file);
-};
-
-
-
-
 const getMCSDataComputed = async (roundNumber, simulationNumber) => {
     if (isMainThread) {
         const cpuCount = os.cpus().length;
@@ -1014,23 +988,6 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
-
-// const getCacheLoadedFromNDJSON = (paths = [PATH_SCORES, PATH_STRATEGIES]) => {
-//     CACHE.clear();
-//     for (let i = 0; i < paths.length; i++) {
-//         const path = paths[i];
-//         const content = fs.readFileSync(path, 'utf8');
-//         const lines = content.split('\n');
-//         for (let i = 0; i < lines.length; i++) {
-//             const line = lines[i];
-//             const trimmed = line.trim();
-//             const entry = trimmed ? JSON.parse(trimmed) : null;
-//             if (entry?.key) {
-//                 CACHE.set(entry.key, trimmed);
-//             }
-//         }
-//     }
-// }
 const getCacheLoadedFromNDJSON = (paths) => {
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
@@ -1065,14 +1022,6 @@ const getTimeElapsed = (timeStart, signal, error) => {
     console.log(`\ngetTimeElapsed.${signal}.${error} : ${timeElapsedAsMs.toFixed(2)}ms`);
 }
 
-const getCacheDuplicated = () => {
-    const result = Array.from(CACHE).reduce((acc, [key, value]) => {
-        acc.push({ key, value: JSON.parse(value) });
-        return acc;
-    }, []);
-    return result;
-}
-
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
 // sudo pkill -9 -f "MCCFR27Discards2.js"
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
@@ -1100,7 +1049,7 @@ const getCacheDuplicated = () => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDataComputed(3);
     // getSingleThreadEnumDataComputed(1);
-    // getExpectedValueDataComputed();
+    getExpectedValueDataComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const a = ["Kh", "10h", "9h", "9s", "8h"]
