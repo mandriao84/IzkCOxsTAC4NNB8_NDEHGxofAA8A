@@ -640,15 +640,16 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
+    const ev = evsMap.get(result.key);
     result.key = keysMap.get(hand.sort().join(''));
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
     if (discardsMap.has(result.keyDiscards)) {
-        result.score = discardsMap.get(result.keyDiscards);
+        result.ev = discardsMap.get(result.keyDiscards);
         return result;
     }
 
-    result.score = -Infinity;
+    result.ev = -Infinity;
     const discardsK = discardskMap.get(result.key);
     
     for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
@@ -665,15 +666,16 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
                 } else {
                     const deckNew = deckLeft.filter(card => !cardsReceived.includes(card));
                     const roundNext = getEnumDiscardsDetails(handNew, deckNew, roundNumber - 1);
-                    acc += roundNext.score;
+                    acc += roundNext.ev;
                 }
 
                 return acc;
             }, 0);
 
-            const score = scoreAcc / allCardsReceived.length;
-            if (score > result.score) {
-                result.score = score.safe("ROUND", 5);
+            // IF (allCardsReceived.length === 0) MEANING STAND PAT MEANING WE TAKE THE EV OF THE HAND
+            const ev = allCardsReceived.length === 0 ? ev : scoreAcc / allCardsReceived.length;
+            if (ev > result.ev) {
+                result.ev = ev.safe("ROUND", 5);
                 result.cards = discards;
             }
         }
@@ -681,14 +683,14 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     
     const timeEnd = performance.now();
     console.log(`getEnumDiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
-    discardsMap.set(result.keyDiscards, result.score);
+    discardsMap.set(result.keyDiscards, result.ev);
     return result;
 };
 
 
 
 
-const getEnumDataComputed = async (roundNumber) => {
+const getEnumDiscardsComputed = async (roundNumber) => {
     if (isMainThread) {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_DISCARDSK, PATH_DISCARDS]);
         const handsAll = Array.from(scoresMap.entries());
@@ -700,7 +702,7 @@ const getEnumDataComputed = async (roundNumber) => {
             }
             return arr;
         }, []);
-        console.log(`getEnumDataComputed.EntriesMissing: ${handsMissing.length}`);
+        console.log(`getEnumDiscardsComputed.EntriesMissing: ${handsMissing.length}`);
 
         const cpuCount = os.cpus().length;
         const workers = { exit: [], instance: [] };
@@ -972,7 +974,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
-    getNDJSONDirRead('.results/mccfr/evs')
+    // getNDJSONDirRead('.results/mccfr/evs')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -987,7 +989,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDataComputed(3);
+    // await getEnumDiscardsComputed(3);
     // getSingleThreadEnumDataComputed(1);
     // getExpectedValueDataComputed(1);
 
@@ -998,9 +1000,8 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // const c = ["Js","Jh","3s","3h","2s"]
     // const d = ["As","Ks","Kh","6h","6s"]
 
-    // getDiscardsDetailsForGivenHand("ENUM", c, 1);
+    getDiscardsDetailsForGivenHand("ENUM", c, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
-    // getDiscardsDetailsForGivenHand("ENUM2", c, 2);
     // getAllHandsPossibleScoreSaved()
     // getTimeElapsed(timeStart, 'END', null);
 })();
