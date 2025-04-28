@@ -345,7 +345,7 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
         return acc;
     }, 0);
   
-    results.score = (scores / allHandsX.length).safe("ROUND", 5);
+    results.ev = (scores / allHandsX.length).safe("ROUND", 5);
     const timeEnd = performance.now();
     console.log(`getHandExpectedValue (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     return results;
@@ -811,8 +811,8 @@ const getExpectedValueDataComputed = async (roundNumber) => {
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getHandExpectedValue(hand, deckLeft, roundNumber);
-            evsMap.set(result.key, result.score);
-            writeStream.write(JSON.stringify({ key: result.key, value: result.score }) + '\n');
+            evsMap.set(result.key, result.ev);
+            writeStream.write(JSON.stringify({ key: result.key, value: result.ev }) + '\n');
 
             index++;
             setImmediate(getHandsProcessed);
@@ -972,6 +972,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
+    getExpectedValueDataComputed(1);
     // getNDJSONDirRead('.results/mccfr/evs')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
@@ -987,8 +988,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDiscardsComputed(3);
-    getExpectedValueDataComputed(1);
+    // await getEnumDiscardsComputed(1);
 
     // const a = ["10h", "6s", "5h", "4h", "3h"]
     // const b = ["10s", "Js", "Qs", "Ks", "Kc"]
