@@ -1000,7 +1000,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getMCSResult = (hand = ['2s', '3d', '4s', '5s', '10s'], simulationNumber = 1000000) => {
+const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
@@ -1075,7 +1075,7 @@ const getMCSResult = (hand = ['2s', '3d', '4s', '5s', '10s'], simulationNumber =
             // if (discardsX.cards.length === 0) break;
             // const cardsXKept = getHandDiscarded(handX, discardsX, roundNumber);
             // const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
-            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['9', '10', 'J', 'Q', 'K', 'A'], roundNumber);
+            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['10', 'J', 'Q', 'K', 'A'], roundNumber);
             const cardsXReceived = deckLeft.splice(0, cardsXDiscarded.length);
             const handXReceived = [...cardsXKept, ...cardsXReceived];
             handX = handXReceived;
