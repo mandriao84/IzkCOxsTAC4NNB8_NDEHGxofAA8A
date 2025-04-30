@@ -1031,3 +1031,45 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getDiscardsDetailsForGivenHand("ENUM", a, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
 })();
+
+
+
+
+
+
+
+
+const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 100000) => {
+    const key = keysMap.get(hand.sort().join(''));
+    const score = scoresMap.get(key).value;
+    let wins = 0, ties = 0;
+
+    for (let t = 0; t < simulationNumber; ++t) {
+        const deck = Object.values(DECK)
+        const deckLeft = deck.filter(c => !hand.includes(c));
+        getArrayShuffled(deckLeft);
+
+        let handX = deckLeft.splice(0, 5);
+        let keyX;
+
+        for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
+            keyX = keysMap.get(handX.sort().join(''));
+            const discards = discardsMap.get(`${keyX}:R${roundNumber}`);
+            if (discards.cards.length === 0) break;
+            const cardsXKept = handX.filter(card => !discards.cards.includes(card));
+            const cardsXReceived = deckLeft.splice(0, discards.cards.length);
+            handX = [...cardsXKept, ...cardsXReceived];
+        }
+        
+        const scoreX = scoresMap.get(keyX).value;
+        if (scoreX < score) ++wins;
+        else if (scoreX === score) ++ties;
+    }
+
+    const winRate = (wins + 0.5 * ties) / simulationNumber;
+    console.log(`
+    Trials run : ${simulationNumber}
+    Hero hand  : ${hand.join('')}  (value = ${score})
+    Win% (½ ties): ${(100 * winRate).toFixed(2)} %
+    `);
+}
