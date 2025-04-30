@@ -1000,7 +1000,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 1000000) => {
+const getAAAA = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
@@ -1019,6 +1019,20 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10000
         return cardsKept;
     }
 
+    const getHandDiscarded2 = (hand) => {
+        const cardsDiscarded = [];
+        const cardsKept = hand.filter(card => {
+            const rank = card.slice(0, -1);
+            const hasHighRank = ['T', 'J', 'Q', 'K', 'A'].includes(rank);
+            const hasDuplicates = hand.findIndex(card => card.slice(0, -1) === rank) !== hand.lastIndexOf(card);
+            const willFilter = hasHighRank || hasDuplicates;
+            if (willFilter) cardsDiscarded.push(card);
+            return !willFilter;
+        });
+
+        return { cardsKept, cardsDiscarded }
+    }
+
     for (let s = 0; s < simulationNumber; ++s) {
         const deck = Object.values(DECK)
         const deckLeft = deck.filter(c => !hand.includes(c));
@@ -1029,10 +1043,12 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10000
 
         for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
             keyX = keysMap.get(handX.sort().join(''));
-            const discardsX = discardsMap.get(`${keyX}:R${roundNumber}`);
-            if (discardsX.cards.length === 0) break;
-            const cardsXKept = getHandDiscarded(handX, discardsX);
-            const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
+            // const discardsX = discardsMap.get(`${keyX}:R${roundNumber}`);
+            // if (discardsX.cards.length === 0) break;
+            // const cardsXKept = getHandDiscarded(handX, discardsX);
+            // const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
+            const { cardsKept: cardsXKept, cardsDiscarded } = getHandDiscarded2(handX);
+            const cardsXReceived = deckLeft.splice(0, cardsDiscarded.length);
             const handXReceived = [...cardsXKept, ...cardsXReceived];
             handX = handXReceived;
         }
@@ -1044,8 +1060,8 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10000
 
     const winRate = (wins + 0.5 * ties) / simulationNumber;
     console.log(`
-        hand  |  sim  |  win% + ties½
-        -----------------------------
+        hand  |  sim  |  win%+ties½
+        ---------------------------
         ${key}  |  ${simulationNumber}  |  ${(100 * winRate).toFixed(2)}
         `);
 }
