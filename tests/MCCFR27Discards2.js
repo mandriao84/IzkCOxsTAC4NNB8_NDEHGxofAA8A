@@ -615,7 +615,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
     if (discardsMap.has(result.keyDiscards)) {
-        result.ev = discardsMap.get(result.keyDiscards);
+        result.ev = discardsMap.get(result.keyDiscards).value;
         return result;
     }
 
@@ -654,7 +654,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     
     const timeEnd = performance.now();
     console.log(`getEnumDiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
-    discardsMap.set(result.keyDiscards, result.ev);
+    discardsMap.set(result.keyDiscards, { cards: result.cards, value: result.ev });
     return result;
 };
 const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
@@ -776,7 +776,7 @@ const getEnumDiscardsComputed = async (roundNumber) => {
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
             const result = getEnumDiscardsDetails(hand, deckLeft, roundNumber);
-            discardsMap.set(result.keyDiscards, result.ev);
+            discardsMap.set(result.keyDiscards, { cards: result.cards, value: result.ev });
             writeStream.write(JSON.stringify({ key: result.keyDiscards, cards: result.cards, value: result.ev }) + '\n');
 
             index++;
@@ -980,7 +980,7 @@ const getCacheLoadedFromNDJSON = (paths) => {
                 } else if (p.includes("discardsk.ndjson")) {
                     discardskMap.set(entry.key, entry.value);
                 } else if (p.includes("discardsev.ndjson")) {
-                    discardsMap.set(entry.key, entry.value);
+                    discardsMap.set(entry.key, { cards: entry.cards, value: entry.value });
                 } else if (p.includes("standsev.ndjson")) {
                     standsevMap.set(entry.key, entry.value);
                 }
@@ -1000,13 +1000,51 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
+const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10) => {
+    const key = keysMap.get(hand.sort().join(''));
+    const score = scoresMap.get(key).value;
+    let wins = 0, ties = 0;
+
+    for (let s = 0; s < simulationNumber; ++s) {
+        const deck = Object.values(DECK)
+        const deckLeft = deck.filter(c => !hand.includes(c));
+        getArrayShuffled(deckLeft);
+
+        let handX = deckLeft.splice(0, 5);
+        let keyX;
+
+        for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
+            keyX = keysMap.get(handX.sort().join(''));
+            const discards = discardsMap.get(`${keyX}:R${roundNumber}`);
+            console.log(discards)
+            if (discards.cards.length === 0) break;
+
+            // const cardsXKept = handX.filter(card => !discards.cards.includes(card));
+            // const cardsXReceived = deckLeft.splice(0, discards.cards.length);
+            // handX = [...cardsXKept, ...cardsXReceived];
+        }
+
+        const scoreX = scoresMap.get(keyX).value;
+        if (scoreX < score) ++wins;
+        else if (scoreX === score) ++ties;
+    }
+
+    const winRate = (wins + 0.5 * ties) / simulationNumber;
+    console.log(`
+    Trials run : ${simulationNumber}
+    Hero hand  : ${hand.join('')}  (value = ${score})
+    Win% (½ ties): ${(100 * winRate).toFixed(2)} %
+    `);
+}
+
+
 (async () => {
     // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDSEV);
     // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
     // getExpectedValueDataComputed(1);
-    getNDJSONDirRead('.results/mccfr/discardsev')
+    // getNDJSONDirRead('.results/mccfr/discardsev')
 
     // getHandDiscardExpectedValue(['2s', '3s', '4s', '5s', '6s'], ['5s', '6s'])
     // const timeStart = process.hrtime();
@@ -1023,7 +1061,8 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(3);
 
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
+    getAAAA();
     // const hand = ["Jc","5c","4c","3c","2d"]
     // const deck = Object.values(DECK);
     // const deckLeft = deck.filter(card => !hand.includes(card));
@@ -1031,45 +1070,3 @@ const getTimeElapsed = (timeStart, signal, error) => {
     // getDiscardsDetailsForGivenHand("ENUM", a, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
 })();
-
-
-
-
-
-
-
-
-const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 100000) => {
-    const key = keysMap.get(hand.sort().join(''));
-    const score = scoresMap.get(key).value;
-    let wins = 0, ties = 0;
-
-    for (let s = 0; s < simulationNumber; ++s) {
-        const deck = Object.values(DECK)
-        const deckLeft = deck.filter(c => !hand.includes(c));
-        getArrayShuffled(deckLeft);
-
-        let handX = deckLeft.splice(0, 5);
-        let keyX;
-
-        for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
-            keyX = keysMap.get(handX.sort().join(''));
-            const discards = discardsMap.get(`${keyX}:R${roundNumber}`);
-            if (discards.cards.length === 0) break;
-            const cardsXKept = handX.filter(card => !discards.cards.includes(card));
-            const cardsXReceived = deckLeft.splice(0, discards.cards.length);
-            handX = [...cardsXKept, ...cardsXReceived];
-        }
-
-        const scoreX = scoresMap.get(keyX).value;
-        if (scoreX < score) ++wins;
-        else if (scoreX === score) ++ties;
-    }
-
-    const winRate = (wins + 0.5 * ties) / simulationNumber;
-    console.log(`
-    Trials run : ${simulationNumber}
-    Hero hand  : ${hand.join('')}  (value = ${score})
-    Win% (½ ties): ${(100 * winRate).toFixed(2)} %
-    `);
-}
