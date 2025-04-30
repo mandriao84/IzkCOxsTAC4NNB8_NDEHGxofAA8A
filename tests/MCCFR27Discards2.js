@@ -1000,36 +1000,108 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getMCSResult = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber = 1000000) => {
+const getMCSResult = (hand = ['2s', '3d', '4s', '5s', 'Js'], simulationNumber = 500) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
 
     const getHandDiscarded = (hand, discards) => {
-        const discardsCardsRank = discards.cards.map(card => card.slice(0, -1));
-        const cardsKept = hand.filter(card => {
+        const discardsRank = discards.cards.map(card => card.slice(0, -1));
+        const discardsSuitDetails = hand.reduce((obj, card) => {
+            const suit = card.slice(-1);
+            obj[suit] = (obj[suit] || 0) + 1;
+            if (obj[suit] > (obj.maxCount ?? 0)) {
+                obj.maxCount = obj[suit];
+                obj.maxSuit = suit;
+            }
+            return obj; 
+        }, {});
+
+        const cardsKeptPrime = hand.filter(card => {
             const rank = card.slice(0, -1);
-            const index = discardsCardsRank.indexOf(rank);
-            if (index !== -1) {
-                discardsCardsRank.splice(index, 1);
+            const suit = card.slice(-1);
+            const index = discardsRank.indexOf(rank);
+            if (index !== -1 && suit === discardsSuitDetails.maxSuit) {
+                discardsRank.splice(index, 1);
                 return false;
             }
             return true;
-        });
-        return cardsKept;
+        })
+
+        if (discardsRank.length > 0) {
+            const cardsKept = cardsKeptPrime.filter(card => {
+                const rank = card.slice(0, -1);
+                const index = discardsRank.indexOf(rank);
+                if (index !== -1) {
+                    discardsRank.splice(index, 1);
+                    return false;
+                }
+                return true;
+            });
+            return cardsKept
+        }
+
+        return cardsKeptPrime;
     }
 
-    const getHandDiscarded2 = (hand) => {
-        const cardsDiscarded = [];
-        const cardsKept = hand.filter(card => {
+    const getHandDiscarded2 = (hand, roundNumber) => {
+        const details = hand.reduce((obj, card) => {
             const rank = card.slice(0, -1);
-            const hasHighRank = ['T', 'J', 'Q', 'K', 'A'].includes(rank);
-            const hasDuplicates = hand.findIndex(card => card.slice(0, -1) === rank) !== hand.lastIndexOf(card);
-            const willFilter = hasHighRank || hasDuplicates;
-            if (willFilter) cardsDiscarded.push(card);
-            return !willFilter;
-        });
+            const suit = card.slice(-1);
+            obj.ranks = obj.ranks || { maxCount: 0, max: '' };
+            obj.ranks[rank] = (obj.ranks[rank] || 0) + 1;
+            obj.ranks.maxCount = Math.max(obj.ranks.maxCount, obj.ranks[rank]);
+            obj.suits = obj.suits || { maxCount: 0, max: '' };
+            obj.suits[suit] = (obj.suits[suit] || 0) + 1;
+            obj.suits.maxCount = Math.max(obj.suits.maxCount, obj.suits[suit]);
+            return obj; 
+        }, {});
 
+        const cardsKeptMax = [];
+        const cardsDiscarded = [];
+        for (let i = 0; i < hand.length; i++) {
+            const card = hand[i];
+            const rank = card.slice(0, -1);
+            const suit = card.slice(-1);
+            if (['10', 'J', 'Q', 'K', 'A'].includes(rank)) {
+                cardsDiscarded.push(card);
+                details.ranks[rank]--;
+                details.suits[suit]--;
+                continue;
+            }
+            if (details.ranks[rank] > 1 && details.suits[suit] > 1) {
+                cardsDiscarded.push(card);
+                details.ranks[rank]--;
+                details.suits[suit]--;
+                continue;
+            }
+            cardsKeptMax.push(card);
+        }
+
+        const cardsKept = [];
+        for (let i = 0; i < cardsKeptMax.length; i++) {
+            const card = cardsKeptMax[i];
+            const rank = card.slice(0, -1);
+            const suit = card.slice(-1);
+            if (details.ranks[rank] > 1) {
+                cardsDiscarded.push(card);
+                details.ranks[rank]--;
+                details.suits[suit]--;
+                continue;
+            }
+            cardsKept.push(card);
+        }
+
+        if (cardsKept.length === 5 && details.suits.maxCount === 5) {
+            const key = keysMap.get(cardsKept.sort().join(''));
+            const discards = discardsMap.get(`${key}:R${roundNumber}`);
+            // const cardsXKept = getHandDiscarded(handX, discardsX);
+            console.log("____", discards);
+        }
+
+        // console.log("____", hand);
+        // console.log(cardsKept);
+        // console.log(cardsDiscarded);
         return { cardsKept, cardsDiscarded }
     }
 
@@ -1043,11 +1115,12 @@ const getMCSResult = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber =
 
         for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
             keyX = keysMap.get(handX.sort().join(''));
+            
             // const discardsX = discardsMap.get(`${keyX}:R${roundNumber}`);
             // if (discardsX.cards.length === 0) break;
             // const cardsXKept = getHandDiscarded(handX, discardsX);
             // const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
-            const { cardsKept: cardsXKept, cardsDiscarded } = getHandDiscarded2(handX);
+            const { cardsKept: cardsXKept, cardsDiscarded } = getHandDiscarded2(handX, roundNumber);
             const cardsXReceived = deckLeft.splice(0, cardsDiscarded.length);
             const handXReceived = [...cardsXKept, ...cardsXReceived];
             handX = handXReceived;
@@ -1091,7 +1164,7 @@ const getMCSResult = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber =
     // await getEnumDiscardsComputed(3);
 
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
-    getAAAA();
+    getMCSResult();
     // const hand = ["Jc","5c","4c","3c","2d"]
     // const deck = Object.values(DECK);
     // const deckLeft = deck.filter(card => !hand.includes(card));
