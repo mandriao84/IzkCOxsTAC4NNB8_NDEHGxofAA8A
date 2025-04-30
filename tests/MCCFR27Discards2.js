@@ -1000,7 +1000,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10) => {
+const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
@@ -1015,13 +1015,23 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10) =
 
         for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
             keyX = keysMap.get(handX.sort().join(''));
-            const discards = discardsMap.get(`${keyX}:R${roundNumber}`);
-            console.log(discards)
-            if (discards.cards.length === 0) break;
+            const discardsX = discardsMap.get(`${keyX}:R${roundNumber}`);
+            if (discardsX.cards.length === 0) break;
 
-            // const cardsXKept = handX.filter(card => !discards.cards.includes(card));
-            // const cardsXReceived = deckLeft.splice(0, discards.cards.length);
-            // handX = [...cardsXKept, ...cardsXReceived];
+            const discardsXCardsRank = discardsX.cards.map(card => card.slice(0, -1));
+            const cardsXKept = handX.filter(card => {
+                const rank = card.slice(0, -1);
+                const index = discardsXCardsRank.indexOf(rank);
+                if (index !== -1) {
+                    discardsXCardsRank.splice(index, 1);
+                    return false;
+                }
+                return true;
+            });
+            const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
+            const handXReceived = [...cardsXKept, ...cardsXReceived];
+            handX = handXReceived;
+            // console.log(roundNumber, ">>", handX, discardsXCardsRank, cardsXKept, cardsXReceived, handXNew)
         }
 
         const scoreX = scoresMap.get(keyX).value;
@@ -1031,10 +1041,10 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10) =
 
     const winRate = (wins + 0.5 * ties) / simulationNumber;
     console.log(`
-    Trials run : ${simulationNumber}
-    Hero hand  : ${hand.join('')}  (value = ${score})
-    Win% (½ ties): ${(100 * winRate).toFixed(2)} %
-    `);
+        hand  |  sim  |  win% + ties½
+        -----------------------------
+        ${key}  |  ${simulationNumber}  |  ${(100 * winRate).toFixed(2)}
+        `);
 }
 
 
