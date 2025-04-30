@@ -1000,7 +1000,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getAAAA = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber = 1000000) => {
+const getMCSResult = (hand = ['5s', '7d', '8h', '9c', '10c'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
