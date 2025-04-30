@@ -1044,7 +1044,7 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10000
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
 
-    for (let t = 0; t < simulationNumber; ++t) {
+    for (let s = 0; s < simulationNumber; ++s) {
         const deck = Object.values(DECK)
         const deckLeft = deck.filter(c => !hand.includes(c));
         getArrayShuffled(deckLeft);
@@ -1060,7 +1060,7 @@ const getAAAA = (hand = ['2s', '3d', '4h', '5c', 'Jc'], simulationNumber = 10000
             const cardsXReceived = deckLeft.splice(0, discards.cards.length);
             handX = [...cardsXKept, ...cardsXReceived];
         }
-        
+
         const scoreX = scoresMap.get(keyX).value;
         if (scoreX < score) ++wins;
         else if (scoreX === score) ++ties;
