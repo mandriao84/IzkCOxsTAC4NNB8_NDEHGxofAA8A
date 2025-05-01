@@ -620,14 +620,13 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     }
 
     result.ev = -Infinity;
-    const discardsK = discardskMap.get(result.key);
+    // const discardsK = discardskMap.get(result.key);
+    const discardsK = getAllDiscardsK(hand).k;
     
-    // for (let discardCount = 0; discardCount <= hand.length; discardCount++) {
     for (let discardCount = hand.length; discardCount >= 0; discardCount--) {
         for (const discards of discardsK[discardCount]) {
             const cardsKept = hand.filter(card => !discards.includes(card));
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
-
             const scoreAcc = allCardsReceived.reduce((acc, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
                 const key = keysMap.get(handNew.sort().join(''));
@@ -644,7 +643,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             }, 0);
 
             // IF (discardCount === 0) MEANING STAND PAT MEANING WE TAKE THE EV OF THE HAND
-            const ev = discardCount === 0 ? handEv : scoreAcc / allCardsReceived.length;
+            const ev = (discardCount === 0 && roundNumber <= 1) ? handEv : scoreAcc / allCardsReceived.length;
             if (ev > result.ev) {
                 result.ev = ev.safe("ROUND", 5);
                 result.cards = discards;
@@ -1000,7 +999,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 1000000) => {
+const getMCSResult = (hand = ['2s', '3d', '4s', '5s', 'Js'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
@@ -1056,6 +1055,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
         if (cardsKept.length === 5 && details.suits.maxCount === 5) {
             const key = keysMap.get(cardsKept.sort().join(''));
             const discards = discardsMap.get(`${key}:R${roundNumber}`);
+            // console.log(`${key}:R${roundNumber}`, discards)
             const discardsRank = discards.cards.map(card => card.slice(0, -1));
             return getHandDiscarded(cardsKept, discardsRank, roundNumber);
         }
@@ -1075,7 +1075,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
             // if (discardsX.cards.length === 0) break;
             // const cardsXKept = getHandDiscarded(handX, discardsX, roundNumber);
             // const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
-            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['10', 'J', 'Q', 'K', 'A'], roundNumber);
+            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['J', 'Q', 'K', 'A'], roundNumber);
             const cardsXReceived = deckLeft.splice(0, cardsXDiscarded.length);
             const handXReceived = [...cardsXKept, ...cardsXReceived];
             handX = handXReceived;
@@ -1117,14 +1117,14 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
     // });
 
     // await getMCSDataComputed(roundNumber, simulationNumber);
-    // await getEnumDiscardsComputed(3);
+    // await getEnumDiscardsComputed(4);
 
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
-    getMCSResult();
-    // const hand = ["Jc","5c","4c","3c","2d"]
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK]);
+    // getMCSResult();
+    const hand = ["Jc","5c","4c","3c","2d"]
     // const deck = Object.values(DECK);
     // const deckLeft = deck.filter(card => !hand.includes(card));
     // getHandExpectedValue2(hand, deckLeft, 1);
-    // getDiscardsDetailsForGivenHand("ENUM", a, 1);
+    getDiscardsDetailsForGivenHand("ENUM", hand, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
 })();
