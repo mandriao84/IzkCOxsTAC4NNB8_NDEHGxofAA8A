@@ -19,7 +19,7 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
-const CACHE = new LRUCache ({
+const CACHE = new LRUCache({
     max: 10000000,
     // maxSize: 5000000000, // ~5GB
     // sizeCalculation: (value, key) => {
@@ -166,7 +166,7 @@ const getHandKey = (hand) => {
     const cardsSuit = handCopy.map(getCardSuit).sort((a, b) => b - a);
     const cardsSuitCount = cardsSuit.reduce((obj, suit) => {
         obj[suit] = (obj[suit] || 0) + 1;
-        return obj; 
+        return obj;
     }, {});
     const cardsSuitCountKeys = Object.keys(cardsSuitCount);
     const cardsSuitCountSize = cardsSuitCountKeys.length;
@@ -195,13 +195,13 @@ const getHandKey = (hand) => {
     const isStraightFlush = isStraight && isFlush;
     const details = function () {
         if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardsCountKey1] };
-        else if (isFour) return { type: 'four', ranks: [...cardsCountKey4,...cardsCountKey1] };
-        else if (isFull) return { type: 'full', ranks: [...cardsCountKey3,...cardsCountKey2] };
+        else if (isFour) return { type: 'four', ranks: [...cardsCountKey4, ...cardsCountKey1] };
+        else if (isFull) return { type: 'full', ranks: [...cardsCountKey3, ...cardsCountKey2] };
         else if (isFlush) return { type: 'flush', ranks: [...cardsCountKey1] };
         else if (isStraight) return { type: 'straight', ranks: [...cardsCountKey1] };
-        else if (isThree) return { type: 'three', ranks: [...cardsCountKey3,...cardsCountKey1] };
-        else if (isPairs) return { type: 'pairs', ranks: [...cardsCountKey2,...cardsCountKey1] };
-        else if (isPair) return { type: 'pair', ranks: [...cardsCountKey2,...cardsCountKey1] };
+        else if (isThree) return { type: 'three', ranks: [...cardsCountKey3, ...cardsCountKey1] };
+        else if (isPairs) return { type: 'pairs', ranks: [...cardsCountKey2, ...cardsCountKey1] };
+        else if (isPair) return { type: 'pair', ranks: [...cardsCountKey2, ...cardsCountKey1] };
         else return { type: 'high', ranks: [...cardsCountKey1] };
     }();
 
@@ -215,7 +215,7 @@ const getHandKey = (hand) => {
         return cardValueB - cardValueA;
     });
 
-    const cardsSuitPattern = function() {
+    const cardsSuitPattern = function () {
         const cardSuitMax = getCardSuit(handCopy.at(0));
         const cardSuitMaxCount = cardsSuit.filter(suit => suit === cardSuitMax).length;
         if (cardsCountKey1.length === 5 && cardsSuitCountSize === 2 && cardSuitMaxCount === 1) {
@@ -245,7 +245,7 @@ const getHandFromKey = (key, discards = []) => {
     for (const rank of ranks) {
         if (!used[rank]) used[rank] = new Set();
         const availableSuits = suitsUniq.filter(s => !used[rank].has(s));
-        const suit = availableSuits.length > 0 
+        const suit = availableSuits.length > 0
             ? availableSuits[Math.floor(Math.random() * availableSuits.length)]
             : suitsUniq[Math.floor(Math.random() * suitsUniq.length)];
         used[rank].add(suit);
@@ -345,7 +345,7 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
         acc += getScore(scoreX, score);
         return acc;
     }, 0);
-  
+
     results.ev = (scoreAcc / allHandsX.length).safe("ROUND", 5);
     const timeEnd = performance.now();
     console.log(`getHandExpectedValue (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
@@ -353,18 +353,18 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
 }
 function evDiscardCall(myHand, keepIdx, Pot) {
     const ed = getHandWithDiscardsExpectedValue(myHand, keepIdx);
-    return ed*(Pot+1) - 1;
+    return ed * (Pot + 1) - 1;
 }
 function shouldPlay(hand, pot = 3, bet = 1) {
     const evHand = getHandExpectedValue(hand);
     const evPot = bet / (pot + bet);    // = 1/(3+1) = 0.25
     return evHand >= evPot;
-  }
+}
 
 
 
 
-  
+
 const getAllCombinations = (arr, k) => {
     const nChooseK = (n, k) => {
         if (k > n) return 0;
@@ -413,24 +413,24 @@ const getAllDiscardsK = (hand) => {
         counts: Array(n + 1).fill(0),
         k: Array(n + 1).fill().map(() => [])
     };
-    
+
     const k = 1 << n; // 2^n
-    
+
     for (let mask = 0; mask < k; mask++) {
         const subset = [];
         let count = 0;
-        
+
         for (let i = 0; i < n; i++) {
             if ((mask & (1 << i)) !== 0) {
                 subset.push(hand[i]);
                 count++;
             }
         }
-        
+
         result.k[count].push(subset);
         result.counts[count]++;
     }
-    
+
     return result;
 }
 const getAllHandsPossibleWithDiscards = (hand) => {
@@ -446,12 +446,12 @@ const getAllHandsPossibleWithDiscards = (hand) => {
             const keyDetails = getHandKey(hand);
             return { hand, keyDetails };
         });
-        
+
         results.push(handsNew.length);
     }
-    
+
     // results.sort((a, b) => b.avgEV - a.avgEV);
-    
+
     return results;
 }
 const getAllHandsKeySaved = () => {
@@ -486,7 +486,7 @@ const getAllHandsScoreSaved = () => {
     const data = Array.from(handsMap.values());
     data.sort((a, b) => a.score - b.score);
     const dataNormalized = data.filter(entry => !entry.key.endsWith("!"))
-    dataNormalized.forEach((entry, index) => { 
+    dataNormalized.forEach((entry, index) => {
         entry.value = (1 - (index / (dataNormalized.length - 1))).safe("ROUND", 5);
     });
     data.forEach((entry, index) => {
@@ -556,17 +556,17 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 
         for (const discardIndices of discardCombinations) {
             let scorePerDiscardIndices = 0;
-            
+
             for (let i = 0; i < simulationNumber; i++) {
                 const deck = [...deckLeft];
                 getArrayShuffled(deck);
-                
+
                 const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
                 const cardsReceived = deck.splice(0, discardNumber);
                 let handNew = [...cardsKept, ...cardsReceived];
                 const keyDetails = getHandKey(handNew);
                 const { key } = keyDetails;
-                
+
                 if (roundNumber > 1 && deck.length >= 5) {
                     let cacheResultKey = `${key}:R${roundNumber - 1}`
                     if (CACHE.has(cacheResultKey)) {
@@ -575,7 +575,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                     } else {
                         const roundNext = getMCSDiscardsDetails(
                             handNew,
-                            deck, 
+                            deck,
                             roundNumber - 1,
                             Math.sqrt(simulationNumber), //simulationNumber
                         );
@@ -587,7 +587,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
                     scorePerDiscardIndices += score;
                 }
             }
-            
+
             const scoreAverage = scorePerDiscardIndices / simulationNumber;
             if (scoreAverage < score) {
                 score = scoreAverage.safe("ROUND", 3);
@@ -627,7 +627,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     result.ev = -Infinity;
     // const discardsK = discardskMap.get(result.key);
     const discardsK = getAllDiscardsK(hand).k;
-    
+
     for (let discardCount = hand.length; discardCount >= 0; discardCount--) {
         for (const discards of discardsK[discardCount]) {
             const cardsKept = hand.filter(card => !discards.includes(card));
@@ -655,7 +655,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             }
         }
     }
-    
+
     const timeEnd = performance.now();
     console.log(`getEnumDiscardsDetails (round ${roundNumber}) took ${(timeEnd - timeStart).toFixed(2)}ms`);
     discardsMap.set(result.keyDiscards, { cards: result.cards, value: result.ev });
@@ -755,10 +755,10 @@ const getEnumDiscardsComputed = async (roundNumber) => {
                     roundNumber
                 }
             });
-            
+
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
-        
+
         await Promise.all(workers.exit);
     } else {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
@@ -769,13 +769,13 @@ const getEnumDiscardsComputed = async (roundNumber) => {
         fs.mkdirSync(pathDir, { recursive: true });
         const pathNew = path.join(pathDir, `${pathParsed.name}-${id}${pathParsed.ext}`);
         const writeStream = fs.createWriteStream(pathNew, { flags: 'a' });
-        
+
         let index = 0;
         function getHandsProcessed() {
             if (index >= hands.length) {
                 process.exit(0);
             }
-    
+
             const { hand } = hands[index];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
@@ -823,10 +823,10 @@ const getExpectedValueDataComputed = async (roundNumber) => {
                     roundNumber
                 }
             });
-            
+
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
-        
+
         await Promise.all(workers.exit);
     } else {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV]);
@@ -837,13 +837,13 @@ const getExpectedValueDataComputed = async (roundNumber) => {
         fs.mkdirSync(pathDir, { recursive: true });
         const pathNew = path.join(pathDir, `${pathParsed.name}-${id}${pathParsed.ext}`);
         const writeStream = fs.createWriteStream(pathNew, { flags: 'a' });
-        
+
         let index = 0;
         function getHandsProcessed() {
             if (index >= hands.length) {
                 process.exit(0);
             }
-    
+
             const { hand } = hands[index];
             const deck = Object.values(DECK);
             const deckLeft = deck.filter(card => !hand.includes(card));
@@ -870,7 +870,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
             instance: []
         };
         const entries = new Map();
-        
+
         if (fs.existsSync(PATH_STRATEGIES)) {
             const content = fs.readFileSync(PATH_STRATEGIES, 'utf8');
             const lines = content.split('\n');
@@ -893,7 +893,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
         for (let i = 0; i < cpuCount; i++) {
             const worker = new Worker(__filename, {
-                workerData: { 
+                workerData: {
                     start: Math.floor(i * simulationNumber / cpuCount),
                     end: Math.floor((i + 1) * simulationNumber / cpuCount),
                     roundNumber,
@@ -917,10 +917,10 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
                     });
                 }
             });
-            
+
             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
         }
-        
+
         await Promise.all(workers.exit);
     } else {
         getCacheLoadedFromNDJSON();
@@ -940,7 +940,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
                 }
             }
         });
-        
+
         for (let i = workerData.start; i < workerData.end; i++) {
             const deck = Object.values(DECK);
             getArrayShuffled(deck);
@@ -957,7 +957,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
                 parentPort.postMessage({ type: 'DATA', payload: resultAsString });
             }
         }
-        
+
         process.exit(0);
     }
 }
@@ -1019,7 +1019,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
             obj.suits = obj.suits || { maxCount: 0, max: '' };
             obj.suits[suit] = (obj.suits[suit] || 0) + 1;
             obj.suits.maxCount = Math.max(obj.suits.maxCount, obj.suits[suit]);
-            return obj; 
+            return obj;
         }, {});
 
         const cardsKeptMax = [];
@@ -1125,7 +1125,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(4);
 
-    const hand = ["Jc","5c","4c","3c","2d"]
+    const hand = ["Jc", "5c", "4c", "3c", "2d"]
     // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
     // getMCSResult();
     // const deck = Object.values(DECK);
@@ -1184,16 +1184,16 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
 // ------------------------------------------------------------
 const ITERATIONS_DEFAULT = 200_000;
 const ACTIONS = (() => {
-  const out = [];
-  for (let mask = 0; mask < 32; ++mask) {
-    const arr = [];
-    for (let i = 0; i < 5; ++i) if (mask & (1 << i)) arr.push(i);
-    out.push(arr);
-  }
-  return out;
+    const out = [];
+    for (let mask = 0; mask < 32; ++mask) {
+        const arr = [];
+        for (let i = 0; i < 5; ++i) if (mask & (1 << i)) arr.push(i);
+        out.push(arr);
+    }
+    return out;
 })();
 const ACTION_COUNT = ACTIONS.length;
-const regretSum   = new Map();
+const regretSum = new Map();
 const strategySum = new Map();
 
 function compareHands(handA, handB) {
@@ -1205,109 +1205,106 @@ function compareHands(handA, handB) {
 }
 
 function applyAction(hand, deck, actionIdx) {
-  const discard = ACTIONS[actionIdx];
-  const kept = hand.filter((_, idx) => !discard.includes(idx));
-  const drawn = [];
-  for (let i = 0; i < discard.length; ++i) drawn.push(deck.pop());
-  return kept.concat(drawn);
+    const discard = ACTIONS[actionIdx];
+    const kept = hand.filter((_, idx) => !discard.includes(idx));
+    const drawn = [];
+    for (let i = 0; i < discard.length; ++i) drawn.push(deck.pop());
+    return kept.concat(drawn);
 }
 
 function regretMatching(regrets) {
-  const strat = new Float64Array(ACTION_COUNT);
-  let normaliser = 0;
-  for (let i = 0; i < ACTION_COUNT; ++i) {
-    strat[i] = Math.max(0, regrets[i]);
-    normaliser += strat[i];
-  }
-  if (normaliser === 0) {
-    for (let i = 0; i < ACTION_COUNT; ++i) strat[i] = 1 / ACTION_COUNT;
-  } else {
-    for (let i = 0; i < ACTION_COUNT; ++i) strat[i] /= normaliser;
-  }
-  return strat;
+    const strat = new Float64Array(ACTION_COUNT);
+    let normaliser = 0;
+    for (let i = 0; i < ACTION_COUNT; ++i) {
+        strat[i] = Math.max(0, regrets[i]);
+        normaliser += strat[i];
+    }
+    if (normaliser === 0) {
+        for (let i = 0; i < ACTION_COUNT; ++i) strat[i] = 1 / ACTION_COUNT;
+    } else {
+        for (let i = 0; i < ACTION_COUNT; ++i) strat[i] /= normaliser;
+    }
+    return strat;
 }
 
 function sampleAction(strat) {
-  const r = Math.random();
-  let cum = 0;
-  for (let i = 0; i < strat.length; ++i) {
-    cum += strat[i];
-    if (r <= cum) return i;
-  }
-  return strat.length - 1;
+    const r = Math.random();
+    let cum = 0;
+    for (let i = 0; i < strat.length; ++i) {
+        cum += strat[i];
+        if (r <= cum) return i;
+    }
+    return strat.length - 1;
 }
 
 function accumulate(arr, add) {
-  for (let i = 0; i < arr.length; ++i) arr[i] += add[i];
+    for (let i = 0; i < arr.length; ++i) arr[i] += add[i];
 }
 
 function iteration() {
-  const deck = Object.values(DECK);
-  getArrayShuffled(deck);
-  const h0 = deck.splice(0, 5);
-  const h1 = deck.splice(0, 5);
+    const deck = Object.values(DECK);
+    getArrayShuffled(deck);
+    const h0 = deck.splice(0, 5);
+    const h1 = deck.splice(0, 5);
 
-  const key0 = keysMap.get(h0.sort().join(''));
-  const key1 = keysMap.get(h1.sort().join(''));
+    const key0 = keysMap.get(h0.sort().join(''));
+    const key1 = keysMap.get(h1.sort().join(''));
 
-  const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
-  const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
+    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
 
-  const strat0 = regretMatching(reg0);
-  const strat1 = regretMatching(reg1);
+    const strat0 = regretMatching(reg0);
+    const strat1 = regretMatching(reg1);
 
-  const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
-  const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
-  accumulate(sum0, strat0);
-  accumulate(sum1, strat1);
+    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
+    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+    accumulate(sum0, strat0);
+    accumulate(sum1, strat1);
 
-  // 2. Each player samples an action according to current strategy
-  const a0 = sampleAction(strat0);
-  const a1 = sampleAction(strat1);
+    const a0 = sampleAction(strat0);
+    const a1 = sampleAction(strat1);
 
-  // 3. Apply discards & draw replacements
-  const h0Final = applyAction(h0, deck, a0);
-  const h1Final = applyAction(h1, deck, a1);
+    const h0Final = applyAction(h0, deck, a0);
+    const h1Final = applyAction(h1, deck, a1);
 
-  const util0 = compareHands(h0Final, h1Final);  // +1 / 0 / –1
-  const util1 = -util0;
+    const util0 = compareHands(h0Final, h1Final);
+    const util1 = -util0;
 
-  // 4. Utility for **each alternate action** (one‑sided resampling)
-  const altUtil0 = new Float64Array(ACTION_COUNT);
-  const altUtil1 = new Float64Array(ACTION_COUNT);
+    const altUtil0 = new Float64Array(ACTION_COUNT);
+    const altUtil1 = new Float64Array(ACTION_COUNT);
 
-  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-    const deckA = Object.values(DECK);
-    getArrayShuffled(deckA);
-    const h0Alt = applyAction(h0, deckA, ai);
-    const h1Fix = applyAction(h1, deckA, a1);
-    altUtil0[ai] = compareHands(h0Alt, h1Fix);
-  }
-  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-    const deckA = Object.values(DECK);
-    getArrayShuffled(deckA);
-    const h1Alt = applyAction(h1, deckA, ai);
-    const h0Fix = applyAction(h0, deckA, a0);
-    altUtil1[ai] = -compareHands(h0Fix, h1Alt);
-  }
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        const deckA = Object.values(DECK);
+        getArrayShuffled(deckA);
+        const h0Alt = applyAction(h0, deckA, ai);
+        const h1Fix = applyAction(h1, deckA, a1);
+        altUtil0[ai] = compareHands(h0Alt, h1Fix);
+    }
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        const deckA = Object.values(DECK);
+        getArrayShuffled(deckA);
+        const h1Alt = applyAction(h1, deckA, ai);
+        const h0Fix = applyAction(h0, deckA, a0);
+        altUtil1[ai] = -compareHands(h0Fix, h1Alt);
+    }
 
-  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-    reg0[ai] += altUtil0[ai] - util0;
-    reg1[ai] += altUtil1[ai] - util1;
-  }
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        reg0[ai] += altUtil0[ai] - util0;
+        reg1[ai] += altUtil1[ai] - util1;
+    }
 }
 
 
 function train(iterations = ITERATIONS_DEFAULT) {
-  for (let i = 0; i < iterations; ++i) iteration();
-  console.log(`\n[MCCFR] completed ${iterations.toLocaleString()} iterations`);
+    for (let i = 0; i < iterations; ++i) iteration();
+    console.log(`\n[MCCFR] completed ${iterations.toLocaleString()} iterations`);
 }
 
 function avgStrategy(infoKey) {
-  const sum = strategySum.get(infoKey);
-  if (!sum) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
-  const total = sum.reduce((acc, v) => acc + v, 0);
-  return sum.map(v => v / total);
+    const sum = strategySum.get(infoKey);
+    if (!sum) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+    const total = sum.reduce((acc, v) => acc + v, 0);
+    return sum.map(v => v / total);
 }
 
 train();
