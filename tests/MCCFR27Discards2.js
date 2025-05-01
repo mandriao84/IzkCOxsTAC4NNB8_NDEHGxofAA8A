@@ -3,14 +3,15 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 const os = require('os');
 const { LRUCache } = require('lru-cache');
 const path = require('path');
-const { randomUUID } = require('crypto');
-const { ResultStorage } = require('firebase-functions/v1/testLab');
-const PATH_KEYS = path.join(process.cwd(), '.results/mccfr/keys.ndjson');
-const PATH_SCORES = path.join(process.cwd(), '.results/mccfr/scores.ndjson');
-const PATH_DISCARDSK = path.join(process.cwd(), '.results/mccfr/discardsk.ndjson');
-const PATH_DISCARDSEV = path.join(process.cwd(), '.results/mccfr/discardsev.ndjson');
-const PATH_STRATEGIES = path.join(process.cwd(), '.results/mccfr/strategies.ndjson');
-const PATH_STANDSEV = path.join(process.cwd(), '.results/mccfr/standsev.ndjson');
+
+const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr');
+const PATH_KEYS = path.join(PATH_RESULTS, 'keys.ndjson');
+const PATH_SCORES = path.join(PATH_RESULTS, 'scores.ndjson');
+const PATH_DISCARDSK = path.join(PATH_RESULTS, 'discardsk.ndjson');
+const PATH_DISCARDSEV = path.join(PATH_RESULTS, 'discardsev.ndjson');
+const PATH_STANDSEV = path.join(PATH_RESULTS,'standsev.ndjson');
+const PATH_STRATEGIES = path.join(PATH_RESULTS, 'strategies.ndjson');
+const PATH_REGRETS = path.join(PATH_RESULTS, 'regrets.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -1178,7 +1179,8 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
  *  core learning loop is fully contained here.
  * -------------------------------------------------------------------------
  */
-const ITERATIONS_DEFAULT = 100_000;
+const ITERATIONS_DEFAULT = 1000000;
+const FLUSH_EVERY = 25_000;
 const ACTIONS = (() => {
     const out = [];
     for (let mask = 0; mask < 32; ++mask) {
@@ -1191,6 +1193,49 @@ const ACTIONS = (() => {
 const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
+
+function loadTables() {
+    if (fs.existsSync(PATH_REGRETS)) {
+        const raw = fs.readFileSync(PATH_REGRETS, 'utf8');
+        const data = raw.split('\n');
+        for (let i = 0; i < data.length; i++) {
+            const line = data[i];
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            const { key, values } = JSON.parse(t);
+            regretSum.set(key, Float64Array.from(values));
+        }
+    }
+    if (fs.existsSync(PATH_STRATEGIES)) {
+        const raw = fs.readFileSync(PATH_STRATEGIES, 'utf8');
+        const data = raw.split('\n');
+        for (let i = 0; i < data.length; i++) {
+            const line = data[i];
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            const { key, values } = JSON.parse(t);
+            strategySum.set(key, Float64Array.from(values));
+        }
+    }
+    console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
+    console.log(`[MCCFR] loaded ${strategySum.size} strategies from disk`);
+}
+
+function flushTables() {
+    const toLines = (map) => {
+        const entries = Array.from(map.entries());
+        const lines = entries.map(([key, values]) => {
+            const entry = { key, values: [...values] };
+            return JSON.stringify(entry);
+        });
+        return lines.join('\n') + '\n';
+    }
+    fs.mkdirSync(PATH_RESULTS, { recursive: true });
+    fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
+    fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
+    console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
+    console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
+}
 
 function compareHands(handA, handB) {
     const keyA = keysMap.get(handA.sort().join('')).value;
@@ -1234,10 +1279,6 @@ function sampleAction(strat) {
 
 }
 
-function accumulate(arr, add) {
-    for (let i = 0; i < arr.length; ++i) arr[i] += add[i];
-}
-
 function iteration() {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
@@ -1254,8 +1295,8 @@ function iteration() {
 
     const sum0 = strategySum.get(hkey0.value) || (strategySum.set(hkey0.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey0.value));
     const sum1 = strategySum.get(hkey1.value) || (strategySum.set(hkey1.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey1.value));
-    accumulate(sum0, strat0);
-    accumulate(sum1, strat1);
+    for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
+    for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
     const a0 = sampleAction(strat0);
     const a1 = sampleAction(strat1);
@@ -1287,18 +1328,12 @@ function iteration() {
         reg1[ai] += altUtil1[ai] - util1;
     }
 
-    // readAvgStrategy(key0)
-    // readAvgStrategy(key1)
+    // readAvgStrategy(hkey0.value)
+    // readAvgStrategy(hkey1.value)
 }
 
-
-function train(iterations = ITERATIONS_DEFAULT) {
-    for (let i = 0; i < iterations; ++i) iteration();
-    console.log(`\n[MCCFR] completed ${iterations.toLocaleString()} iterations`);
-}
-
-function avgStrategy(infoKey) {
-    const sum = strategySum.get(infoKey);
+function avgStrategy(key) {
+    const sum = strategySum.get(key);
     if (!sum) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
     const total = sum.reduce((acc, v) => acc + v, 0);
     return sum.map(v => v / total);
@@ -1306,12 +1341,25 @@ function avgStrategy(infoKey) {
 
 function readAvgStrategy(key) {
     const strat = avgStrategy(key);
-    for (let i = 0; i < ACTION_COUNT; ++i) {
-        const pct = (100 * strat[i]).toFixed(2);
-        const mask = ACTIONS[i].length ? ACTIONS[i].join('') : '––';
-        console.log(`${key}  →  discards:${mask.padEnd(5, ' ')}  →  ${pct}%`);
-    }
+    const result = strat.reduce((obj, value, index) => {
+        if (value > (obj.value ?? 0)) {
+            obj.key = key;
+            obj.discards = ACTIONS[index].length ? ACTIONS[index].join('') : '––';
+            obj.value = value.safe("ROUND", 4);
+        }
+        return obj;
+    }, {});
+    console.log(result);
 }
 
-// getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-// train();
+function train(iterations = ITERATIONS_DEFAULT) {
+    const timeStart = performance.now();
+    for (let i = 0; i < iterations; ++i) {
+        iteration();
+    }
+    const timeEnd = performance.now();
+    console.log(`mccfr train took ${(timeEnd - timeStart).toFixed(2)}ms`);
+}
+
+getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+train();
