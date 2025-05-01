@@ -1180,7 +1180,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
  * -------------------------------------------------------------------------
  */
 const ITERATIONS_DEFAULT = 1000000;
-const FLUSH_EVERY = 25_000;
+const FLUSH_EVERY = 100000;
 const ACTIONS = (() => {
     const out = [];
     for (let mask = 0; mask < 32; ++mask) {
@@ -1353,13 +1353,15 @@ function readAvgStrategy(key) {
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+    loadTables();
     const timeStart = performance.now();
     for (let i = 0; i < iterations; ++i) {
         iteration();
+        if (i % FLUSH_EVERY === 0) flushTables();
     }
     const timeEnd = performance.now();
     console.log(`mccfr train took ${(timeEnd - timeStart).toFixed(2)}ms`);
 }
 
-getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
 train();
