@@ -324,7 +324,7 @@ const getHandScore = (keyDetails) => {
 const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const results = {};
-    results.key = keysMap.get(hand.sort().join(''));
+    results.key = keysMap.get(hand.sort().join('')).value;
 
     if (standsevMap.has(results.key)) {
         results.score = standsevMap.get(results.key);
@@ -340,7 +340,7 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
     };
 
     const scoreAcc = allHandsX.reduce((acc, handX) => {
-        const keyX = keysMap.get(handX.sort().join(''));
+        const keyX = keysMap.get(handX.sort().join('')).value;
         const scoreX = scoresMap.get(keyX).value;
         acc += getScore(scoreX, score);
         return acc;
@@ -460,8 +460,8 @@ const getAllHandsKeySaved = () => {
     const allHandsRaw = getAllHandsPossible();
     const data = allHandsRaw.reduce((arr, hand) => {
         const keyDetails = getHandKey(hand);
-        const { key } = keyDetails;
-        arr.push({ key: hand.sort().join(''), value: key });
+        const { key, hand: handSorted } = keyDetails;
+        arr.push({ key: hand.sort().join(''), hand: handSorted, value: key });
         return arr;
     }, []);
     fs.writeFileSync(PATH_KEYS, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
@@ -615,7 +615,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
-    result.key = keysMap.get(hand.sort().join(''));
+    result.key = keysMap.get(hand.sort().join('')).value;
     const handEv = standsevMap.get(result.key);
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
@@ -634,7 +634,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
             const scoreAcc = allCardsReceived.reduce((acc, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
-                const key = keysMap.get(handNew.sort().join(''));
+                const key = keysMap.get(handNew.sort().join('')).value;
 
                 if (roundNumber <= 1) {
                     acc += scoresMap.get(key).value;
@@ -664,7 +664,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const results = {};
-    results.key = keysMap.get(hand.sort().join(""));
+    results.key = keysMap.get(hand.sort().join("")).value;
     const score = scoresMap.get(results.key).value;
 
     const cacheKey = `${results.key}:R${roundNumber}`;
@@ -678,7 +678,7 @@ const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
     if (roundNumber <= 0) {
         const allHandsX = getAllCombinations(deckLeft, 5);
         const scoreAcc = allHandsX.reduce((acc, handX) => {
-            const keyX = keysMap.get(handX.sort().join(""));
+            const keyX = keysMap.get(handX.sort().join("")).value;
             const scoreX = scoresMap.get(keyX).value;
             acc += getScore(scoreX, score);
             return acc
@@ -704,7 +704,7 @@ const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
                 const allCardsReceived = getAllCombinations(deckLeftNewAfter, discardCount);
                 for (const cardsReceived of allCardsReceived) {
                     const handXNew = [...cardsKept, ...cardsReceived];
-                    const keyX = keysMap.get(handXNew.sort().join(''));
+                    const keyX = keysMap.get(handXNew.sort().join('')).value;
                     const scoreX = scoresMap.get(keyX).value;
                     const result = getScore(scoreX, score);
                     if (result === 1) win++;
@@ -978,7 +978,7 @@ const getCacheLoadedFromNDJSON = (paths) => {
             const entry = trimmed ? JSON.parse(trimmed) : null;
             if (entry?.key) {
                 if (p.includes("keys.ndjson")) {
-                    keysMap.set(entry.key, entry.value);
+                    keysMap.set(entry.key, { hand: entry.hand, value: entry.value });
                 } else if (p.includes("scores.ndjson")) {
                     scoresMap.set(entry.key, { hand: entry.hand, value: entry.value });
                 } else if (p.includes("discardsk.ndjson")) {
@@ -1005,7 +1005,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 
 
 const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 1000000) => {
-    const key = keysMap.get(hand.sort().join(''));
+    const key = keysMap.get(hand.sort().join('')).value;
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
 
@@ -1058,7 +1058,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
         }
 
         if (cardsKept.length === 5 && details.suits.maxCount === 5) {
-            const key = keysMap.get(cardsKept.sort().join(''));
+            const key = keysMap.get(cardsKept.sort().join('')).value;
             const discards = discardsMap.get(`${key}:R${roundNumber}`);
             // console.log(`${key}:R${roundNumber}`, discards)
             const discardsRank = discards.cards.map(card => card.slice(0, -1));
@@ -1087,7 +1087,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
             handX = handXReceived;
         }
 
-        const keyX = keysMap.get(handX.sort().join(''));
+        const keyX = keysMap.get(handX.sort().join('')).value;
         const scoreX = scoresMap.get(keyX).value;
         if (scoreX < score) ++wins;
         else if (scoreX === score) ++ties;
@@ -1125,7 +1125,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(4);
 
-    const hand = ["Jc", "5c", "4c", "3c", "2d"]
+    // const hand = ["Jc", "5c", "4c", "3c", "2d"]
     // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
     // getMCSResult();
     // const deck = Object.values(DECK);
@@ -1178,11 +1178,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
  *  core learning loop is fully contained here.
  * -------------------------------------------------------------------------
  */
-
-// ------------------------------------------------------------
-//  Configuration
-// ------------------------------------------------------------
-const ITERATIONS_DEFAULT = 200_000;
+const ITERATIONS_DEFAULT = 100_000;
 const ACTIONS = (() => {
     const out = [];
     for (let mask = 0; mask < 32; ++mask) {
@@ -1197,19 +1193,19 @@ const regretSum = new Map();
 const strategySum = new Map();
 
 function compareHands(handA, handB) {
-    const keyA = keysMap.get(handA.sort().join(''));
+    const keyA = keysMap.get(handA.sort().join('')).value;
     const scoreA = scoresMap.get(keyA).value;
-    const keyB = keysMap.get(handB.sort().join(''));
+    const keyB = keysMap.get(handB.sort().join('')).value;
     const scoreB = scoresMap.get(keyB).value;
     return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
 }
 
 function applyAction(hand, deck, actionIdx) {
-    const discard = ACTIONS[actionIdx];
-    const kept = hand.filter((_, idx) => !discard.includes(idx));
-    const drawn = [];
-    for (let i = 0; i < discard.length; ++i) drawn.push(deck.pop());
-    return kept.concat(drawn);
+    const discardIndices = ACTIONS[actionIdx];
+    const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
+    const cardsReceived = deck.splice(0, discardIndices.length);
+    const handNew = [...cardsKept, ...cardsReceived];
+    return handNew;
 }
 
 function regretMatching(regrets) {
@@ -1235,6 +1231,7 @@ function sampleAction(strat) {
         if (r <= cum) return i;
     }
     return strat.length - 1;
+
 }
 
 function accumulate(arr, add) {
@@ -1246,26 +1243,25 @@ function iteration() {
     getArrayShuffled(deck);
     const h0 = deck.splice(0, 5);
     const h1 = deck.splice(0, 5);
+    const hkey0 = keysMap.get(h0.sort().join(''));
+    const hkey1 = keysMap.get(h1.sort().join(''));
 
-    const key0 = keysMap.get(h0.sort().join(''));
-    const key1 = keysMap.get(h1.sort().join(''));
-
-    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
-    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+    const reg0 = regretSum.get(hkey0.value) || (regretSum.set(hkey0.value, new Float64Array(ACTION_COUNT)), regretSum.get(hkey0.value));
+    const reg1 = regretSum.get(hkey1.value) || (regretSum.set(hkey1.value, new Float64Array(ACTION_COUNT)), regretSum.get(hkey1.value));
 
     const strat0 = regretMatching(reg0);
     const strat1 = regretMatching(reg1);
 
-    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
-    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+    const sum0 = strategySum.get(hkey0.value) || (strategySum.set(hkey0.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey0.value));
+    const sum1 = strategySum.get(hkey1.value) || (strategySum.set(hkey1.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey1.value));
     accumulate(sum0, strat0);
     accumulate(sum1, strat1);
 
     const a0 = sampleAction(strat0);
     const a1 = sampleAction(strat1);
 
-    const h0Final = applyAction(h0, deck, a0);
-    const h1Final = applyAction(h1, deck, a1);
+    const h0Final = applyAction(hkey0.hand, deck, a0);
+    const h1Final = applyAction(hkey1.hand, deck, a1);
 
     const util0 = compareHands(h0Final, h1Final);
     const util1 = -util0;
@@ -1274,17 +1270,15 @@ function iteration() {
     const altUtil1 = new Float64Array(ACTION_COUNT);
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = Object.values(DECK);
-        getArrayShuffled(deckA);
-        const h0Alt = applyAction(h0, deckA, ai);
-        const h1Fix = applyAction(h1, deckA, a1);
+        const deckA = getArrayShuffled([...deck]);
+        const h0Alt = applyAction(hkey0.hand, deckA, ai);
+        const h1Fix = applyAction(hkey1.hand, deckA, a1);
         altUtil0[ai] = compareHands(h0Alt, h1Fix);
     }
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = Object.values(DECK);
-        getArrayShuffled(deckA);
-        const h1Alt = applyAction(h1, deckA, ai);
-        const h0Fix = applyAction(h0, deckA, a0);
+        const deckA = getArrayShuffled([...deck]);
+        const h1Alt = applyAction(hkey1.hand, deckA, ai);
+        const h0Fix = applyAction(hkey0.hand, deckA, a0);
         altUtil1[ai] = -compareHands(h0Fix, h1Alt);
     }
 
@@ -1292,6 +1286,9 @@ function iteration() {
         reg0[ai] += altUtil0[ai] - util0;
         reg1[ai] += altUtil1[ai] - util1;
     }
+
+    // readAvgStrategy(key0)
+    // readAvgStrategy(key1)
 }
 
 
@@ -1307,13 +1304,14 @@ function avgStrategy(infoKey) {
     return sum.map(v => v / total);
 }
 
-train();
+function readAvgStrategy(key) {
+    const strat = avgStrategy(key);
+    for (let i = 0; i < ACTION_COUNT; ++i) {
+        const pct = (100 * strat[i]).toFixed(2);
+        const mask = ACTIONS[i].length ? ACTIONS[i].join('') : '––';
+        console.log(`${key}  →  discards:${mask.padEnd(5, ' ')}  →  ${pct}%`);
+    }
+}
 
-//   const demoKey = 'A|K|Q|J|10';
-//   console.log(`\nAverage discard frequencies for ranks [${demoKey}]:`);
-//   const strat = avgStrategy(demoKey);
-//   for (let i = 0; i < ACTION_COUNT; ++i) {
-//     const pct = (100 * strat[i]).toFixed(2);
-//     const mask = ACTIONS[i].length ? ACTIONS[i].join('') : '––';
-//     console.log(`  action ${i.toString().padStart(2)}  discards:${mask.padEnd(5,' ')}  →  ${pct}%`);
-//   }
+// getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+// train();
