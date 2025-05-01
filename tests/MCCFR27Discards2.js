@@ -520,7 +520,12 @@ const getDiscardsDetailsForGivenHand = (type, hand, roundNumber, simulationNumbe
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const deckLeft = deck.filter(card => !hand.includes(card));
-    if (type === "MCS") {
+    if (type === "MCCFR") {
+        const cfr = new MonteCarloCFR();
+        const strategy = cfr.run(simulationNumber);
+        console.log(strategy)
+        return strategy;
+    } else if (type === "MCS") {
         const result = getMCSDiscardsDetails(hand, deckLeft, roundNumber, simulationNumber);
         console.log(type)
         console.log(result)
@@ -999,7 +1004,7 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
 
-const getMCSResult = (hand = ['2s', '3d', '4s', '5s', 'Js'], simulationNumber = 1000000) => {
+const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 1000000) => {
     const key = keysMap.get(hand.sort().join(''));
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
@@ -1071,11 +1076,12 @@ const getMCSResult = (hand = ['2s', '3d', '4s', '5s', 'Js'], simulationNumber = 
         let handX = deckLeft.splice(0, 5);
 
         for (let roundNumber = 3; roundNumber >= 1; --roundNumber) {
+
             // const discardsX = discardsMap.get(`${keyX}:R${roundNumber}`);
             // if (discardsX.cards.length === 0) break;
             // const cardsXKept = getHandDiscarded(handX, discardsX, roundNumber);
             // const cardsXReceived = deckLeft.splice(0, discardsX.cards.length);
-            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['J', 'Q', 'K', 'A'], roundNumber);
+            const { cardsKept: cardsXKept, cardsDiscarded: cardsXDiscarded } = getHandDiscarded(handX, ['10', 'J', 'Q', 'K', 'A'], roundNumber);
             const cardsXReceived = deckLeft.splice(0, cardsXDiscarded.length);
             const handXReceived = [...cardsXKept, ...cardsXReceived];
             handX = handXReceived;
@@ -1119,12 +1125,198 @@ const getMCSResult = (hand = ['2s', '3d', '4s', '5s', 'Js'], simulationNumber = 
     // await getMCSDataComputed(roundNumber, simulationNumber);
     // await getEnumDiscardsComputed(4);
 
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK]);
-    // getMCSResult();
     const hand = ["Jc","5c","4c","3c","2d"]
+    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_STANDSEV, PATH_DISCARDSK, PATH_DISCARDSEV]);
+    // getMCSResult();
     // const deck = Object.values(DECK);
     // const deckLeft = deck.filter(card => !hand.includes(card));
     // getHandExpectedValue2(hand, deckLeft, 1);
-    getDiscardsDetailsForGivenHand("ENUM", hand, 1);
+    // getDiscardsDetailsForGivenHand("ENUM", hand, 1);
     // getDiscardsDetailsForGivenHand("MCS", b, 1);
+    // getDiscardsDetailsForGivenHand("MCCFR");
 })();
+
+
+
+
+
+
+
+
+/**
+ * -------------------------------------------------------------------------
+ *  HEADS‑UP 5‑CARD‑DRAW  •  MCCFR SELF‑PLAY FOR DISCARD DECISIONS ONLY
+ * -------------------------------------------------------------------------
+ *  This module plugs straight into the utilities you already have in
+ *  **MCCFR27Discards2.js** — we re‑use your existing helpers to avoid any
+ *  duplicate logic:
+ *
+ *      • `DECK`              → canonical 52‑card deck (object → values)
+ *      • `getArrayShuffled`  → Fisher‑Yates shuffle (in‑place)
+ *      • `getHandKey`        → returns { key, … }
+ *      • `getHandScore`      → returns { key, score } (higher = stronger)
+ *
+ *  Drop the whole block **below the helper section** of your file or pull
+ *  those helpers into a separate `utils.js` and `require` it here — either
+ *  way the names stay identical.
+ *
+ *  ▸  One decision per player: choose a subset of the 5 cards to discard.
+ *  ▸  32 possible actions = every bit‑mask of length 5 (0b00000 … 0b11111).
+ *  ▸  Monte‑Carlo Counterfactual Regret Minimisation (outcome‑sampling).
+ *
+ *  -------------------------------------------------------------------
+ *  Quick start:
+ *      $ node MCCFR27Discards2.js   # if you merged files
+ *        – or –
+ *      $ node mccfr_discard_heads_up.js
+ *
+ *  Public helpers:
+ *      train(iters)               // run additional iterations
+ *      avgStrategy(infoKey)       // get the average strategy for a hand‑key
+ *
+ *  Feel free to wire the tables into persistent storage or add a CLI – the
+ *  core learning loop is fully contained here.
+ * -------------------------------------------------------------------------
+ */
+
+// ------------------------------------------------------------
+//  Configuration
+// ------------------------------------------------------------
+const ITERATIONS_DEFAULT = 200_000;
+const ACTIONS = (() => {
+  const out = [];
+  for (let mask = 0; mask < 32; ++mask) {
+    const arr = [];
+    for (let i = 0; i < 5; ++i) if (mask & (1 << i)) arr.push(i);
+    out.push(arr);
+  }
+  return out;
+})();
+const ACTION_COUNT = ACTIONS.length;
+const regretSum   = new Map();
+const strategySum = new Map();
+
+function compareHands(handA, handB) {
+    const keyA = keysMap.get(handA.sort().join(''));
+    const scoreA = scoresMap.get(keyA).value;
+    const keyB = keysMap.get(handB.sort().join(''));
+    const scoreB = scoresMap.get(keyB).value;
+    return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
+}
+
+function applyAction(hand, deck, actionIdx) {
+  const discard = ACTIONS[actionIdx];
+  const kept = hand.filter((_, idx) => !discard.includes(idx));
+  const drawn = [];
+  for (let i = 0; i < discard.length; ++i) drawn.push(deck.pop());
+  return kept.concat(drawn);
+}
+
+function regretMatching(regrets) {
+  const strat = new Float64Array(ACTION_COUNT);
+  let normaliser = 0;
+  for (let i = 0; i < ACTION_COUNT; ++i) {
+    strat[i] = Math.max(0, regrets[i]);
+    normaliser += strat[i];
+  }
+  if (normaliser === 0) {
+    for (let i = 0; i < ACTION_COUNT; ++i) strat[i] = 1 / ACTION_COUNT;
+  } else {
+    for (let i = 0; i < ACTION_COUNT; ++i) strat[i] /= normaliser;
+  }
+  return strat;
+}
+
+function sampleAction(strat) {
+  const r = Math.random();
+  let cum = 0;
+  for (let i = 0; i < strat.length; ++i) {
+    cum += strat[i];
+    if (r <= cum) return i;
+  }
+  return strat.length - 1;
+}
+
+function accumulate(arr, add) {
+  for (let i = 0; i < arr.length; ++i) arr[i] += add[i];
+}
+
+function iteration() {
+  const deck = Object.values(DECK);
+  getArrayShuffled(deck);
+  const h0 = deck.splice(0, 5);
+  const h1 = deck.splice(0, 5);
+
+  const key0 = keysMap.get(h0.sort().join(''));
+  const key1 = keysMap.get(h1.sort().join(''));
+
+  const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
+  const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+
+  const strat0 = regretMatching(reg0);
+  const strat1 = regretMatching(reg1);
+
+  const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
+  const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+  accumulate(sum0, strat0);
+  accumulate(sum1, strat1);
+
+  // 2. Each player samples an action according to current strategy
+  const a0 = sampleAction(strat0);
+  const a1 = sampleAction(strat1);
+
+  // 3. Apply discards & draw replacements
+  const h0Final = applyAction(h0, deck, a0);
+  const h1Final = applyAction(h1, deck, a1);
+
+  const util0 = compareHands(h0Final, h1Final);  // +1 / 0 / –1
+  const util1 = -util0;
+
+  // 4. Utility for **each alternate action** (one‑sided resampling)
+  const altUtil0 = new Float64Array(ACTION_COUNT);
+  const altUtil1 = new Float64Array(ACTION_COUNT);
+
+  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+    const deckA = Object.values(DECK);
+    getArrayShuffled(deckA);
+    const h0Alt = applyAction(h0, deckA, ai);
+    const h1Fix = applyAction(h1, deckA, a1);
+    altUtil0[ai] = compareHands(h0Alt, h1Fix);
+  }
+  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+    const deckA = Object.values(DECK);
+    getArrayShuffled(deckA);
+    const h1Alt = applyAction(h1, deckA, ai);
+    const h0Fix = applyAction(h0, deckA, a0);
+    altUtil1[ai] = -compareHands(h0Fix, h1Alt);
+  }
+
+  for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+    reg0[ai] += altUtil0[ai] - util0;
+    reg1[ai] += altUtil1[ai] - util1;
+  }
+}
+
+
+function train(iterations = ITERATIONS_DEFAULT) {
+  for (let i = 0; i < iterations; ++i) iteration();
+  console.log(`\n[MCCFR] completed ${iterations.toLocaleString()} iterations`);
+}
+
+function avgStrategy(infoKey) {
+  const sum = strategySum.get(infoKey);
+  if (!sum) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+  const total = sum.reduce((acc, v) => acc + v, 0);
+  return sum.map(v => v / total);
+}
+
+train();
+
+//   const demoKey = 'A|K|Q|J|10';
+//   console.log(`\nAverage discard frequencies for ranks [${demoKey}]:`);
+//   const strat = avgStrategy(demoKey);
+//   for (let i = 0; i < ACTION_COUNT; ++i) {
+//     const pct = (100 * strat[i]).toFixed(2);
+//     const mask = ACTIONS[i].length ? ACTIONS[i].join('') : '––';
+//     console.log(`  action ${i.toString().padStart(2)}  discards:${mask.padEnd(5,' ')}  →  ${pct}%`);
+//   }
