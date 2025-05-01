@@ -1202,7 +1202,7 @@ function loadTables() {
             const line = data[i];
             const trimmed = line.trim();
             if (!trimmed) continue;
-            const { key, values } = JSON.parse(t);
+            const { key, values } = JSON.parse(trimmed);
             regretSum.set(key, Float64Array.from(values));
         }
     }
@@ -1213,7 +1213,7 @@ function loadTables() {
             const line = data[i];
             const trimmed = line.trim();
             if (!trimmed) continue;
-            const { key, values } = JSON.parse(t);
+            const { key, values } = JSON.parse(trimmed);
             strategySum.set(key, Float64Array.from(values));
         }
     }
@@ -1356,9 +1356,13 @@ function train(iterations = ITERATIONS_DEFAULT) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     const timeStart = performance.now();
+    let flushTablesLastIteration = 0;
     for (let i = 0; i < iterations; ++i) {
         iteration();
-        if (i % FLUSH_EVERY === 0) flushTables();
+        if (i - flushTablesLastIteration >= FLUSH_EVERY) {
+            flushTables();
+            flushTablesLastIteration = i
+        }
     }
     const timeEnd = performance.now();
     console.log(`mccfr train took ${(timeEnd - timeStart).toFixed(2)}ms`);
