@@ -1144,43 +1144,9 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
 
 
 
-/**
- * -------------------------------------------------------------------------
- *  HEADS‑UP 5‑CARD‑DRAW  •  MCCFR SELF‑PLAY FOR DISCARD DECISIONS ONLY
- * -------------------------------------------------------------------------
- *  This module plugs straight into the utilities you already have in
- *  **MCCFR27Discards2.js** — we re‑use your existing helpers to avoid any
- *  duplicate logic:
- *
- *      • `DECK`              → canonical 52‑card deck (object → values)
- *      • `getArrayShuffled`  → Fisher‑Yates shuffle (in‑place)
- *      • `getHandKey`        → returns { key, … }
- *      • `getHandScore`      → returns { key, score } (higher = stronger)
- *
- *  Drop the whole block **below the helper section** of your file or pull
- *  those helpers into a separate `utils.js` and `require` it here — either
- *  way the names stay identical.
- *
- *  ▸  One decision per player: choose a subset of the 5 cards to discard.
- *  ▸  32 possible actions = every bit‑mask of length 5 (0b00000 … 0b11111).
- *  ▸  Monte‑Carlo Counterfactual Regret Minimisation (outcome‑sampling).
- *
- *  -------------------------------------------------------------------
- *  Quick start:
- *      $ node MCCFR27Discards2.js   # if you merged files
- *        – or –
- *      $ node mccfr_discard_heads_up.js
- *
- *  Public helpers:
- *      train(iters)               // run additional iterations
- *      avgStrategy(infoKey)       // get the average strategy for a hand‑key
- *
- *  Feel free to wire the tables into persistent storage or add a CLI – the
- *  core learning loop is fully contained here.
- * -------------------------------------------------------------------------
- */
-const ITERATIONS_DEFAULT = 1000000;
-const FLUSH_EVERY = 100000;
+
+const ITERATIONS_DEFAULT = 1_000_000_000;
+const FLUSH_EVERY = 1_000_000;
 const ACTIONS = (() => {
     const out = [];
     for (let mask = 0; mask < 32; ++mask) {
@@ -1355,15 +1321,16 @@ function readAvgStrategy(key) {
 function train(iterations = ITERATIONS_DEFAULT) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
-    const timeStart = performance.now();
+    let timeStart = performance.now();
     for (let i = 0; i < iterations; ++i) {
         iteration();
         if (i > 0 && i % FLUSH_EVERY === 0) {
             flushTables();
+            const timeEnd = performance.now();
+            console.log(`[MCCFR] train(${FLUSH_EVERY}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+            timeStart = performance.now();
         }
     }
-    const timeEnd = performance.now();
-    console.log(`mccfr train took ${(timeEnd - timeStart).toFixed(2)}ms`);
 }
 
 train();
