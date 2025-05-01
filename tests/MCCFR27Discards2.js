@@ -1356,12 +1356,10 @@ function train(iterations = ITERATIONS_DEFAULT) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     const timeStart = performance.now();
-    let flushTablesLastIteration = 0;
     for (let i = 0; i < iterations; ++i) {
         iteration();
-        if (i - flushTablesLastIteration >= FLUSH_EVERY) {
+        if (i > 0 && i % FLUSH_EVERY === 0) {
             flushTables();
-            flushTablesLastIteration = i
         }
     }
     const timeEnd = performance.now();
