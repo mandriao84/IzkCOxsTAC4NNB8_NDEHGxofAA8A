@@ -1391,27 +1391,27 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 function train(iterations = 1_000_000_000, flushInterval = 999_999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
-    let timeStart = performance.now();
-    const hand = [];// ["Kc","Jc","8c","2d","2c"];
+    // let timeStart = performance.now();
+    // const hand = [];// ["Kc","Jc","8c","2d","2c"];
 
-    for (let i = 0; i < iterations; ++i) {
-        // const timeStartIteration = performance.now();
-        let deck = Object.values(DECK);
-        getArrayShuffled(deck);
-        const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
-        if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
-        const h1 = deck.splice(0, 5);
-        const hkey0 = keysMap.get([...h0].sort().join(''));
-        const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 1, []);
+    // for (let i = 0; i < iterations; ++i) {
+    //     // const timeStartIteration = performance.now();
+    //     let deck = Object.values(DECK);
+    //     getArrayShuffled(deck);
+    //     const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
+    //     if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
+    //     const h1 = deck.splice(0, 5);
+    //     const hkey0 = keysMap.get([...h0].sort().join(''));
+    //     const hkey1 = keysMap.get([...h1].sort().join(''));
+    //     simulateRound(hkey0, hkey1, deck, 1, []);
 
-        if (i > 0 && i % flushInterval === 0) {
-            flushTables();
-            const timeEnd = performance.now();
-            console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-            timeStart = performance.now();
-        }
-    }
+    //     if (i > 0 && i % flushInterval === 0) {
+    //         flushTables();
+    //         const timeEnd = performance.now();
+    //         console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+    //         timeStart = performance.now();
+    //     }
+    // }
 }
 (async () => {
     train();
