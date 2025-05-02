@@ -1161,12 +1161,12 @@ const regretSum = new Map();
 const strategySum = new Map();
 
 function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
+    const ndjson = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
         if (fs.existsSync(p)) {
             const raw = fs.readFileSync(p, 'utf8');
             const data = raw.split('\n');
-            let ndjson = '';
             for (let j = 0; j < data.length; j++) {
                 const line = data[j];
                 const trimmed = line.trim();
@@ -1178,14 +1178,11 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
                 } else if (p.endsWith('strategies.ndjson')) {
                     strategySum.set(key, Float64Array.from(values));
                     const strategy = getStrategyReadable(key);
-                    ndjson += (JSON.stringify(strategy) + '\n');
-                    if (j === (data.length - 1)) {
-                        console.log("hello")
-                        fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson);
-                    }
+                    ndjson[i] += (JSON.stringify(strategy) + '\n');
                 }
             }
-            // console.log(ndjson);
+
+            if (ndjson[i]) fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson[i]);
         }
     }
     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
