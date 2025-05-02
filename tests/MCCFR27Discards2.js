@@ -1346,16 +1346,12 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const hkey0Next = getActionApplied(hkey0.hand, deck, a0);
     const hkey1Next = getActionApplied(hkey1.hand, deck, a1);
 
-    if (isRoundNumberFrozen) {
-        return roundNumber === 1
-            ? compareHands(hkey0Next.hand, hkey1Next.hand)
-            : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
-    }
-
     const util0 = roundNumber <= 1
         ? compareHands(hkey0Next.hand, hkey1Next.hand)
         : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
+
+    if (isRoundNumberFrozen) return util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
