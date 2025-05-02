@@ -1238,7 +1238,7 @@ function compareHands(handA, handB) {
     return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
 }
 
-function applyAction(hand, deck, actionIdx) {
+function getActionApplied(hand, deck, actionIdx) {
     const discardIndices = ACTIONS[actionIdx];
     const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
     const cardsReceived = deck.splice(0, discardIndices.length);
@@ -1262,16 +1262,6 @@ function regretMatching(regrets) {
     return strat;
 }
 
-function sampleAction(strat) {
-    const r = Math.random();
-    let cum = 0;
-    for (let i = 0; i < strat.length; ++i) {
-        cum += strat[i];
-        if (r <= cum) return i;
-    }
-    return strat.length - 1;
-}
-
 function iteration(roundNumber = 1) {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
@@ -1293,11 +1283,11 @@ function iteration(roundNumber = 1) {
     for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
     for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
-    const a0 = sampleAction(strat0);
-    const a1 = sampleAction(strat1);
+    const a0 = getBestActionIndex(strat0);
+    const a1 = getBestActionIndex(strat1);
 
-    const hkey0New = applyAction(hkey0.hand, deck, a0);
-    const hkey1New = applyAction(hkey1.hand, deck, a1);
+    const hkey0New = getActionApplied(hkey0.hand, deck, a0);
+    const hkey1New = getActionApplied(hkey1.hand, deck, a1);
 
     const util0 = compareHands(hkey0New.hand, hkey1New.hand);
     const util1 = -util0;
@@ -1307,14 +1297,14 @@ function iteration(roundNumber = 1) {
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const hkey0Alt = applyAction(hkey0.hand, deckA, ai);
-        const hkey1Fix = applyAction(hkey1.hand, deckA, a1);
+        const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
+        const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
         altUtil0[ai] = compareHands(hkey0Alt.hand, hkey1Fix.hand);
     }
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const hkey0Fix = applyAction(hkey0.hand, deckA, a0);
-        const hkey1Alt = applyAction(hkey1.hand, deckA, ai);
+        const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
+        const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
         altUtil1[ai] = -compareHands(hkey0Fix.hand, hkey1Alt.hand);
     }
 
@@ -1351,10 +1341,10 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
     const a0 = getBestActionIndex(strat0);
-    const a1 = getBestActionIndex(strat0);
+    const a1 = getBestActionIndex(strat1);
 
-    const hkey0Next = applyAction(hkey0.hand, deck, a0);
-    const hkey1Next = applyAction(hkey1.hand, deck, a1);
+    const hkey0Next = getActionApplied(hkey0.hand, deck, a0);
+    const hkey1Next = getActionApplied(hkey1.hand, deck, a1);
 
     if (isRoundNumberFrozen) {
         return roundNumber === 1
@@ -1372,8 +1362,8 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const hkey0Alt = applyAction(hkey0.hand, deckA, ai);
-        const hkey1Fix = applyAction(hkey1.hand, deckA, a1);
+        const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
+        const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
 
         altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
@@ -1382,8 +1372,8 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const hkey0Fix = applyAction(hkey0.hand, deckA, a0);
-        const hkey1Alt = applyAction(hkey1.hand, deckA, ai);
+        const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
+        const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
 
         altUtil1[ai] = roundNumber <= 1
             ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
