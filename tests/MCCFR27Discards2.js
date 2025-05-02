@@ -1350,12 +1350,12 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     if (isRoundNumberFrozen) {
         return roundNumber === 1
             ? compareHands(hkey0Next.hand, hkey1Next.hand)
-            : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
+            : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
     }
 
     const util0 = roundNumber <= 1
         ? compareHands(hkey0Next.hand, hkey1Next.hand)
-        : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
+        : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
@@ -1368,7 +1368,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
         altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
-            : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1);
+            : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -1378,7 +1378,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
         altUtil1[ai] = roundNumber <= 1
             ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
-            : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1);
+            : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -1402,7 +1402,7 @@ function train(iterations = 1_000_000, flushInterval = 9999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get(h0.sort().join(''));
         const hkey1 = keysMap.get(h1.sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 2);
+        simulateRound(hkey0, hkey1, deck, 2, [1]);
         // const timeEndIteration = performance.now();
         // console.log(`[MCCFR] iteration(${i}) took ${(timeEndIteration - timeStartIteration).safe("ROUND", 2)}ms`);
 
