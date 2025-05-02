@@ -9,7 +9,7 @@ const PATH_KEYS = path.join(PATH_RESULTS, 'keys.ndjson');
 const PATH_SCORES = path.join(PATH_RESULTS, 'scores.ndjson');
 const PATH_DISCARDSK = path.join(PATH_RESULTS, 'discardsk.ndjson');
 const PATH_DISCARDSEV = path.join(PATH_RESULTS, 'discardsev.ndjson');
-const PATH_STANDSEV = path.join(PATH_RESULTS,'standsev.ndjson');
+const PATH_STANDSEV = path.join(PATH_RESULTS, 'standsev.ndjson');
 const PATH_STRATEGIES = path.join(PATH_RESULTS, 'strategies.ndjson');
 const PATH_REGRETS = path.join(PATH_RESULTS, 'regrets.ndjson');
 const DECK = {
@@ -1244,7 +1244,8 @@ function applyAction(hand, deck, actionIdx) {
     const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
     const cardsReceived = deck.splice(0, discardIndices.length);
     const handNew = [...cardsKept, ...cardsReceived];
-    return handNew;
+    const handNewKey = keysMap.get(handNew.sort().join(''));
+    return handNewKey;
 }
 
 function regretMatching(regrets) {
@@ -1295,10 +1296,10 @@ function iteration() {
     const a0 = sampleAction(strat0);
     const a1 = sampleAction(strat1);
 
-    const h0Final = applyAction(hkey0.hand, deck, a0);
-    const h1Final = applyAction(hkey1.hand, deck, a1);
+    const hkey0New = applyAction(hkey0.hand, deck, a0);
+    const hkey1New = applyAction(hkey1.hand, deck, a1);
 
-    const util0 = compareHands(h0Final, h1Final);
+    const util0 = compareHands(hkey0New.hand, hkey1New.hand);
     const util1 = -util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
@@ -1306,15 +1307,72 @@ function iteration() {
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const h0Alt = applyAction(hkey0.hand, deckA, ai);
-        const h1Fix = applyAction(hkey1.hand, deckA, a1);
-        altUtil0[ai] = compareHands(h0Alt, h1Fix);
+        const hkey0Alt = applyAction(hkey0.hand, deckA, ai);
+        const hkey1Fix = applyAction(hkey1.hand, deckA, a1);
+        altUtil0[ai] = compareHands(hkey0Alt.hand, hkey1Fix.hand);
     }
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
-        const h1Alt = applyAction(hkey1.hand, deckA, ai);
-        const h0Fix = applyAction(hkey0.hand, deckA, a0);
-        altUtil1[ai] = -compareHands(h0Fix, h1Alt);
+        const hkey0Fix = applyAction(hkey0.hand, deckA, a0);
+        const hkey1Alt = applyAction(hkey1.hand, deckA, ai);
+        altUtil1[ai] = -compareHands(hkey0Fix.hand, hkey1Alt.hand);
+    }
+
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        reg0[ai] += altUtil0[ai] - util0;
+        reg1[ai] += altUtil1[ai] - util1;
+    }
+}
+
+function simulateRound(hkey0, hkey1, deck, roundNumber) {
+    const key0 = `${hkey0.value}:${roundNumber}`;
+    const key1 = `${hkey1.value}:${roundNumber}`;
+
+    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
+    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+
+    const strat0 = regretMatching(reg0);
+    const strat1 = regretMatching(reg1);
+
+    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
+    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+    for (let i = 0; i < ACTION_COUNT; ++i) { sum0[i] += strat0[i]; sum1[i] += strat1[i]; }
+
+    const a0 = sampleAction(strat0);
+    const a1 = sampleAction(strat1);
+
+    const hkey0Next = applyAction(hkey0.hand, deck, a0);
+    const hkey1Next = applyAction(hkey1.hand, deck, a1);
+
+    let util0;
+    if (roundNumber <= 1) {
+        util0 = compareHands(hkey0Next.hand, hkey1Next.hand);
+    } else {
+        util0 = simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
+    }
+    const util1 = -util0;
+
+    const altUtil0 = new Float64Array(ACTION_COUNT);
+    const altUtil1 = new Float64Array(ACTION_COUNT);
+
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        const deckA = getArrayShuffled([...deck]);
+        const hkey0Alt = applyAction(hkey0.hand, deckA, ai);
+        const hkey1Fix = applyAction(hkey1.hand, deckA, a1);
+
+        altUtil0[ai] = roundNumber === 1
+            ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
+            : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1);
+    }
+
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        const deckA = getArrayShuffled([...deck]);
+        const hkey0Fix = applyAction(hkey0.hand, deckA, a0);
+        const hkey1Alt = applyAction(hkey1.hand, deckA, ai);
+
+        altUtil1[ai] = roundNumber === 1
+            ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
+            : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -1322,8 +1380,7 @@ function iteration() {
         reg1[ai] += altUtil1[ai] - util1;
     }
 
-    // readAvgStrategy(hkey0.value)
-    // readAvgStrategy(hkey1.value)
+    return util0;
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
