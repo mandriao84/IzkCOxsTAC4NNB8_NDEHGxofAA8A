@@ -325,7 +325,7 @@ const getHandScore = (keyDetails) => {
 const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const results = {};
-    results.key = keysMap.get(hand.sort().join('')).value;
+    results.key = keysMap.get([...hand].sort().join('')).value;
 
     if (standsevMap.has(results.key)) {
         results.score = standsevMap.get(results.key);
@@ -341,7 +341,7 @@ const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
     };
 
     const scoreAcc = allHandsX.reduce((acc, handX) => {
-        const keyX = keysMap.get(handX.sort().join('')).value;
+        const keyX = keysMap.get([...handX].sort().join('')).value;
         const scoreX = scoresMap.get(keyX).value;
         acc += getScore(scoreX, score);
         return acc;
@@ -616,7 +616,7 @@ const getMCSDiscardsDetails = (hand, deckLeft, roundNumber, simulationNumber) =>
 const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const result = {};
-    result.key = keysMap.get(hand.sort().join('')).value;
+    result.key = keysMap.get([...hand].sort().join('')).value;
     const handEv = standsevMap.get(result.key);
     result.keyDiscards = `${result.key}:R${roundNumber}`;
 
@@ -635,7 +635,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
             const allCardsReceived = getAllCombinations(deckLeft, discardCount);
             const scoreAcc = allCardsReceived.reduce((acc, cardsReceived) => {
                 const handNew = [...cardsKept, ...cardsReceived];
-                const key = keysMap.get(handNew.sort().join('')).value;
+                const key = keysMap.get([...handNew].sort().join('')).value;
 
                 if (roundNumber <= 1) {
                     acc += scoresMap.get(key).value;
@@ -665,7 +665,7 @@ const getEnumDiscardsDetails = (hand, deckLeft, roundNumber) => {
 const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
     const timeStart = performance.now();
     const results = {};
-    results.key = keysMap.get(hand.sort().join("")).value;
+    results.key = keysMap.get([...hand].sort().join("")).value;
     const score = scoresMap.get(results.key).value;
 
     const cacheKey = `${results.key}:R${roundNumber}`;
@@ -679,7 +679,7 @@ const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
     if (roundNumber <= 0) {
         const allHandsX = getAllCombinations(deckLeft, 5);
         const scoreAcc = allHandsX.reduce((acc, handX) => {
-            const keyX = keysMap.get(handX.sort().join("")).value;
+            const keyX = keysMap.get([...handX].sort().join("")).value;
             const scoreX = scoresMap.get(keyX).value;
             acc += getScore(scoreX, score);
             return acc
@@ -705,7 +705,7 @@ const getHandExpectedValue2 = (hand, deckLeft, roundNumber) => {
                 const allCardsReceived = getAllCombinations(deckLeftNewAfter, discardCount);
                 for (const cardsReceived of allCardsReceived) {
                     const handXNew = [...cardsKept, ...cardsReceived];
-                    const keyX = keysMap.get(handXNew.sort().join('')).value;
+                    const keyX = keysMap.get([...handXNew].sort().join('')).value;
                     const scoreX = scoresMap.get(keyX).value;
                     const result = getScore(scoreX, score);
                     if (result === 1) win++;
@@ -979,7 +979,10 @@ const getCacheLoadedFromNDJSON = (paths) => {
             const entry = trimmed ? JSON.parse(trimmed) : null;
             if (entry?.key) {
                 if (p.includes("keys.ndjson")) {
-                    keysMap.set(entry.key, { hand: entry.hand, value: entry.value });
+                    const obj = { hand: entry.hand, value: entry.value };
+                    Object.freeze(obj.value);
+                    Object.freeze(obj.hand);   
+                    keysMap.set(entry.key, obj);
                 } else if (p.includes("scores.ndjson")) {
                     scoresMap.set(entry.key, { hand: entry.hand, value: entry.value });
                 } else if (p.includes("discardsk.ndjson")) {
@@ -1004,70 +1007,69 @@ const getTimeElapsed = (timeStart, signal, error) => {
 // sudo pkill -9 -f "MCCFR27Discards2.js"
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 
+const getHandDiscarded = (hand, discards, roundNumber) => {
+    const details = hand.reduce((obj, card) => {
+        const rank = card.slice(0, -1);
+        const suit = card.slice(-1);
+        obj.ranks = obj.ranks || { maxCount: 0, max: '' };
+        obj.ranks[rank] = (obj.ranks[rank] || 0) + 1;
+        obj.ranks.maxCount = Math.max(obj.ranks.maxCount, obj.ranks[rank]);
+        obj.suits = obj.suits || { maxCount: 0, max: '' };
+        obj.suits[suit] = (obj.suits[suit] || 0) + 1;
+        obj.suits.maxCount = Math.max(obj.suits.maxCount, obj.suits[suit]);
+        return obj;
+    }, {});
+
+    const cardsKeptMax = [];
+    const cardsDiscarded = [];
+    for (let i = 0; i < hand.length; i++) {
+        const card = hand[i];
+        const rank = card.slice(0, -1);
+        const suit = card.slice(-1);
+        if (discards.includes(rank)) {
+            cardsDiscarded.push(card);
+            details.ranks[rank]--;
+            details.suits[suit]--;
+            continue;
+        }
+        if (details.ranks[rank] > 1 && details.suits[suit] > 1) {
+            cardsDiscarded.push(card);
+            details.ranks[rank]--;
+            details.suits[suit]--;
+            continue;
+        }
+        cardsKeptMax.push(card);
+    }
+
+    const cardsKept = [];
+    for (let i = 0; i < cardsKeptMax.length; i++) {
+        const card = cardsKeptMax[i];
+        const rank = card.slice(0, -1);
+        const suit = card.slice(-1);
+        if (details.ranks[rank] > 1) {
+            cardsDiscarded.push(card);
+            details.ranks[rank]--;
+            details.suits[suit]--;
+            continue;
+        }
+        cardsKept.push(card);
+    }
+
+    if (cardsKept.length === 5 && details.suits.maxCount === 5) {
+        const key = keysMap.get([...cardsKept].sort().join('')).value;
+        const discards = discardsMap.get(`${key}:R${roundNumber}`);
+        // console.log(`${key}:R${roundNumber}`, discards)
+        const discardsRank = discards.cards.map(card => card.slice(0, -1));
+        return getHandDiscarded(cardsKept, discardsRank, roundNumber);
+    }
+
+    return { cardsKept, cardsDiscarded }
+};
 
 const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 1000000) => {
-    const key = keysMap.get(hand.sort().join('')).value;
+    const key = keysMap.get([...hand].sort().join('')).value;
     const score = scoresMap.get(key).value;
     let wins = 0, ties = 0;
-
-    const getHandDiscarded = (hand, discards, roundNumber) => {
-        const details = hand.reduce((obj, card) => {
-            const rank = card.slice(0, -1);
-            const suit = card.slice(-1);
-            obj.ranks = obj.ranks || { maxCount: 0, max: '' };
-            obj.ranks[rank] = (obj.ranks[rank] || 0) + 1;
-            obj.ranks.maxCount = Math.max(obj.ranks.maxCount, obj.ranks[rank]);
-            obj.suits = obj.suits || { maxCount: 0, max: '' };
-            obj.suits[suit] = (obj.suits[suit] || 0) + 1;
-            obj.suits.maxCount = Math.max(obj.suits.maxCount, obj.suits[suit]);
-            return obj;
-        }, {});
-
-        const cardsKeptMax = [];
-        const cardsDiscarded = [];
-        for (let i = 0; i < hand.length; i++) {
-            const card = hand[i];
-            const rank = card.slice(0, -1);
-            const suit = card.slice(-1);
-            if (discards.includes(rank)) {
-                cardsDiscarded.push(card);
-                details.ranks[rank]--;
-                details.suits[suit]--;
-                continue;
-            }
-            if (details.ranks[rank] > 1 && details.suits[suit] > 1) {
-                cardsDiscarded.push(card);
-                details.ranks[rank]--;
-                details.suits[suit]--;
-                continue;
-            }
-            cardsKeptMax.push(card);
-        }
-
-        const cardsKept = [];
-        for (let i = 0; i < cardsKeptMax.length; i++) {
-            const card = cardsKeptMax[i];
-            const rank = card.slice(0, -1);
-            const suit = card.slice(-1);
-            if (details.ranks[rank] > 1) {
-                cardsDiscarded.push(card);
-                details.ranks[rank]--;
-                details.suits[suit]--;
-                continue;
-            }
-            cardsKept.push(card);
-        }
-
-        if (cardsKept.length === 5 && details.suits.maxCount === 5) {
-            const key = keysMap.get(cardsKept.sort().join('')).value;
-            const discards = discardsMap.get(`${key}:R${roundNumber}`);
-            // console.log(`${key}:R${roundNumber}`, discards)
-            const discardsRank = discards.cards.map(card => card.slice(0, -1));
-            return getHandDiscarded(cardsKept, discardsRank, roundNumber);
-        }
-
-        return { cardsKept, cardsDiscarded }
-    }
 
     for (let s = 0; s < simulationNumber; ++s) {
         const deck = Object.values(DECK)
@@ -1088,7 +1090,7 @@ const getMCSResult = (hand = ['4s', '6d', '7s', '8s', '9s'], simulationNumber = 
             handX = handXReceived;
         }
 
-        const keyX = keysMap.get(handX.sort().join('')).value;
+        const keyX = keysMap.get([...handX].sort().join('')).value;
         const scoreX = scoresMap.get(keyX).value;
         if (scoreX < score) ++wins;
         else if (scoreX === score) ++ties;
@@ -1231,9 +1233,9 @@ function flushTables() {
 }
 
 function compareHands(handA, handB) {
-    const keyA = keysMap.get(handA.sort().join('')).value;
+    const keyA = keysMap.get([...handA].sort().join('')).value;
     const scoreA = scoresMap.get(keyA).value;
-    const keyB = keysMap.get(handB.sort().join('')).value;
+    const keyB = keysMap.get([...handB].sort().join('')).value;
     const scoreB = scoresMap.get(keyB).value;
     return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
 }
@@ -1243,7 +1245,7 @@ function getActionApplied(hand, deck, actionIdx) {
     const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
     const cardsReceived = deck.splice(0, discardIndices.length);
     const handNew = [...cardsKept, ...cardsReceived];
-    const handNewKey = keysMap.get(handNew.sort().join(''));
+    const handNewKey = keysMap.get([...handNew].sort().join(''));
     return handNewKey;
 }
 
@@ -1267,8 +1269,8 @@ function iteration(roundNumber = 1) {
     getArrayShuffled(deck);
     const h0 = deck.splice(0, 5);
     const h1 = deck.splice(0, 5);
-    const hkey0 = keysMap.get(h0.sort().join(''));
-    const hkey1 = keysMap.get(h1.sort().join(''));
+    const hkey0 = keysMap.get([...h0].sort().join(''));
+    const hkey1 = keysMap.get([...h1].sort().join(''));
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
@@ -1325,7 +1327,7 @@ function getBestActionIndex(strat) {
 }
 
 function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
-    const isRoundNumberFrozen = roundNumbersFrozen.includes(roundNumber);
+    const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
@@ -1343,6 +1345,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const a0 = getBestActionIndex(strat0);
     const a1 = getBestActionIndex(strat1);
 
+    // console.log(hkey0.hand, hkey1.hand);
     const hkey0Next = getActionApplied(hkey0.hand, deck, a0);
     const hkey1Next = getActionApplied(hkey1.hand, deck, a1);
 
@@ -1351,7 +1354,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
-    if (isRoundNumberFrozen) return util0;
+    // if (isRoundNumberFrozen) return util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
@@ -1360,6 +1363,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         const deckA = getArrayShuffled([...deck]);
         const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
         const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
+        // console.log(hkey1.hand, hkey1Fix)
 
         altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
@@ -1384,22 +1388,22 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000_000, flushInterval = 99999) {
+function train(iterations = 1_000, flushInterval = 999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
+    const hand = ["Kc","Jc","8c","2d","2c"];
 
     for (let i = 0; i < iterations; ++i) {
         // const timeStartIteration = performance.now();
-        const deck = Object.values(DECK);
+        let deck = Object.values(DECK);
         getArrayShuffled(deck);
-        const h0 = deck.splice(0, 5);
+        const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
+        if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
         const h1 = deck.splice(0, 5);
-        const hkey0 = keysMap.get(h0.sort().join(''));
-        const hkey1 = keysMap.get(h1.sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 1, []);
-        // const timeEndIteration = performance.now();
-        // console.log(`[MCCFR] iteration(${i}) took ${(timeEndIteration - timeStartIteration).safe("ROUND", 2)}ms`);
+        const hkey0 = keysMap.get([...h0].sort().join(''));
+        const hkey1 = keysMap.get([...h1].sort().join(''));
+        simulateRound(hkey0, hkey1, deck, 2);
 
         if (i > 0 && i % flushInterval === 0) {
             flushTables();
@@ -1409,5 +1413,6 @@ function train(iterations = 1_000_000, flushInterval = 99999) {
         }
     }
 }
-
-train();
+(async () => {
+    train();
+})();
