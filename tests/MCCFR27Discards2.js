@@ -1274,22 +1274,24 @@ function sampleAction(strat) {
 
 }
 
-function iteration() {
+function iteration(roundNumber = 1) {
     const deck = Object.values(DECK);
     getArrayShuffled(deck);
     const h0 = deck.splice(0, 5);
     const h1 = deck.splice(0, 5);
     const hkey0 = keysMap.get(h0.sort().join(''));
     const hkey1 = keysMap.get(h1.sort().join(''));
+    const key0 = `${hkey0.value}:R${roundNumber}`;
+    const key1 = `${hkey1.value}:R${roundNumber}`;
 
-    const reg0 = regretSum.get(hkey0.value) || (regretSum.set(hkey0.value, new Float64Array(ACTION_COUNT)), regretSum.get(hkey0.value));
-    const reg1 = regretSum.get(hkey1.value) || (regretSum.set(hkey1.value, new Float64Array(ACTION_COUNT)), regretSum.get(hkey1.value));
+    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
+    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
 
     const strat0 = regretMatching(reg0);
     const strat1 = regretMatching(reg1);
 
-    const sum0 = strategySum.get(hkey0.value) || (strategySum.set(hkey0.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey0.value));
-    const sum1 = strategySum.get(hkey1.value) || (strategySum.set(hkey1.value, new Float64Array(ACTION_COUNT)), strategySum.get(hkey1.value));
+    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
+    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
     for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
     for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
@@ -1325,8 +1327,8 @@ function iteration() {
 }
 
 function simulateRound(hkey0, hkey1, deck, roundNumber) {
-    const key0 = `${hkey0.value}:${roundNumber}`;
-    const key1 = `${hkey1.value}:${roundNumber}`;
+    const key0 = `${hkey0.value}:R${roundNumber}`;
+    const key1 = `${hkey1.value}:R${roundNumber}`;
 
     const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
     const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
@@ -1382,15 +1384,15 @@ function simulateRound(hkey0, hkey1, deck, roundNumber) {
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-    loadTables();
-    const deck = Object.values(DECK);
-    getArrayShuffled(deck);
-    const h0 = deck.splice(0, 5);
-    const h1 = deck.splice(0, 5);
-    const hkey0 = keysMap.get(h0.sort().join(''));
-    const hkey1 = keysMap.get(h1.sort().join(''));
-    simulateRound(hkey0, hkey1, deck, 2);
+    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+    // loadTables();
+    // const deck = Object.values(DECK);
+    // getArrayShuffled(deck);
+    // const h0 = deck.splice(0, 5);
+    // const h1 = deck.splice(0, 5);
+    // const hkey0 = keysMap.get(h0.sort().join(''));
+    // const hkey1 = keysMap.get(h1.sort().join(''));
+    // simulateRound(hkey0, hkey1, deck, 1);
     // let timeStart = performance.now();
     // for (let i = 0; i < iterations; ++i) {
     //     iteration();
