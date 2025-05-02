@@ -1160,8 +1160,34 @@ const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
 
+const getStrategyReadable = (key) => {
+    const getStrategyAverage = (key) => {
+        const values = strategySum.get(key);
+        if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+        const total = values.reduce((acc, value) => acc + value, 0);
+        return values.map(v => v / total);
+    }
+
+    const strat = getStrategyAverage(key);
+    const result = strat.reduce((obj, value, index) => {
+        // if (value > (obj.value ?? 0)) {
+        //     obj.key = key;
+        //     obj.discards = ACTIONS[index].length ? ACTIONS[index].join('') : '––';
+        //     obj.value = value.safe("ROUND", 4);
+        // }
+        obj.key = key;
+        obj.discards = obj.discards || [];
+        const d = ACTIONS[index].length ? ACTIONS[index].join('') : '–';
+        const v = value.safe("ROUND", 4);
+        obj.discards.push([d, v]);
+        return obj;
+    }, {});
+    result.discards.sort((a, b) => b[1] - a[1]);
+
+    return result;
+}
 function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
-    const ndjson = Array.from({ length: paths.length }, () => '');
+    const ndjsons = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
         if (fs.existsSync(p)) {
@@ -1178,11 +1204,11 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
                 } else if (p.endsWith('strategies.ndjson')) {
                     strategySum.set(key, Float64Array.from(values));
                     const strategy = getStrategyReadable(key);
-                    ndjson[i] += (JSON.stringify(strategy) + '\n');
+                    ndjsons[i] += (JSON.stringify(strategy) + '\n');
                 }
             }
 
-            if (ndjson[i]) fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson[i]);
+            if (ndjsons[i]) fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjsons[i]);
         }
     }
     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
@@ -1298,28 +1324,6 @@ function iteration() {
 
     // readAvgStrategy(hkey0.value)
     // readAvgStrategy(hkey1.value)
-}
-
-
-
-const getStrategyReadable = (key) => {
-    const getStrategyAverage = (key) => {
-        const values = strategySum.get(key);
-        if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
-        const total = values.reduce((acc, value) => acc + value, 0);
-        return values.map(v => v / total);
-    }
-
-    const strat = getStrategyAverage(key);
-    const result = strat.reduce((obj, value, index) => {
-        if (value > (obj.value ?? 0)) {
-            obj.key = key;
-            obj.discards = ACTIONS[index].length ? ACTIONS[index].join('') : '––';
-            obj.value = value.safe("ROUND", 4);
-        }
-        return obj;
-    }, {});
-    return result;
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
