@@ -1326,7 +1326,7 @@ function iteration(roundNumber = 1) {
 }
 
 function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
-    // const isRoundNumberFrozen = roundNumbersFrozen.includes(roundNumber);
+    const isRoundNumberFrozen = roundNumbersFrozen.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
@@ -1335,9 +1335,6 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
     const strat0 = regretMatching(reg0);
     const strat1 = regretMatching(reg1);
-
-    // const strat0 = isRoundNumberFrozen ? getStrategyAverage(key0) : regretMatching(reg0);
-    // const strat1 = isRoundNumberFrozen ? getStrategyAverage(key1) : regretMatching(reg1);
 
     const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
     const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
@@ -1350,7 +1347,13 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const hkey0Next = applyAction(hkey0.hand, deck, a0);
     const hkey1Next = applyAction(hkey1.hand, deck, a1);
 
-    const util0 = roundNumber === 1
+    if (isRoundNumberFrozen) {
+        return roundNumber === 1
+            ? compareHands(hkey0Next.hand, hkey1Next.hand)
+            : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
+    }
+
+    const util0 = roundNumber <= 1
         ? compareHands(hkey0Next.hand, hkey1Next.hand)
         : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
     const util1 = -util0;
@@ -1363,7 +1366,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         const hkey0Alt = applyAction(hkey0.hand, deckA, ai);
         const hkey1Fix = applyAction(hkey1.hand, deckA, a1);
 
-        altUtil0[ai] = roundNumber === 1
+        altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
             : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1);
     }
@@ -1373,22 +1376,20 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         const hkey0Fix = applyAction(hkey0.hand, deckA, a0);
         const hkey1Alt = applyAction(hkey1.hand, deckA, ai);
 
-        altUtil1[ai] = roundNumber === 1
+        altUtil1[ai] = roundNumber <= 1
             ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
             : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1);
     }
 
-    // if (!isRoundNumberFrozen) {
-        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            reg0[ai] += altUtil0[ai] - util0;
-            reg1[ai] += altUtil1[ai] - util1;
-        }
-    // }
+    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+        reg0[ai] += altUtil0[ai] - util0;
+        reg1[ai] += altUtil1[ai] - util1;
+    }
 
     return util0;
 }
 
-function train(iterations = 1_000_000, flushInterval = 100_000) {
+function train(iterations = 1_000_000, flushInterval = 9999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
@@ -1401,7 +1402,7 @@ function train(iterations = 1_000_000, flushInterval = 100_000) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get(h0.sort().join(''));
         const hkey1 = keysMap.get(h1.sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 1);
+        simulateRound(hkey0, hkey1, deck, 2);
         // const timeEndIteration = performance.now();
         // console.log(`[MCCFR] iteration(${i}) took ${(timeEndIteration - timeStartIteration).safe("ROUND", 2)}ms`);
 
