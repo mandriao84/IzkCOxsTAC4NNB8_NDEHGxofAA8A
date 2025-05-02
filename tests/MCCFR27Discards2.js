@@ -1388,11 +1388,11 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000_000, flushInterval = 9999) {
+function train(iterations = 1_000_000_000, flushInterval = 999_999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
-    const hand = ["Kc","Jc","8c","2d","2c"];
+    const hand = [];// ["Kc","Jc","8c","2d","2c"];
 
     for (let i = 0; i < iterations; ++i) {
         // const timeStartIteration = performance.now();
@@ -1403,7 +1403,7 @@ function train(iterations = 1_000_000, flushInterval = 9999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 2, []);
+        simulateRound(hkey0, hkey1, deck, 1, []);
 
         if (i > 0 && i % flushInterval === 0) {
             flushTables();
