@@ -1166,15 +1166,26 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
         if (fs.existsSync(p)) {
             const raw = fs.readFileSync(p, 'utf8');
             const data = raw.split('\n');
-            for (let i = 0; i < data.length; i++) {
-                const line = data[i];
+            let ndjson = '';
+            for (let j = 0; j < data.length; j++) {
+                const line = data[j];
                 const trimmed = line.trim();
                 if (!trimmed) continue;
                 const { key, values } = JSON.parse(trimmed);
 
-                if (p.endsWith('regrets.ndjson')) regretSum.set(key, Float64Array.from(values));
-                else if (p.endsWith('strategies.ndjson')) strategySum.set(key, Float64Array.from(values));
+                if (p.endsWith('regrets.ndjson')) {
+                    regretSum.set(key, Float64Array.from(values));
+                } else if (p.endsWith('strategies.ndjson')) {
+                    strategySum.set(key, Float64Array.from(values));
+                    const strategy = getStrategyReadable(key);
+                    ndjson += (JSON.stringify(strategy) + '\n');
+                    if (j === (data.length - 1)) {
+                        console.log("hello")
+                        fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson);
+                    }
+                }
             }
+            // console.log(ndjson);
         }
     }
     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
@@ -1292,15 +1303,17 @@ function iteration() {
     // readAvgStrategy(hkey1.value)
 }
 
-function avgStrategy(key) {
-    const values = strategySum.get(key);
-    if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
-    const total = values.reduce((acc, value) => acc + value, 0);
-    return values.map(v => v / total);
-}
 
-function readAvgStrategy(key) {
-    const strat = avgStrategy(key);
+
+const getStrategyReadable = (key) => {
+    const getStrategyAverage = (key) => {
+        const values = strategySum.get(key);
+        if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+        const total = values.reduce((acc, value) => acc + value, 0);
+        return values.map(v => v / total);
+    }
+
+    const strat = getStrategyAverage(key);
     const result = strat.reduce((obj, value, index) => {
         if (value > (obj.value ?? 0)) {
             obj.key = key;
@@ -1309,22 +1322,22 @@ function readAvgStrategy(key) {
         }
         return obj;
     }, {});
-    console.log(result);
+    return result;
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
-    let timeStart = performance.now();
-    for (let i = 0; i < iterations; ++i) {
-        iteration();
-        if (i > 0 && i % FLUSH_EVERY === 0) {
-            flushTables();
-            const timeEnd = performance.now();
-            console.log(`[MCCFR] train(${FLUSH_EVERY}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-            timeStart = performance.now();
-        }
-    }
+    // let timeStart = performance.now();
+    // for (let i = 0; i < iterations; ++i) {
+    //     iteration();
+    //     if (i > 0 && i % FLUSH_EVERY === 0) {
+    //         flushTables();
+    //         const timeEnd = performance.now();
+    //         console.log(`[MCCFR] train(${FLUSH_EVERY}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+    //         timeStart = performance.now();
+    //     }
+    // }
 }
 
 train();
