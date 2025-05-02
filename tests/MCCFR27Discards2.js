@@ -1345,7 +1345,6 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const a0 = getBestActionIndex(strat0);
     const a1 = getBestActionIndex(strat1);
 
-    // console.log(hkey0.hand, hkey1.hand);
     const hkey0Next = getActionApplied(hkey0.hand, deck, a0);
     const hkey1Next = getActionApplied(hkey1.hand, deck, a1);
 
@@ -1354,7 +1353,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
-    // if (isRoundNumberFrozen) return util0;
+    if (isRoundNumberFrozen) return util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
@@ -1363,7 +1362,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         const deckA = getArrayShuffled([...deck]);
         const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
         const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
-        // console.log(hkey1.hand, hkey1Fix)
+        // console.log(deck.length, hkey0Alt.hand, hkey1Fix.hand)
 
         altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
@@ -1374,6 +1373,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         const deckA = getArrayShuffled([...deck]);
         const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
         const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
+        // console.log(deck.length, hkey0Fix.hand, hkey1Alt.hand)
 
         altUtil1[ai] = roundNumber <= 1
             ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
@@ -1388,7 +1388,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000, flushInterval = 999) {
+function train(iterations = 1_000_000, flushInterval = 9999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
@@ -1403,7 +1403,7 @@ function train(iterations = 1_000, flushInterval = 999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 2);
+        simulateRound(hkey0, hkey1, deck, 2, []);
 
         if (i > 0 && i % flushInterval === 0) {
             flushTables();
