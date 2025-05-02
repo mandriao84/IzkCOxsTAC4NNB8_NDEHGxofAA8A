@@ -1270,7 +1270,6 @@ function sampleAction(strat) {
         if (r <= cum) return i;
     }
     return strat.length - 1;
-
 }
 
 function iteration(roundNumber = 1) {
@@ -1325,6 +1324,16 @@ function iteration(roundNumber = 1) {
     }
 }
 
+function getBestActionIndex(strat) {
+    const result = strat.reduce((obj, value, index) => {
+        if (value > (obj.value ?? 0)) {
+            obj.index = index;
+        }
+        return obj;
+    }, {});
+    return result.index;
+}
+
 function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const isRoundNumberFrozen = roundNumbersFrozen.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
@@ -1341,8 +1350,8 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
     for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
-    const a0 = sampleAction(strat0);
-    const a1 = sampleAction(strat1);
+    const a0 = getBestActionIndex(strat0);
+    const a1 = getBestActionIndex(strat0);
 
     const hkey0Next = applyAction(hkey0.hand, deck, a0);
     const hkey1Next = applyAction(hkey1.hand, deck, a1);
@@ -1389,7 +1398,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000_000, flushInterval = 9999) {
+function train(iterations = 1_000_000, flushInterval = 99999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
@@ -1402,7 +1411,7 @@ function train(iterations = 1_000_000, flushInterval = 9999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get(h0.sort().join(''));
         const hkey1 = keysMap.get(h1.sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 2, [1]);
+        simulateRound(hkey0, hkey1, deck, 1, []);
         // const timeEndIteration = performance.now();
         // console.log(`[MCCFR] iteration(${i}) took ${(timeEndIteration - timeStartIteration).safe("ROUND", 2)}ms`);
 
