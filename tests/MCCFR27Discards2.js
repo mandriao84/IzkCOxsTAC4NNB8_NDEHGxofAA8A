@@ -1384,25 +1384,26 @@ function simulateRound(hkey0, hkey1, deck, roundNumber) {
 }
 
 function train(iterations = ITERATIONS_DEFAULT) {
-    // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-    // loadTables();
-    // const deck = Object.values(DECK);
-    // getArrayShuffled(deck);
-    // const h0 = deck.splice(0, 5);
-    // const h1 = deck.splice(0, 5);
-    // const hkey0 = keysMap.get(h0.sort().join(''));
-    // const hkey1 = keysMap.get(h1.sort().join(''));
-    // simulateRound(hkey0, hkey1, deck, 1);
-    // let timeStart = performance.now();
-    // for (let i = 0; i < iterations; ++i) {
-    //     iteration();
-    //     if (i > 0 && i % FLUSH_EVERY === 0) {
-    //         flushTables();
-    //         const timeEnd = performance.now();
-    //         console.log(`[MCCFR] train(${FLUSH_EVERY}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-    //         timeStart = performance.now();
-    //     }
-    // }
+    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+    loadTables();
+    let timeStart = performance.now();
+    
+    for (let i = 0; i < iterations; ++i) {
+        const deck = Object.values(DECK);
+        getArrayShuffled(deck);
+        const h0 = deck.splice(0, 5);
+        const h1 = deck.splice(0, 5);
+        const hkey0 = keysMap.get(h0.sort().join(''));
+        const hkey1 = keysMap.get(h1.sort().join(''));
+        simulateRound(hkey0, hkey1, deck, 1);
+
+        if (i > 0 && i % FLUSH_EVERY === 0) {
+            flushTables();
+            const timeEnd = performance.now();
+            console.log(`[MCCFR] train(${FLUSH_EVERY}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+            timeStart = performance.now();
+        }
+    }
 }
 
 train();
