@@ -1336,7 +1336,8 @@ function simulateRound(hkey0, hkey1, deck, roundNumber) {
 
     const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
     const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
-    for (let i = 0; i < ACTION_COUNT; ++i) { sum0[i] += strat0[i]; sum1[i] += strat1[i]; }
+    for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
+    for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
 
     const a0 = sampleAction(strat0);
     const a1 = sampleAction(strat1);
@@ -1344,12 +1345,9 @@ function simulateRound(hkey0, hkey1, deck, roundNumber) {
     const hkey0Next = applyAction(hkey0.hand, deck, a0);
     const hkey1Next = applyAction(hkey1.hand, deck, a1);
 
-    let util0;
-    if (roundNumber <= 1) {
-        util0 = compareHands(hkey0Next.hand, hkey1Next.hand);
-    } else {
-        util0 = simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
-    }
+    const util0 = roundNumber === 1
+        ? compareHands(hkey0Next.hand, hkey1Next.hand)
+        : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1);
     const util1 = -util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
