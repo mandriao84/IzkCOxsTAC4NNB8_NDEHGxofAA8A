@@ -1405,7 +1405,7 @@ function train(iterations = 1_000_000_000, flushInterval = 999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 2, []);
+        simulateRound(hkey0, hkey1, deck, 3, []);
 
         if (i > 0 && i % flushInterval === 0) {
             flushTables();
