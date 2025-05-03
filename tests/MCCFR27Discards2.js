@@ -1345,12 +1345,14 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const a0 = getBestActionIndex(strat0);
     const a1 = getBestActionIndex(strat1);
 
-    const hkey0Next = getActionApplied(hkey0.hand, deck, a0);
-    const hkey1Next = getActionApplied(hkey1.hand, deck, a1);
+    const deckNext = [...deck];
+    const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
+    const hkey1Next = getActionApplied(hkey1.hand, deckNext, a1);
+    if (!hkey0Next?.hand || !hkey1Next?.hand) console.log(deckNext.length, hkey0Next?.hand, hkey1Next?.hand)
 
     const util0 = roundNumber <= 1
         ? compareHands(hkey0Next.hand, hkey1Next.hand)
-        : simulateRound(hkey0Next, hkey1Next, deck, roundNumber - 1, roundNumbersFrozen);
+        : simulateRound(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
     if (isRoundNumberFrozen) return util0;
@@ -1359,10 +1361,10 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const altUtil1 = new Float64Array(ACTION_COUNT);
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = getArrayShuffled([...deck]);
+        const deckA = [...deck];
         const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
         const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
-        // console.log(deck.length, hkey0Alt.hand, hkey1Fix.hand)
+        if (!hkey0Alt?.hand || !hkey1Fix?.hand) console.log(deckA.length, hkey0Alt?.hand, hkey1Fix?.hand)
 
         altUtil0[ai] = roundNumber <= 1
             ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
@@ -1370,10 +1372,10 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = getArrayShuffled([...deck]);
+        const deckA = [...deck];
         const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
         const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
-        // console.log(deck.length, hkey0Fix.hand, hkey1Alt.hand)
+        if (!hkey0Fix?.hand || !hkey1Alt?.hand) console.log(deckA.length, hkey0Fix?.hand, hkey1Alt?.hand)
 
         altUtil1[ai] = roundNumber <= 1
             ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
@@ -1388,30 +1390,30 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000_000_000, flushInterval = 999_999) {
+function train(iterations = 1_000_000_000, flushInterval = 999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
     const hand = [];// ["Kc","Jc","8c","2d","2c"];
 
-    // for (let i = 0; i < iterations; ++i) {
-    //     // const timeStartIteration = performance.now();
-    //     let deck = Object.values(DECK);
-    //     getArrayShuffled(deck);
-    //     const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
-    //     if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
-    //     const h1 = deck.splice(0, 5);
-    //     const hkey0 = keysMap.get([...h0].sort().join(''));
-    //     const hkey1 = keysMap.get([...h1].sort().join(''));
-    //     simulateRound(hkey0, hkey1, deck, 2, [1]);
+    for (let i = 0; i < iterations; ++i) {
+        // const timeStartIteration = performance.now();
+        let deck = Object.values(DECK);
+        getArrayShuffled(deck);
+        const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
+        if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
+        const h1 = deck.splice(0, 5);
+        const hkey0 = keysMap.get([...h0].sort().join(''));
+        const hkey1 = keysMap.get([...h1].sort().join(''));
+        simulateRound(hkey0, hkey1, deck, 2, []);
 
-    //     if (i > 0 && i % flushInterval === 0) {
-    //         flushTables();
-    //         const timeEnd = performance.now();
-    //         console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-    //         timeStart = performance.now();
-    //     }
-    // }
+        if (i > 0 && i % flushInterval === 0) {
+            flushTables();
+            const timeEnd = performance.now();
+            console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+            timeStart = performance.now();
+        }
+    }
 }
 (async () => {
     train();
