@@ -12,6 +12,7 @@ const PATH_DISCARDSEV = path.join(PATH_RESULTS, 'discardsev.ndjson');
 const PATH_STANDSEV = path.join(PATH_RESULTS, 'standsev.ndjson');
 const PATH_STRATEGIES = path.join(PATH_RESULTS, 'strategies.ndjson');
 const PATH_REGRETS = path.join(PATH_RESULTS, 'regrets.ndjson');
+const PATH_VISITS = path.join(PATH_RESULTS, 'visits.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -1160,6 +1161,7 @@ const ACTIONS = (() => {
 const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
+const visitsMap = new Map();
 
 const getStrategyReadable = (key) => {
     const getStrategyAverage = (key) => {
@@ -1187,7 +1189,7 @@ const getStrategyReadable = (key) => {
 
     return result;
 }
-function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
+function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
     const ndjsons = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
@@ -1206,6 +1208,8 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
                     strategySum.set(key, Float64Array.from(values));
                     const strategy = getStrategyReadable(key);
                     ndjsons[i] += (JSON.stringify(strategy) + '\n');
+                } else if (p.endsWith('visits.ndjson')) {
+                    visitsMap.set(key, values);
                 }
             }
 
@@ -1214,6 +1218,7 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES]) {
     }
     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
     console.log(`[MCCFR] loaded ${strategySum.size} strategies from disk`);
+    console.log(`[MCCFR] loaded ${visitsMap.size} visits from disk`);
 }
 
 function flushTables() {
@@ -1228,11 +1233,13 @@ function flushTables() {
     fs.mkdirSync(PATH_RESULTS, { recursive: true });
     fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
     fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
+    fs.writeFileSync(PATH_VISITS, toLines(visitsMap));
     console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
     console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
+    console.log(`[MCCFR] flushed ${visitsMap.size} visits to disk`);
 }
 
-function compareHands(handA, handB) {
+function getScores(handA, handB) {
     const keyA = keysMap.get([...handA].sort().join('')).value;
     const scoreA = scoresMap.get(keyA).value;
     const keyB = keysMap.get([...handB].sort().join('')).value;
@@ -1291,7 +1298,7 @@ function iteration(roundNumber = 1) {
     const hkey0New = getActionApplied(hkey0.hand, deck, a0);
     const hkey1New = getActionApplied(hkey1.hand, deck, a1);
 
-    const util0 = compareHands(hkey0New.hand, hkey1New.hand);
+    const util0 = getScores(hkey0New.hand, hkey1New.hand);
     const util1 = -util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
@@ -1301,13 +1308,13 @@ function iteration(roundNumber = 1) {
         const deckA = getArrayShuffled([...deck]);
         const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
         const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
-        altUtil0[ai] = compareHands(hkey0Alt.hand, hkey1Fix.hand);
+        altUtil0[ai] = getScores(hkey0Alt.hand, hkey1Fix.hand);
     }
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = getArrayShuffled([...deck]);
         const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
         const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
-        altUtil1[ai] = -compareHands(hkey0Fix.hand, hkey1Alt.hand);
+        altUtil1[ai] = -getScores(hkey0Fix.hand, hkey1Alt.hand);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -1331,6 +1338,9 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
+    visitsMap.set(key0, (visitsMap.get(key0) || 0) + 1);
+    visitsMap.set(key1, (visitsMap.get(key1) || 0) + 1);
+
     const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
     const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
 
@@ -1351,7 +1361,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     if (!hkey0Next?.hand || !hkey1Next?.hand) console.log(deckNext.length, hkey0Next?.hand, hkey1Next?.hand)
 
     const util0 = roundNumber <= 1
-        ? compareHands(hkey0Next.hand, hkey1Next.hand)
+        ? getScores(hkey0Next.hand, hkey1Next.hand)
         : simulateRound(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
@@ -1367,7 +1377,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         if (!hkey0Alt?.hand || !hkey1Fix?.hand) console.log(deckA.length, hkey0Alt?.hand, hkey1Fix?.hand)
 
         altUtil0[ai] = roundNumber <= 1
-            ? compareHands(hkey0Alt.hand, hkey1Fix.hand)
+            ? getScores(hkey0Alt.hand, hkey1Fix.hand)
             : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
@@ -1378,7 +1388,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
         if (!hkey0Fix?.hand || !hkey1Alt?.hand) console.log(deckA.length, hkey0Fix?.hand, hkey1Alt?.hand)
 
         altUtil1[ai] = roundNumber <= 1
-            ? -compareHands(hkey0Fix.hand, hkey1Alt.hand)
+            ? -getScores(hkey0Fix.hand, hkey1Alt.hand)
             : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
@@ -1390,7 +1400,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1_000_000_000, flushInterval = 999) {
+function train(iterations = 1, flushInterval = 999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
@@ -1405,7 +1415,7 @@ function train(iterations = 1_000_000_000, flushInterval = 999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 3, []);
+        simulateRound(hkey0, hkey1, deck, 1, []);
 
         if (i > 0 && i % flushInterval === 0) {
             flushTables();
