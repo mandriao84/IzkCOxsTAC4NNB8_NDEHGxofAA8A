@@ -1225,7 +1225,10 @@ function flushTables() {
     const toLines = (map) => {
         const entries = Array.from(map.entries());
         const lines = entries.map(([key, values]) => {
-            const entry = { key, values: [...values] };
+            const entry = { 
+                key, 
+                values: values instanceof Float64Array ? [...values] : values 
+            };
             return JSON.stringify(entry);
         });
         return lines.join('\n') + '\n';
@@ -1400,7 +1403,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     return util0;
 }
 
-function train(iterations = 1, flushInterval = 999) {
+function train(iterations = 1_000_000_000, flushInterval = 999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     loadTables();
     let timeStart = performance.now();
