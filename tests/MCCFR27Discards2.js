@@ -1249,6 +1249,7 @@ function getDataNashed() {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
         const regretMax = Math.max(0, ...values);
         const regretAvg = regretMax / visitAcc;
+        if (regretAvg <= 0.02 && visitAcc > 100_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
         regretSumAvg += regretAvg;
         if (regretAvg > regretMaxAvg) regretMaxAvg = regretAvg;
     }
