@@ -1384,7 +1384,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     return util0;
 }
 
-function train(iterations = 1_000_000_000, flushInterval = 999) {
+function train(iterations = 1_000_000_000, flushInterval = 999_999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     getDataLoaded();
     let timeStart = performance.now();
@@ -1399,7 +1399,7 @@ function train(iterations = 1_000_000_000, flushInterval = 999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        getDiscardsSimulated(hkey0, hkey1, deck, 3, []);
+        getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
 
         if (i > 0 && i % flushInterval === 0) {
             getDataFlushed();
