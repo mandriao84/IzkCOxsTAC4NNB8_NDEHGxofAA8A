@@ -1163,14 +1163,14 @@ const regretSum = new Map();
 const strategySum = new Map();
 const visitsMap = new Map();
 
-const getStrategyReadable = (key) => {
-    const getStrategyAverage = (key) => {
-        const values = strategySum.get(key);
-        if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
-        const total = values.reduce((acc, value) => acc + value, 0);
-        return values.map(v => v / total);
-    }
+const getStrategyAverage = (key) => {
+    const values = strategySum.get(key);
+    if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+    const total = values.reduce((acc, value) => acc + value, 0);
+    return values.map(v => v / total);
+}
 
+const getStrategyReadable = (key) => {
     const strat = getStrategyAverage(key);
     const result = strat.reduce((obj, value, index) => {
         // if (value > (obj.value ?? 0)) {
@@ -1189,7 +1189,7 @@ const getStrategyReadable = (key) => {
 
     return result;
 }
-function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
+function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
     const ndjsons = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
@@ -1221,7 +1221,7 @@ function loadTables(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
     console.log(`[MCCFR] loaded ${visitsMap.size} visits from disk`);
 }
 
-function flushTables() {
+function getDataFlushed() {
     const toLines = (map) => {
         const entries = Array.from(map.entries());
         const lines = entries.map(([key, values]) => {
@@ -1274,58 +1274,6 @@ function regretMatching(regrets) {
     return strat;
 }
 
-function iteration(roundNumber = 1) {
-    const deck = Object.values(DECK);
-    getArrayShuffled(deck);
-    const h0 = deck.splice(0, 5);
-    const h1 = deck.splice(0, 5);
-    const hkey0 = keysMap.get([...h0].sort().join(''));
-    const hkey1 = keysMap.get([...h1].sort().join(''));
-    const key0 = `${hkey0.value}:R${roundNumber}`;
-    const key1 = `${hkey1.value}:R${roundNumber}`;
-
-    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
-    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
-
-    const strat0 = regretMatching(reg0);
-    const strat1 = regretMatching(reg1);
-
-    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
-    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
-    for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
-    for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
-
-    const a0 = getBestActionIndex(strat0);
-    const a1 = getBestActionIndex(strat1);
-
-    const hkey0New = getActionApplied(hkey0.hand, deck, a0);
-    const hkey1New = getActionApplied(hkey1.hand, deck, a1);
-
-    const util0 = getScores(hkey0New.hand, hkey1New.hand);
-    const util1 = -util0;
-
-    const altUtil0 = new Float64Array(ACTION_COUNT);
-    const altUtil1 = new Float64Array(ACTION_COUNT);
-
-    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = getArrayShuffled([...deck]);
-        const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
-        const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
-        altUtil0[ai] = getScores(hkey0Alt.hand, hkey1Fix.hand);
-    }
-    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = getArrayShuffled([...deck]);
-        const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
-        const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
-        altUtil1[ai] = -getScores(hkey0Fix.hand, hkey1Alt.hand);
-    }
-
-    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        reg0[ai] += altUtil0[ai] - util0;
-        reg1[ai] += altUtil1[ai] - util1;
-    }
-}
-
 function getBestActionIndex(strat) {
     const result = strat.reduce((obj, value, index) => {
         if (value > (obj.value ?? 0)) {
@@ -1336,8 +1284,8 @@ function getBestActionIndex(strat) {
     return result.index;
 }
 
-function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
-    const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
+function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
+    // const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
@@ -1352,8 +1300,10 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
     const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
     const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
-    for (let i = 0; i < sum0.length; ++i) sum0[i] += strat0[i];
-    for (let i = 0; i < sum1.length; ++i) sum1[i] += strat1[i];
+    for (let i = 0; i < ACTION_COUNT; ++i) {
+        sum0[i] += strat0[i];
+        sum1[i] += strat1[i];
+    }
 
     const a0 = getBestActionIndex(strat0);
     const a1 = getBestActionIndex(strat1);
@@ -1365,10 +1315,10 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
     const util0 = roundNumber <= 1
         ? getScores(hkey0Next.hand, hkey1Next.hand)
-        : simulateRound(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
+        : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
 
-    if (isRoundNumberFrozen) return util0;
+    // if (isRoundNumberFrozen) return util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
@@ -1381,7 +1331,7 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(hkey0Alt.hand, hkey1Fix.hand)
-            : simulateRound(hkey0Alt, hkey1Fix, deckA, roundNumber - 1, roundNumbersFrozen);
+            : getDiscardsSimulated(hkey0Alt, hkey1Fix, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -1392,20 +1342,26 @@ function simulateRound(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
 
         altUtil1[ai] = roundNumber <= 1
             ? -getScores(hkey0Fix.hand, hkey1Alt.hand)
-            : -simulateRound(hkey0Fix, hkey1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
+            : -getDiscardsSimulated(hkey0Fix, hkey1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
+    let ev0 = 0, ev1 = 0;
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         reg0[ai] += altUtil0[ai] - util0;
         reg1[ai] += altUtil1[ai] - util1;
+        ev0 += strat0[ai] * altUtil0[ai];
+        ev1 += strat1[ai] * altUtil1[ai];
     }
+
+    // evSum.set(key0, (evSum.get(key0) || 0) + nodeEV0);
+    // evSum.set(key1, (evSum.get(key1) || 0) + nodeEV1);
 
     return util0;
 }
 
 function train(iterations = 1_000_000_000, flushInterval = 999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-    loadTables();
+    getDataLoaded();
     let timeStart = performance.now();
     const hand = [];// ["Kc","Jc","8c","2d","2c"];
 
@@ -1418,16 +1374,79 @@ function train(iterations = 1_000_000_000, flushInterval = 999) {
         const h1 = deck.splice(0, 5);
         const hkey0 = keysMap.get([...h0].sort().join(''));
         const hkey1 = keysMap.get([...h1].sort().join(''));
-        simulateRound(hkey0, hkey1, deck, 3, []);
+        getDiscardsSimulated(hkey0, hkey1, deck, 3, []);
 
         if (i > 0 && i % flushInterval === 0) {
-            flushTables();
+            getDataFlushed();
             const timeEnd = performance.now();
             console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
             timeStart = performance.now();
         }
     }
 }
+// const getLeafExpectedValue = () => {
+//     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+//     getDataLoaded();
+//     const leafsMap = new Map();
+
+//     for (const [keyRA, stratA] of strategySum) {
+//         if (!keyRA.endsWith(':R1')) continue;
+//         const keyA = keyRA.slice(0, -3);
+
+//         let evAcc = 0, oount = 0;
+//         for (let s = 0; s < 1000; ++s) {
+//             const deck = Object.values(DECK);
+//             getArrayShuffled(deck);
+//             const handA = scoresMap.get(keyA).hand;
+//             const deckAfterHandA = deck.filter(card => !handA.includes(card));
+//             const evMap = new Map();
+
+//             const handsB = getAllCombinations(deckAfterHandA, 5);
+//             for (let h = 0; h < handsB.length; ++h) {
+//                 const handB = handsB[h];
+//                 const deckAfterHandB = deckAfterHandA.filter(card => !handB.includes(card));
+//                 const hkeyB = keysMap.get([...handB].sort().join(''));
+//                 const keyRB = `${hkeyB.value}:R1`;
+
+//                 if (evMap.has(keyRB)) {
+//                     evAcc += evMap.get(keyRB);
+//                     ++oount;
+//                     continue;
+//                 }
+
+//                 const stratB = getStrategyAverage(keyRB);
+
+//                 let evEnum = 0;
+//                 for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+//                     for (let bi = 0; bi < ACTION_COUNT; ++bi) {
+//                         const p = stratA[ai] * stratB[bi];
+//                         if (p === 0) {
+//                             console.log(ai, bi, p);
+//                             continue;
+//                         }
+
+//                         const deckEnum = [...deckAfterHandB];
+//                         const hkeyAEnum = getActionApplied(handA, deckEnum, ai);
+//                         const hkeyBEnum = getActionApplied(hkeyB.hand, deckEnum, bi);
+//                         const scores = getScores(hkeyAEnum.hand, hkeyBEnum.hand);
+//                         evEnum += p * scores;
+//                     }
+//                 }
+
+//                 evMap.set(keyRB, evEnum);
+
+//                 evAcc += evEnum;
+//                 ++oount;
+//             }
+//         }
+
+
+//         const ev = (evAcc / oount).safe("ROUND", 4);
+//         console.log("____", keyRA, ev);
+//         leafsMap.set(keyRA, ev);
+//     }
+// }
+
 (async () => {
     train();
 })();
