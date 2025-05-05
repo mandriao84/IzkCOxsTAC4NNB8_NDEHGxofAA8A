@@ -12,7 +12,7 @@ const PATH_DISCARDSEV = path.join(PATH_RESULTS, 'discardsev.ndjson');
 const PATH_STANDSEV = path.join(PATH_RESULTS, 'standsev.ndjson');
 const PATH_STRATEGIES = path.join(PATH_RESULTS, 'strategies.ndjson');
 const PATH_REGRETS = path.join(PATH_RESULTS, 'regrets.ndjson');
-const PATH_VISITS = path.join(PATH_RESULTS, 'visits.ndjson');
+const PATH_EVS = path.join(PATH_RESULTS, 'evs.ndjson');
 const DECK = {
     1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
     14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
@@ -1161,7 +1161,7 @@ const ACTIONS = (() => {
 const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
-const visitsMap = new Map();
+const evSum = new Map();
 
 const getStrategyAverage = (key) => {
     const values = strategySum.get(key);
@@ -1189,7 +1189,7 @@ const getStrategyReadable = (key) => {
 
     return result;
 }
-function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
+function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS]) {
     const ndjsons = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
@@ -1208,8 +1208,8 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
                     strategySum.set(key, Float64Array.from(values));
                     const strategy = getStrategyReadable(key);
                     ndjsons[i] += (JSON.stringify(strategy) + '\n');
-                } else if (p.endsWith('visits.ndjson')) {
-                    visitsMap.set(key, values);
+                } else if (p.endsWith('evs.ndjson')) {
+                    evSum.set(key, values);
                 }
             }
 
@@ -1218,7 +1218,7 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_VISITS]) {
     }
     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
     console.log(`[MCCFR] loaded ${strategySum.size} strategies from disk`);
-    console.log(`[MCCFR] loaded ${visitsMap.size} visits from disk`);
+    console.log(`[MCCFR] loaded ${evSum.size} evs from disk`);
 }
 
 function getDataFlushed() {
@@ -1236,10 +1236,24 @@ function getDataFlushed() {
     fs.mkdirSync(PATH_RESULTS, { recursive: true });
     fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
     fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
-    fs.writeFileSync(PATH_VISITS, toLines(visitsMap));
+    fs.writeFileSync(PATH_EVS, toLines(evSum));
     console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
     console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
-    console.log(`[MCCFR] flushed ${visitsMap.size} visits to disk`);
+    console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
+}
+
+function getDataNashed() {
+    let regretSumAvg = 0;
+    let regretMaxAvg = 0;
+    for (const [key, values] of regretSum.entries()) {
+        const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
+        const regretMax = Math.max(0, ...values);
+        const regretAvg = regretMax / visitAcc;
+        regretSumAvg += regretAvg;
+        if (regretAvg > regretMaxAvg) regretMaxAvg = regretAvg;
+    }
+    console.log(`[MCCFR] max avg regret per node: ${regretMaxAvg}`);
+    console.log(`[MCCFR] sum avg regret (≤ exploit): ${regretSumAvg}`);
 }
 
 function getScores(handA, handB) {
@@ -1285,12 +1299,24 @@ function getBestActionIndex(strat) {
 }
 
 function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
-    // const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
+    const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
     const key1 = `${hkey1.value}:R${roundNumber}`;
 
-    visitsMap.set(key0, (visitsMap.get(key0) || 0) + 1);
-    visitsMap.set(key1, (visitsMap.get(key1) || 0) + 1);
+    if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
+    if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
+
+    if (isRoundNumberFrozen) {
+        const [n0, evSum0] = evSum.get(key0);
+        const [n1, evSum1] = evSum.get(key1);
+
+        if (n0 >= 1_000_000 && n1 >= 1_000_000) {
+            return (evSum0 / n0) - (evSum1 / n1);
+        }
+    }
+
+    ++evSum.get(key0)[0];
+    ++evSum.get(key1)[0];
 
     const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
     const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
@@ -1317,8 +1343,6 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         ? getScores(hkey0Next.hand, hkey1Next.hand)
         : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
-
-    // if (isRoundNumberFrozen) return util0;
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
@@ -1353,8 +1377,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         ev1 += strat1[ai] * altUtil1[ai];
     }
 
-    // evSum.set(key0, (evSum.get(key0) || 0) + nodeEV0);
-    // evSum.set(key1, (evSum.get(key1) || 0) + nodeEV1);
+    evSum.get(key0)[1] += ev0;
+    evSum.get(key1)[1] += ev1;
 
     return util0;
 }
@@ -1450,3 +1474,5 @@ function train(iterations = 1_000_000_000, flushInterval = 999) {
 (async () => {
     train();
 })();
+// const [n, evSum] = evSum.get(infoKey);
+// const avgEV = evSum / n;
