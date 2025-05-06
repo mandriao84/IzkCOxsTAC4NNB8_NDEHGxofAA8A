@@ -1259,9 +1259,9 @@ function getDataFlushed(threadId = null) {
         fs.writeFileSync(PATH_EVS, toLines(evSum));
     }
 
-    console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
-    console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
-    console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
+    // console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
+    // console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
+    // console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
 }
 
 function getDataFlushedMerged(dir) {
@@ -1516,14 +1516,21 @@ const getMCCFRComputed = async (roundNumber) => {
         const keys = workerData.hands.map(([key, value]) => `${key}:R${roundNumber}`);
         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
 
-        const flushInterval = hands.length - 1;
         let timeStart = performance.now();
-
+        let iteration = 1_000;
         let index = 0;
-        function getHandsProcessed() {
-            if (index >= hands.length) {
-                process.exit(0);
+        function run() {
+            if (index >= hands.length && iteration % 100 === 0) {
+                getDataFlushed(id);
+                const timeEnd = performance.now();
+                console.log(`[MCCFR] ITERATION | ${iteration} | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
+
+                timeStart = performance.now();
+                iteration--;
+                if (iteration <= 0) return;
+                index = 0;
             }
+
             const { hand } = hands[index];
             const h0 = hand
             const deck = Object.values(DECK).filter(card => !hand.includes(card));
@@ -1532,19 +1539,12 @@ const getMCCFRComputed = async (roundNumber) => {
             const hkey0 = keysMap.get([...h0].sort().join(''));
             const hkey1 = keysMap.get([...h1].sort().join(''));
             getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, []);
-    
-            if (index > 0 && index % flushInterval === 0) {
-                getDataFlushed(id);
-                const timeEnd = performance.now();
-                console.log(`[MCCFR] train(${flushInterval}/${index}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-                timeStart = performance.now();
-            }
 
             index++;
-            setImmediate(getHandsProcessed);
+            setImmediate(run);
         }
+        run();
 
-        setImmediate(getHandsProcessed);
     }
 };
 
