@@ -1281,7 +1281,8 @@ function getDataFlushedMerged(dir) {
                 if (!trimmed) continue;
                 const { key, values } = JSON.parse(line);
                 if (!map.has(key)) {
-                    map.set(key, Float64Array.from(values));
+                    if (values instanceof Float64Array) map.set(key, Float64Array.from(values));
+                    else map.set(key, values);
                 } else {
                     const arr = map.get(key);
                     for (let j = 0; j < arr.length; j++) {
