@@ -1297,8 +1297,8 @@ function getDataFlushedMerged(dir) {
         return map;
     }, new Map())
 
-    const outPath = path.join(path.dirname(dir), '__merged__.ndjson');
-    const outData = "";
+    const outPath = path.join(dir, '__merged__.ndjson');
+    let outData = "";
     for (const [key, values] of results.entries()) {
         outData += JSON.stringify({ key, values: [...values] }) + '\n';
     }
@@ -1512,7 +1512,7 @@ const getMCCFRComputed = async (roundNumber) => {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const id = workerData.id;
         const hands = workerData.hands.map(([key, value]) => value);
-        const keys = workerData.hands.map(([key, value]) => key);
+        const keys = workerData.hands.map(([key, value]) => `${key}:R${roundNumber}`);
         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
 
         const flushInterval = hands.length - 1;
@@ -1549,7 +1549,10 @@ const getMCCFRComputed = async (roundNumber) => {
 
 (async () => {
     // train();
-    getMCCFRComputed();
+    getMCCFRComputed(1);
+    // getDataFlushedMerged(".results/mccfr/evs")
+    // getDataFlushedMerged(".results/mccfr/regrets")
+    // getDataFlushedMerged(".results/mccfr/strategies")
 })();
 // const [n, evSum] = evSum.get(infoKey);
 // const avgEV = evSum / n;
