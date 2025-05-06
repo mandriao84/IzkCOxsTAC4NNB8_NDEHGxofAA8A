@@ -1173,11 +1173,6 @@ const getStrategyAverage = (key) => {
 const getStrategyReadable = (key) => {
     const strat = getStrategyAverage(key);
     const result = strat.reduce((obj, value, index) => {
-        // if (value > (obj.value ?? 0)) {
-        //     obj.key = key;
-        //     obj.discards = ACTIONS[index].length ? ACTIONS[index].join('') : '––';
-        //     obj.value = value.safe("ROUND", 4);
-        // }
         obj.key = key;
         obj.discards = obj.discards || [];
         const d = ACTIONS[index].length ? ACTIONS[index].join('') : '–';
@@ -1189,7 +1184,7 @@ const getStrategyReadable = (key) => {
 
     return result;
 }
-function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS]) {
+function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys = null) {
     const ndjsons = Array.from({ length: paths.length }, () => '');
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
@@ -1203,13 +1198,18 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS]) {
                 const { key, values } = JSON.parse(trimmed);
 
                 if (p.endsWith('regrets.ndjson')) {
-                    regretSum.set(key, Float64Array.from(values));
+                    if (keys?.includes(key)) regretSum.set(key, Float64Array.from(values));
+                    if (!keys) regretSum.set(key, Float64Array.from(values));
                 } else if (p.endsWith('strategies.ndjson')) {
-                    strategySum.set(key, Float64Array.from(values));
-                    const strategy = getStrategyReadable(key);
-                    ndjsons[i] += (JSON.stringify(strategy) + '\n');
+                    if (keys?.includes(key)) strategySum.set(key, Float64Array.from(values));
+                    if (!keys) {
+                        strategySum.set(key, Float64Array.from(values));
+                        const strategy = getStrategyReadable(key);
+                        ndjsons[i] += (JSON.stringify(strategy) + '\n');
+                    }
                 } else if (p.endsWith('evs.ndjson')) {
-                    evSum.set(key, values);
+                    if (keys?.includes(key)) evSum.set(key, values);
+                    if (!keys) evSum.set(key, values);
                 }
             }
 
@@ -1221,7 +1221,7 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS]) {
     console.log(`[MCCFR] loaded ${evSum.size} evs from disk`);
 }
 
-function getDataFlushed() {
+function getDataFlushed(threadId = null) {
     const toLines = (map) => {
         const entries = Array.from(map.entries());
         const lines = entries.map(([key, values]) => {
@@ -1233,10 +1233,30 @@ function getDataFlushed() {
         });
         return lines.join('\n') + '\n';
     }
-    fs.mkdirSync(PATH_RESULTS, { recursive: true });
-    fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
-    fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
-    fs.writeFileSync(PATH_EVS, toLines(evSum));
+
+    if (threadId) {
+        const dirRegrets = path.join(PATH_RESULTS, `regrets`);
+        fs.mkdirSync(dirRegrets, { recursive: true });
+        const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
+
+        const dirStrategies = path.join(PATH_RESULTS, `strategies`);
+        fs.mkdirSync(dirStrategies, { recursive: true });
+        const pathStrategies = path.join(dirStrategies, `strategies-${threadId}.ndjson`);
+
+        const dirEvs = path.join(PATH_RESULTS, `evs`);
+        fs.mkdirSync(dirEvs, { recursive: true });
+        const pathEvs = path.join(dirEvs, `evs-${threadId}.ndjson`);
+        
+        fs.writeFileSync(pathRegrets, toLines(regretSum));
+        fs.writeFileSync(pathStrategies, toLines(strategySum));
+        fs.writeFileSync(pathEvs, toLines(evSum));
+    } else {
+        fs.mkdirSync(PATH_RESULTS, { recursive: true });
+        fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
+        fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
+        fs.writeFileSync(PATH_EVS, toLines(evSum));
+    }
+
     console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
     console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
     console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
@@ -1327,6 +1347,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
 
     const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
     const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+
     for (let i = 0; i < ACTION_COUNT; ++i) {
         sum0[i] += strat0[i];
         sum1[i] += strat1[i];
@@ -1384,31 +1405,112 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     return util0;
 }
 
-function train(iterations = 1_000_000_000, flushInterval = 999_999) {
+function train(iterations = 1_000_000, flushInterval = 999_999) {
     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
     getDataLoaded();
     let timeStart = performance.now();
-    const hand = [];// ["Kc","Jc","8c","2d","2c"];
 
-    for (let i = 0; i < iterations; ++i) {
-        // const timeStartIteration = performance.now();
-        let deck = Object.values(DECK);
-        getArrayShuffled(deck);
-        const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
-        if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
-        const h1 = deck.splice(0, 5);
-        const hkey0 = keysMap.get([...h0].sort().join(''));
-        const hkey1 = keysMap.get([...h1].sort().join(''));
-        getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+    const handsAll = Array.from(scoresMap.entries());
+    const hands = handsAll.map(([key, value]) => value);
+    flushInterval = (hands.length - 1)
+    // const hand = ["Kc","Jc","8c","2d","2c"];
 
-        if (i > 0 && i % flushInterval === 0) {
-            getDataFlushed();
-            const timeEnd = performance.now();
-            console.log(`[MCCFR] train(${flushInterval}/${i}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-            timeStart = performance.now();
+    for (let s = 0; s < iterations; ++s) {
+        for (let i = 0; i < (hands.length); ++i) {
+            // const timeStartIteration = performance.now();
+            // let deck = Object.values(DECK);
+            // getArrayShuffled(deck);
+            // const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
+            // if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
+            const h0 = hands[i].hand;
+            const deck = Object.values(DECK).filter(card => !h0.includes(card));
+            getArrayShuffled(deck);
+            const h1 = deck.splice(0, 5);
+            const hkey0 = keysMap.get([...h0].sort().join(''));
+            const hkey1 = keysMap.get([...h1].sort().join(''));
+            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+
+            if (i > 0 && i % flushInterval === 0) {
+                getDataFlushed();
+                const timeEnd = performance.now();
+                console.log(`[MCCFR] train(${flushInterval}/${s}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+                timeStart = performance.now();
+            }
         }
     }
 }
+
+// const getMCCFRComputed = async (roundNumber) => {
+//     if (isMainThread) {
+//         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+//         const handsAll = Array.from(scoresMap.entries());
+//         const cpuCount = os.cpus().length;
+//         const workers = { exit: [], instance: [] };
+//         const handsCountPerWorker = Math.ceil(handsAll.length / cpuCount);
+
+//         for (let i = 0; i < cpuCount; i++) {
+//             const workerStart = i * handsCountPerWorker;
+//             const workerEnd = Math.min(workerStart + handsCountPerWorker, handsAll.length);
+//             const workerHands = handsAll.slice(workerStart, workerEnd);
+
+//             const worker = new Worker(__filename, {
+//                 workerData: {
+//                     id: i,
+//                     hands: workerHands,
+//                     roundNumber
+//                 }
+//             });
+
+//             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
+//         }
+
+//         await Promise.all(workers.exit);
+//     } else {
+//         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+//         const id = workerData.id;
+//         const hands = workerData.hands.map(([key, value]) => value);
+//         const keys = workerData.hands.map(([key, value]) => key);
+//         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
+
+//         const flushInterval = hands.length - 1;
+//         let timeStart = performance.now();
+
+//         let index = 0;
+//         function getHandsProcessed() {
+//             if (index >= hands.length) {
+//                 process.exit(0);
+//             }
+//             const { hand } = hands[index];
+//             const h0 = hand
+//             const deck = Object.values(DECK).filter(card => !hand.includes(card));
+//             getArrayShuffled(deck);
+//             const h1 = deck.splice(0, 5);
+//             const hkey0 = keysMap.get([...h0].sort().join(''));
+//             const hkey1 = keysMap.get([...h1].sort().join(''));
+//             getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+    
+//             if (index > 0 && index % flushInterval === 0) {
+//                 getDataFlushed(id);
+//                 const timeEnd = performance.now();
+//                 console.log(`[MCCFR] train(${flushInterval}/${index}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+//                 timeStart = performance.now();
+//             }
+
+//             index++;
+//             setImmediate(getHandsProcessed);
+//         }
+
+//         setImmediate(getHandsProcessed);
+//     }
+// };
+
+(async () => {
+    train();
+})();
+// const [n, evSum] = evSum.get(infoKey);
+// const avgEV = evSum / n;
+
+
 // const getLeafExpectedValue = () => {
 //     getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
 //     getDataLoaded();
@@ -1471,9 +1573,3 @@ function train(iterations = 1_000_000_000, flushInterval = 999_999) {
 //         leafsMap.set(keyRA, ev);
 //     }
 // }
-
-(async () => {
-    train();
-})();
-// const [n, evSum] = evSum.get(infoKey);
-// const avgEV = evSum / n;
