@@ -1511,6 +1511,7 @@ const getMCCFRComputed = async (roundNumber) => {
     } else {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const id = workerData.id;
+        const roundNumber = workerData.roundNumber;
         const hands = workerData.hands.map(([key, value]) => value);
         const keys = workerData.hands.map(([key, value]) => `${key}:R${roundNumber}`);
         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
@@ -1530,7 +1531,7 @@ const getMCCFRComputed = async (roundNumber) => {
             const h1 = deck.splice(0, 5);
             const hkey0 = keysMap.get([...h0].sort().join(''));
             const hkey1 = keysMap.get([...h1].sort().join(''));
-            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+            getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, []);
     
             if (index > 0 && index % flushInterval === 0) {
                 getDataFlushed(id);
