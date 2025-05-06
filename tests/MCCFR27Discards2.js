@@ -1246,7 +1246,7 @@ function getDataFlushed(threadId = null) {
         const dirEvs = path.join(PATH_RESULTS, `evs`);
         fs.mkdirSync(dirEvs, { recursive: true });
         const pathEvs = path.join(dirEvs, `evs-${threadId}.ndjson`);
-        
+
         fs.writeFileSync(pathRegrets, toLines(regretSum));
         fs.writeFileSync(pathStrategies, toLines(strategySum));
         fs.writeFileSync(pathEvs, toLines(evSum));
@@ -1260,6 +1260,46 @@ function getDataFlushed(threadId = null) {
     console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
     console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
     console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
+}
+
+function getDataFlushedMerged(dir) {
+    if (!fs.existsSync(dir)) {
+        console.log(`getDataFlushedMerged.Directory(${dir}).Error`);
+        return;
+    }
+
+    const files = fs.readdirSync(dir);
+    const results = files.reduce((map, filePath) => {
+        const filePathParsed = path.parse(filePath);
+        if (filePathParsed.ext === '.ndjson') {
+            const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
+            const lines = data.split('\n');
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                const { key, values } = JSON.parse(line);
+                if (!map.has(key)) {
+                    map.set(key, Float64Array.from(values));
+                } else {
+                    const arr = map.get(key);
+                    for (let j = 0; j < arr.length; j++) {
+                        arr[j] += values[j];
+                    }
+                }
+            }
+
+        }
+        return map;
+    }, new Map())
+
+    const outPath = path.join(path.dirname(dir), '__merged__.ndjson');
+    const outData = "";
+    for (const [key, values] of results.entries()) {
+        outData += JSON.stringify({ key, values: [...values] }) + '\n';
+    }
+    fs.writeFileSync(outPath, outData, 'utf8');
 }
 
 function getDataNashed() {
