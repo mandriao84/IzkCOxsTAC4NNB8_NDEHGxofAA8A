@@ -1250,7 +1250,9 @@ function getDataFlushed(threadId = null) {
         fs.writeFileSync(pathRegrets, toLines(regretSum));
         fs.writeFileSync(pathStrategies, toLines(strategySum));
         fs.writeFileSync(pathEvs, toLines(evSum));
-    } else {
+    } 
+    
+    if (threadId === null || threadId === undefined) {
         fs.mkdirSync(PATH_RESULTS, { recursive: true });
         fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
         fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
@@ -1481,72 +1483,73 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
     }
 }
 
-// const getMCCFRComputed = async (roundNumber) => {
-//     if (isMainThread) {
-//         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-//         const handsAll = Array.from(scoresMap.entries());
-//         const cpuCount = os.cpus().length;
-//         const workers = { exit: [], instance: [] };
-//         const handsCountPerWorker = Math.ceil(handsAll.length / cpuCount);
+const getMCCFRComputed = async (roundNumber) => {
+    if (isMainThread) {
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+        const handsAll = Array.from(scoresMap.entries());
+        const cpuCount = os.cpus().length;
+        const workers = { exit: [], instance: [] };
+        const handsCountPerWorker = Math.ceil(handsAll.length / cpuCount);
 
-//         for (let i = 0; i < cpuCount; i++) {
-//             const workerStart = i * handsCountPerWorker;
-//             const workerEnd = Math.min(workerStart + handsCountPerWorker, handsAll.length);
-//             const workerHands = handsAll.slice(workerStart, workerEnd);
+        for (let i = 0; i < cpuCount; i++) {
+            const workerStart = i * handsCountPerWorker;
+            const workerEnd = Math.min(workerStart + handsCountPerWorker, handsAll.length);
+            const workerHands = handsAll.slice(workerStart, workerEnd);
 
-//             const worker = new Worker(__filename, {
-//                 workerData: {
-//                     id: i,
-//                     hands: workerHands,
-//                     roundNumber
-//                 }
-//             });
+            const worker = new Worker(__filename, {
+                workerData: {
+                    id: i,
+                    hands: workerHands,
+                    roundNumber
+                }
+            });
 
-//             workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
-//         }
+            workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
+        }
 
-//         await Promise.all(workers.exit);
-//     } else {
-//         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-//         const id = workerData.id;
-//         const hands = workerData.hands.map(([key, value]) => value);
-//         const keys = workerData.hands.map(([key, value]) => key);
-//         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
+        await Promise.all(workers.exit);
+    } else {
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+        const id = workerData.id;
+        const hands = workerData.hands.map(([key, value]) => value);
+        const keys = workerData.hands.map(([key, value]) => key);
+        getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
 
-//         const flushInterval = hands.length - 1;
-//         let timeStart = performance.now();
+        const flushInterval = hands.length - 1;
+        let timeStart = performance.now();
 
-//         let index = 0;
-//         function getHandsProcessed() {
-//             if (index >= hands.length) {
-//                 process.exit(0);
-//             }
-//             const { hand } = hands[index];
-//             const h0 = hand
-//             const deck = Object.values(DECK).filter(card => !hand.includes(card));
-//             getArrayShuffled(deck);
-//             const h1 = deck.splice(0, 5);
-//             const hkey0 = keysMap.get([...h0].sort().join(''));
-//             const hkey1 = keysMap.get([...h1].sort().join(''));
-//             getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+        let index = 0;
+        function getHandsProcessed() {
+            if (index >= hands.length) {
+                process.exit(0);
+            }
+            const { hand } = hands[index];
+            const h0 = hand
+            const deck = Object.values(DECK).filter(card => !hand.includes(card));
+            getArrayShuffled(deck);
+            const h1 = deck.splice(0, 5);
+            const hkey0 = keysMap.get([...h0].sort().join(''));
+            const hkey1 = keysMap.get([...h1].sort().join(''));
+            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
     
-//             if (index > 0 && index % flushInterval === 0) {
-//                 getDataFlushed(id);
-//                 const timeEnd = performance.now();
-//                 console.log(`[MCCFR] train(${flushInterval}/${index}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-//                 timeStart = performance.now();
-//             }
+            if (index > 0 && index % flushInterval === 0) {
+                getDataFlushed(id);
+                const timeEnd = performance.now();
+                console.log(`[MCCFR] train(${flushInterval}/${index}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+                timeStart = performance.now();
+            }
 
-//             index++;
-//             setImmediate(getHandsProcessed);
-//         }
+            index++;
+            setImmediate(getHandsProcessed);
+        }
 
-//         setImmediate(getHandsProcessed);
-//     }
-// };
+        setImmediate(getHandsProcessed);
+    }
+};
 
 (async () => {
-    train();
+    // train();
+    getMCCFRComputed();
 })();
 // const [n, evSum] = evSum.get(infoKey);
 // const avgEV = evSum / n;
