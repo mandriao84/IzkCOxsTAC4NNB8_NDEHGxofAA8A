@@ -1520,12 +1520,14 @@ const getMCCFRComputed = async (roundNumber) => {
         let iteration = 1_000;
         let index = 0;
         function run() {
-            if (index >= hands.length && iteration % 100 === 0) {
-                getDataFlushed(id);
-                const timeEnd = performance.now();
-                console.log(`[MCCFR] ITERATION | ${iteration} | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
-
-                timeStart = performance.now();
+            if (index >= hands.length) {
+                if (iteration % 100 === 0) {
+                    getDataFlushed(id);
+                    const timeEnd = performance.now();
+                    console.log(`[MCCFR] ITERATION | x100 | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
+                    timeStart = performance.now();
+                }
+                
                 iteration--;
                 if (iteration <= 0) return;
                 index = 0;
