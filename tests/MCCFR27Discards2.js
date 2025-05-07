@@ -1498,61 +1498,61 @@ const getMCCFRComputed = async (roundNumber) => {
             cluster.fork({ WORKER_ID: id });
         }
 
-        const workers = Object.values(cluster.workers);
-        for (let i = 0; i < workers.length; i++) {
-            workers[i].on('message', async (message) => {
-                if (message.key === 'FLUSH') {
-                    const { id, value } = message;
+        // const workers = Object.values(cluster.workers);
+        // for (let i = 0; i < workers.length; i++) {
+        //     workers[i].on('message', async (message) => {
+        //         if (message.key === 'FLUSH') {
+        //             const { id, value } = message;
 
-                    const dirRegrets = path.join(PATH_RESULTS, `regrets`);
-                    const dirStrategies = path.join(PATH_RESULTS, `strategies`);
-                    const dirEvs = path.join(PATH_RESULTS, `evs`);
+        //             const dirRegrets = path.join(PATH_RESULTS, `regrets`);
+        //             const dirStrategies = path.join(PATH_RESULTS, `strategies`);
+        //             const dirEvs = path.join(PATH_RESULTS, `evs`);
             
-                    await Promise.all([
-                        fs.promises.mkdir(dirRegrets, { recursive: true }),
-                        fs.promises.mkdir(dirStrategies, { recursive: true }),
-                        fs.promises.mkdir(dirEvs, { recursive: true })
-                    ]);
+        //             await Promise.all([
+        //                 fs.promises.mkdir(dirRegrets, { recursive: true }),
+        //                 fs.promises.mkdir(dirStrategies, { recursive: true }),
+        //                 fs.promises.mkdir(dirEvs, { recursive: true })
+        //             ]);
             
-                    const pathRegrets = path.join(dirRegrets, `regrets-${id}.ndjson`);
-                    const pathStrategies = path.join(dirStrategies, `strategies-${id}.ndjson`);
-                    const pathEvs = path.join(dirEvs, `evs-${id}.ndjson`);
+        //             const pathRegrets = path.join(dirRegrets, `regrets-${id}.ndjson`);
+        //             const pathStrategies = path.join(dirStrategies, `strategies-${id}.ndjson`);
+        //             const pathEvs = path.join(dirEvs, `evs-${id}.ndjson`);
             
-                    await Promise.all([
-                        fs.promises.writeFile(pathRegrets, value.regrets),
-                        fs.promises.writeFile(pathStrategies, value.strategies),
-                        fs.promises.writeFile(pathEvs, value.evs)
-                    ]);
-                }
-            })
-        }
+        //             await Promise.all([
+        //                 fs.promises.writeFile(pathRegrets, value.regrets),
+        //                 fs.promises.writeFile(pathStrategies, value.strategies),
+        //                 fs.promises.writeFile(pathEvs, value.evs)
+        //             ]);
+        //         }
+        //     })
+        // }
 
         cluster.on('exit', (worker, code) => {
             console.log(`[MCCFR] WORKER | PID=${worker.process.pid} | EXIT_CODE=${code}`);
         });
     } else {
-        function mapsAsLines() {
-            const toLines = (map) =>
-                Array.from(map.entries())
-                    .map(([key, values]) => JSON.stringify({
-                        key,
-                        values: values instanceof Float64Array ? [...values] : values
-                    }))
-                    .join('\n') + '\n';
+        // function mapsAsLines() {
+        //     const toLines = (map) =>
+        //         Array.from(map.entries())
+        //             .map(([key, values]) => JSON.stringify({
+        //                 key,
+        //                 values: values instanceof Float64Array ? [...values] : values
+        //             }))
+        //             .join('\n') + '\n';
 
-            return {
-                regrets: toLines(regretSum),
-                strategies: toLines(strategySum),
-                evs: toLines(evSum)
-            };
-        }
+        //     return {
+        //         regrets: toLines(regretSum),
+        //         strategies: toLines(strategySum),
+        //         evs: toLines(evSum)
+        //     };
+        // }
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
 
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
 
-        const flushInterval = 10;
+        const flushInterval = 1;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
@@ -1567,10 +1567,10 @@ const getMCCFRComputed = async (roundNumber) => {
             }
 
             if ((s+1) % flushInterval === 0) {
-                // await getDataFlushed(workerId);
+                await getDataFlushed(workerId);
                 const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
                 timeNow = performance.now();
-                process.send({ id: workerId, key: `FLUSH`, value: mapsAsLines() });
+                // process.send({ id: workerId, key: `FLUSH`, value: mapsAsLines() });
                 console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
             }
         }
@@ -1579,10 +1579,10 @@ const getMCCFRComputed = async (roundNumber) => {
                 
 (async () => {
     // train();
-    // getMCCFRComputed(1);
-    getDataFlushedMerged(".results/mccfr/evs")
-    getDataFlushedMerged(".results/mccfr/regrets")
-    getDataFlushedMerged(".results/mccfr/strategies")
+    getMCCFRComputed(1);
+    // getDataFlushedMerged(".results/mccfr/evs")
+    // getDataFlushedMerged(".results/mccfr/regrets")
+    // getDataFlushedMerged(".results/mccfr/strategies")
     // getDataLoaded();
     // getDataNashed();
 })();
