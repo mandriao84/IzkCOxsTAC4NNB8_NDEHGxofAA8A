@@ -1498,10 +1498,11 @@ const getMCCFRComputed = async (roundNumber) => {
             cluster.fork({ WORKER_ID: id });
         }
 
-        for (const worker of Object.values(cluster.workers)) {
-            worker.on('message', async (message) => {
+        const workers = Object.values(cluster.workers);
+        for (let i = 0; i < workers.length; i++) {
+            workers[i].on('message', async (message) => {
                 if (message.key === 'FLUSH') {
-                    const { id, value } = msg;
+                    const { id, value } = message;
 
                     const dirRegrets = path.join(PATH_RESULTS, `regrets`);
                     const dirStrategies = path.join(PATH_RESULTS, `strategies`);
@@ -1523,7 +1524,7 @@ const getMCCFRComputed = async (roundNumber) => {
                         fs.promises.writeFile(pathEvs, value.evs)
                     ]);
 
-                    console.log(`[MCCFR] DATA FLUSHED FROM WORKER_ID=${threadId}`);
+                    console.log(`[MCCFR] DATA FLUSHED FROM WORKER_ID=${id}`);
                 }
             })
         }
@@ -1569,7 +1570,7 @@ const getMCCFRComputed = async (roundNumber) => {
 
             if ((s+1) % flushInterval === 0) {
                 // await getDataFlushed(workerId);
-                const timeElapsed = (performance.now() - timeNow).safe("ROUND", 2);
+                const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
                 timeNow = performance.now();
                 process.send({ id: workerId, key: `FLUSH`, value: mapsAsLines() });
                 console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
