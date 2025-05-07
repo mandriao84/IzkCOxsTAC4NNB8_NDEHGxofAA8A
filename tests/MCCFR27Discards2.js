@@ -1457,11 +1457,11 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
 
     const handsAll = Array.from(scoresMap.entries());
     const hands = handsAll.map(([key, value]) => value);
-    flushInterval = (hands.length - 1)
+    flushInterval = 999
     // const hand = ["Kc","Jc","8c","2d","2c"];
 
     for (let s = 0; s < iterations; ++s) {
-        for (let i = 0; i < (hands.length); ++i) {
+        for (let i = 0; i < hands.length; ++i) {
             // const timeStartIteration = performance.now();
             // let deck = Object.values(DECK);
             // getArrayShuffled(deck);
@@ -1474,35 +1474,26 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
             const hkey0 = keysMap.get([...h0].sort().join(''));
             const hkey1 = keysMap.get([...h1].sort().join(''));
             getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+        }
 
-            if (i > 0 && i % flushInterval === 0) {
-                getDataFlushed();
-                const timeEnd = performance.now();
-                console.log(`[MCCFR] train(${flushInterval}/${s}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-                timeStart = performance.now();
-            }
+        if (s > 0 && s % flushInterval === 0) {
+            getDataFlushed();
+            const timeEnd = performance.now();
+            console.log(`[MCCFR] train(${(hands.length)}/${s}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
+            timeStart = performance.now();
         }
     }
 }
 
 const getMCCFRComputed = async (roundNumber) => {
     if (isMainThread) {
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-        const handsAll = Array.from(scoresMap.entries());
-        const cpuCount = os.cpus().length;
+        const cpuCount = (os.cpus().length * 2/3).safe("ROUND", 0);
         const workers = { exit: [], instance: [] };
-        const handsCountPerWorker = Math.ceil(handsAll.length / cpuCount);
 
         for (let i = 0; i < cpuCount; i++) {
-            const workerStart = i * handsCountPerWorker;
-            const workerEnd = Math.min(workerStart + handsCountPerWorker, handsAll.length);
-            const workerHands = handsAll.slice(workerStart, workerEnd);
-
             const worker = new Worker(__filename, {
                 workerData: {
-                    id: i,
-                    hands: workerHands,
-                    roundNumber
+                    id: i
                 }
             });
 
@@ -1513,10 +1504,7 @@ const getMCCFRComputed = async (roundNumber) => {
     } else {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const id = workerData.id;
-        const roundNumber = workerData.roundNumber;
-        const hands = workerData.hands.map(([key, value]) => value);
-        const keys = workerData.hands.map(([key, value]) => `${key}:R${roundNumber}`);
-        getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
+        const hands = Array.from(scoresMap.entries());
 
         let timeStart = performance.now();
         let iteration = 100_000;
@@ -1535,14 +1523,14 @@ const getMCCFRComputed = async (roundNumber) => {
                 if (iteration <= 0) return;
             }
 
-            const { hand } = hands[index];
+            const { hand } = hands[index].hand;
             const h0 = hand
             const deck = Object.values(DECK).filter(card => !hand.includes(card));
             getArrayShuffled(deck);
             const h1 = deck.splice(0, 5);
             const hkey0 = keysMap.get([...h0].sort().join(''));
             const hkey1 = keysMap.get([...h1].sort().join(''));
-            getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, []);
+            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
 
             index++;
             setImmediate(run);
@@ -1559,7 +1547,7 @@ const getMCCFRComputed = async (roundNumber) => {
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
     // getDataLoaded();
-    getDataNashed();
+    // getDataNashed();
 })();
 // const [n, evSum] = evSum.get(infoKey);
 // const avgEV = evSum / n;
