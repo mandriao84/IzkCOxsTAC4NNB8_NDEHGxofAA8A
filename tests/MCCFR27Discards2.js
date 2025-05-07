@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const os = require('os');
+const cluster = require('cluster');
 const { LRUCache } = require('lru-cache');
 const path = require('path');
 
@@ -1236,27 +1237,34 @@ function getDataFlushed(threadId = null) {
 
     if (threadId) {
         const dirRegrets = path.join(PATH_RESULTS, `regrets`);
-        fs.mkdirSync(dirRegrets, { recursive: true });
-        const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
-
         const dirStrategies = path.join(PATH_RESULTS, `strategies`);
-        fs.mkdirSync(dirStrategies, { recursive: true });
-        const pathStrategies = path.join(dirStrategies, `strategies-${threadId}.ndjson`);
-
         const dirEvs = path.join(PATH_RESULTS, `evs`);
-        fs.mkdirSync(dirEvs, { recursive: true });
+
+        const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
+        const pathStrategies = path.join(dirStrategies, `strategies-${threadId}.ndjson`);
         const pathEvs = path.join(dirEvs, `evs-${threadId}.ndjson`);
 
-        fs.writeFileSync(pathRegrets, toLines(regretSum));
-        fs.writeFileSync(pathStrategies, toLines(strategySum));
-        fs.writeFileSync(pathEvs, toLines(evSum));
+        fs.mkdir(dirRegrets, { recursive: true }, err => {
+            if (err) return console.error(err);
+            fs.writeFile(pathRegrets, toLines(regretSum), err => { if (err) console.error(err); });
+        });
+        fs.mkdir(dirStrategies, { recursive: true }, err => {
+            if (err) return console.error(err);
+            fs.writeFile(pathStrategies, toLines(strategySum), err => { if (err) console.error(err); });
+        });
+        fs.mkdir(dirEvs, { recursive: true }, err => {
+            if (err) return console.error(err);
+            fs.writeFile(pathEvs, toLines(evSum), err => { if (err) console.error(err); });
+        });
     } 
     
     if (threadId === null || threadId === undefined) {
-        fs.mkdirSync(PATH_RESULTS, { recursive: true });
-        fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
-        fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
-        fs.writeFileSync(PATH_EVS, toLines(evSum));
+        fs.mkdir(PATH_RESULTS, { recursive: true }, err => {
+            if (err) return console.error(err);
+            fs.writeFile(PATH_REGRETS, toLines(regretSum), err => { if (err) console.error(err); });
+            fs.writeFile(PATH_STRATEGIES, toLines(strategySum), err => { if (err) console.error(err); });
+            fs.writeFile(PATH_EVS, toLines(evSum), err => { if (err) console.error(err); });
+        });
     }
 
     // console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
@@ -1486,57 +1494,94 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
 }
 
 const getMCCFRComputed = async (roundNumber) => {
-    if (isMainThread) {
+    if (cluster.isMaster) {
         const cpuCount = (os.cpus().length * 2/3).safe("ROUND", 0);
-        const workers = { exit: [], instance: [] };
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-        const hands = Array.from(scoresMap.entries());
 
-        for (let i = 0; i < cpuCount; i++) {
-            const worker = new Worker(__filename, {
-                workerData: {
-                    id: i
-                }
-            });
-
-            workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
+        for (let id = 0; id < cpuCount; id++) {
+            cluster.fork({ WORKER_ID: id });
         }
 
-        await Promise.all(workers.exit);
+        cluster.on('exit', (worker, code) => {
+            console.log(`[MCCFR] Worker ${worker.process.pid} exited (code=${code})`);
+        });
+
+        // for (let i = 0; i < cpuCount; i++) {
+        //     const worker = new Worker(__filename, {
+        //         workerData: {
+        //             id: i
+        //         }
+        //     });
+
+        //     workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
+        // }
+
+        // await Promise.all(workers.exit);
     } else {
+        const workerId = Number(process.env.WORKER_ID);
+        console.log(`[MCCFR] WORKER | ${workerId} | PID=${process.pid} | START`);
+
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-        const id = workerData.id;
-        const hands = Array.from(scoresMap.entries());
+        const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
 
-        let timeStart = performance.now();
-        let iteration = 100_000;
-        let index = 0;
-        function run() {
-            if (index >= hands.length) {
-                iteration--;
-                index = 0;
+        const flushInterval = hands.length;
+        const iterations = 100_000;
+        for (let s = 0; s < iterations; ++s) {
+            const timeStart = performance.now();
 
-                if (iteration % 100 === 0) {
-                    getDataFlushed(id);
-                    const timeEnd = performance.now();
-                    console.log(`[MCCFR] ${id} | ${iteration} | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
-                    timeStart = performance.now();
-                }
-                if (iteration <= 0) return;
+            for (let i = 0; i < hands; ++i) {
+                const h0 = hands[i];
+                const deck = Object.values(DECK).filter(card => !h0.includes(card));
+                getArrayShuffled(deck);
+                const h1 = deck.splice(0, 5);
+                const hkey0 = keysMap.get([...h0].sort().join(''));
+                const hkey1 = keysMap.get([...h1].sort().join(''));
+                getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
             }
 
-            const h0 = hands[index][1].hand;
-            const deck = Object.values(DECK).filter(card => !h0.includes(card));
-            getArrayShuffled(deck);
-            const h1 = deck.splice(0, 5);
-            const hkey0 = keysMap.get([...h0].sort().join(''));
-            const hkey1 = keysMap.get([...h1].sort().join(''));
-            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
-
-            index++;
-            setImmediate(run);
+            if ((s + 1) % flushInterval === 0) {
+                // getDataFlushed(workerId);
+                const timeElapsed = (performance.now() - timeStart).safe("ROUND", 2);
+                console.log(`[MCCFR] ${workerId} | ${s} | ${timeElapsed}ms`);
+            }
         }
-        run();
+
+        // getDataFlushed(workerId);
+        // console.log(`[MCCFR] | ${workerId} | END`);
+        // process.exit(0);
+
+        // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+        // const id = workerData.id;
+        // const hands = Array.from(scoresMap.entries());
+
+        // let timeStart = performance.now();
+        // let iteration = 100_000;
+        // let index = 0;
+        // function run() {
+        //     if (index >= hands.length) {
+        //         iteration--;
+        //         index = 0;
+
+        //         if (iteration % 100 === 0) {
+        //             getDataFlushed(id);
+        //             const timeEnd = performance.now();
+        //             console.log(`[MCCFR] ${id} | ${iteration} | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
+        //             timeStart = performance.now();
+        //         }
+        //         if (iteration <= 0) return;
+        //     }
+
+        //     const h0 = hands[index][1].hand;
+        //     const deck = Object.values(DECK).filter(card => !h0.includes(card));
+        //     getArrayShuffled(deck);
+        //     const h1 = deck.splice(0, 5);
+        //     const hkey0 = keysMap.get([...h0].sort().join(''));
+        //     const hkey1 = keysMap.get([...h1].sort().join(''));
+        //     getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+
+        //     index++;
+        //     setImmediate(run);
+        // }
+        // run();
 
     }
 };
