@@ -1222,7 +1222,7 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys =
     console.log(`[MCCFR] loaded ${evSum.size} evs from disk`);
 }
 
-function getDataFlushed(threadId = null) {
+async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
         const entries = Array.from(map.entries());
         const lines = entries.map(([key, values]) => {
@@ -1240,18 +1240,22 @@ function getDataFlushed(threadId = null) {
         const dirStrategies = path.join(PATH_RESULTS, `strategies`);
         const dirEvs = path.join(PATH_RESULTS, `evs`);
 
-        fs.mkdirSync(dirRegrets, { recursive: true });
-        fs.mkdirSync(dirStrategies, { recursive: true });
-        fs.mkdirSync(dirEvs, { recursive: true });
+        await Promise.all([
+            fs.promises.mkdir(dirRegrets, { recursive: true }),
+            fs.promises.mkdir(dirStrategies, { recursive: true }),
+            fs.promises.mkdir(dirStrategies, { recursive: true })
+        ]);
 
         const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
         const pathStrategies = path.join(dirStrategies, `strategies-${threadId}.ndjson`);
         const pathEvs = path.join(dirEvs, `evs-${threadId}.ndjson`);
 
-        fs.writeFileSync(pathRegrets, toLines(regretSum));
-        fs.writeFileSync(pathStrategies, toLines(strategySum));
-        fs.writeFileSync(pathEvs, toLines(evSum));
-    } 
+        await Promise.all([
+            fs.promises.writeFile(pathRegrets, toLines(regretSum)),
+            fs.promises.writeFile(pathStrategies, toLines(strategySum)),
+            fs.promises.writeFile(pathEvs, toLines(evSum))
+        ]);
+    }
     
     if (threadId === null || threadId === undefined) {
         fs.mkdirSync(PATH_RESULTS, { recursive: true });
@@ -1519,15 +1523,15 @@ const getMCCFRComputed = async (roundNumber) => {
                 getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
             }
 
-            if ((s + 1) % flushInterval === 0) {
+            if ((s+1) % flushInterval === 0) {
                 getDataFlushed(workerId);
                 const timeElapsed = (performance.now() - timeStart).safe("ROUND", 2);
-                console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s} | TIME_ELAPSED=${timeElapsed}ms`);
+                console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
             }
         }
-    }
+    }       
 };
-
+                
 (async () => {
     // train();
     getMCCFRComputed(1);
