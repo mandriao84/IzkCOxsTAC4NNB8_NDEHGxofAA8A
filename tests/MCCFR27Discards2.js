@@ -1489,6 +1489,8 @@ const getMCCFRComputed = async (roundNumber) => {
     if (isMainThread) {
         const cpuCount = (os.cpus().length * 2/3).safe("ROUND", 0);
         const workers = { exit: [], instance: [] };
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
+        const hands = Array.from(scoresMap.entries());
 
         for (let i = 0; i < cpuCount; i++) {
             const worker = new Worker(__filename, {
@@ -1523,8 +1525,7 @@ const getMCCFRComputed = async (roundNumber) => {
                 if (iteration <= 0) return;
             }
 
-            const { hand } = hands[index].hand;
-            const h0 = hand
+            const h0 = hands[index][1].hand;
             const deck = Object.values(DECK).filter(card => !hand.includes(card));
             getArrayShuffled(deck);
             const h1 = deck.splice(0, 5);
@@ -1542,7 +1543,7 @@ const getMCCFRComputed = async (roundNumber) => {
 
 (async () => {
     // train();
-    // getMCCFRComputed(1);
+    getMCCFRComputed(1);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
