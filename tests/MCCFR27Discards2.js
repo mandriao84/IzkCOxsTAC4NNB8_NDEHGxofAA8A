@@ -1523,8 +1523,6 @@ const getMCCFRComputed = async (roundNumber) => {
                         fs.promises.writeFile(pathStrategies, value.strategies),
                         fs.promises.writeFile(pathEvs, value.evs)
                     ]);
-
-                    console.log(`[MCCFR] DATA FLUSHED FROM WORKER_ID=${id}`);
                 }
             })
         }
@@ -1581,10 +1579,10 @@ const getMCCFRComputed = async (roundNumber) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(1);
-    // getDataFlushedMerged(".results/mccfr/evs")
-    // getDataFlushedMerged(".results/mccfr/regrets")
-    // getDataFlushedMerged(".results/mccfr/strategies")
+    // getMCCFRComputed(1);
+    getDataFlushedMerged(".results/mccfr/evs")
+    getDataFlushedMerged(".results/mccfr/regrets")
+    getDataFlushedMerged(".results/mccfr/strategies")
     // getDataLoaded();
     // getDataNashed();
 })();
