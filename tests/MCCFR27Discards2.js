@@ -1240,31 +1240,24 @@ function getDataFlushed(threadId = null) {
         const dirStrategies = path.join(PATH_RESULTS, `strategies`);
         const dirEvs = path.join(PATH_RESULTS, `evs`);
 
+        fs.mkdirSync(dirRegrets, { recursive: true });
+        fs.mkdirSync(dirStrategies, { recursive: true });
+        fs.mkdirSync(dirEvs, { recursive: true });
+
         const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
         const pathStrategies = path.join(dirStrategies, `strategies-${threadId}.ndjson`);
         const pathEvs = path.join(dirEvs, `evs-${threadId}.ndjson`);
 
-        fs.mkdir(dirRegrets, { recursive: true }, err => {
-            if (err) return console.error(err);
-            fs.writeFile(pathRegrets, toLines(regretSum), err => { if (err) console.error(err); });
-        });
-        fs.mkdir(dirStrategies, { recursive: true }, err => {
-            if (err) return console.error(err);
-            fs.writeFile(pathStrategies, toLines(strategySum), err => { if (err) console.error(err); });
-        });
-        fs.mkdir(dirEvs, { recursive: true }, err => {
-            if (err) return console.error(err);
-            fs.writeFile(pathEvs, toLines(evSum), err => { if (err) console.error(err); });
-        });
+        fs.writeFileSync(pathRegrets, toLines(regretSum));
+        fs.writeFileSync(pathStrategies, toLines(strategySum));
+        fs.writeFileSync(pathEvs, toLines(evSum));
     } 
     
     if (threadId === null || threadId === undefined) {
-        fs.mkdir(PATH_RESULTS, { recursive: true }, err => {
-            if (err) return console.error(err);
-            fs.writeFile(PATH_REGRETS, toLines(regretSum), err => { if (err) console.error(err); });
-            fs.writeFile(PATH_STRATEGIES, toLines(strategySum), err => { if (err) console.error(err); });
-            fs.writeFile(PATH_EVS, toLines(evSum), err => { if (err) console.error(err); });
-        });
+        fs.mkdirSync(PATH_RESULTS, { recursive: true });
+        fs.writeFileSync(PATH_REGRETS, toLines(regretSum));
+        fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
+        fs.writeFileSync(PATH_EVS, toLines(evSum));
     }
 
     // console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
@@ -1504,18 +1497,6 @@ const getMCCFRComputed = async (roundNumber) => {
         cluster.on('exit', (worker, code) => {
             console.log(`[MCCFR] Worker ${worker.process.pid} exited (code=${code})`);
         });
-
-        // for (let i = 0; i < cpuCount; i++) {
-        //     const worker = new Worker(__filename, {
-        //         workerData: {
-        //             id: i
-        //         }
-        //     });
-
-        //     workers.exit.push(new Promise(resolve => worker.on('exit', resolve)));
-        // }
-
-        // await Promise.all(workers.exit);
     } else {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER | ${workerId} | PID=${process.pid} | START`);
@@ -1523,12 +1504,12 @@ const getMCCFRComputed = async (roundNumber) => {
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
 
-        const flushInterval = hands.length;
+        const flushInterval = 1;
         const iterations = 100_000;
         for (let s = 0; s < iterations; ++s) {
             const timeStart = performance.now();
 
-            for (let i = 0; i < hands; ++i) {
+            for (let i = 0; i < hands.length; ++i) {
                 const h0 = hands[i];
                 const deck = Object.values(DECK).filter(card => !h0.includes(card));
                 getArrayShuffled(deck);
@@ -1539,50 +1520,11 @@ const getMCCFRComputed = async (roundNumber) => {
             }
 
             if ((s + 1) % flushInterval === 0) {
-                // getDataFlushed(workerId);
+                getDataFlushed(workerId);
                 const timeElapsed = (performance.now() - timeStart).safe("ROUND", 2);
                 console.log(`[MCCFR] ${workerId} | ${s} | ${timeElapsed}ms`);
             }
         }
-
-        // getDataFlushed(workerId);
-        // console.log(`[MCCFR] | ${workerId} | END`);
-        // process.exit(0);
-
-        // getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-        // const id = workerData.id;
-        // const hands = Array.from(scoresMap.entries());
-
-        // let timeStart = performance.now();
-        // let iteration = 100_000;
-        // let index = 0;
-        // function run() {
-        //     if (index >= hands.length) {
-        //         iteration--;
-        //         index = 0;
-
-        //         if (iteration % 100 === 0) {
-        //             getDataFlushed(id);
-        //             const timeEnd = performance.now();
-        //             console.log(`[MCCFR] ${id} | ${iteration} | ${(timeEnd - timeStart).safe("ROUND", 2)}MS`);
-        //             timeStart = performance.now();
-        //         }
-        //         if (iteration <= 0) return;
-        //     }
-
-        //     const h0 = hands[index][1].hand;
-        //     const deck = Object.values(DECK).filter(card => !h0.includes(card));
-        //     getArrayShuffled(deck);
-        //     const h1 = deck.splice(0, 5);
-        //     const hkey0 = keysMap.get([...h0].sort().join(''));
-        //     const hkey1 = keysMap.get([...h1].sort().join(''));
-        //     getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
-
-        //     index++;
-        //     setImmediate(run);
-        // }
-        // run();
-
     }
 };
 
