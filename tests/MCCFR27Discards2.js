@@ -1243,7 +1243,7 @@ async function getDataFlushed(threadId = null) {
         await Promise.all([
             fs.promises.mkdir(dirRegrets, { recursive: true }),
             fs.promises.mkdir(dirStrategies, { recursive: true }),
-            fs.promises.mkdir(dirStrategies, { recursive: true })
+            fs.promises.mkdir(dirEvs, { recursive: true })
         ]);
 
         const pathRegrets = path.join(dirRegrets, `regrets-${threadId}.ndjson`);
@@ -1498,8 +1498,8 @@ const getMCCFRComputed = async (roundNumber) => {
             cluster.fork({ WORKER_ID: id });
         }
 
-        for (let i = 0; i < cluster.workers.length; i++) {
-            cluster.workers[i].on('message', async (message) => {
+        for (const worker of Object.values(cluster.workers)) {
+            worker.on('message', async (message) => {
                 if (message.key === 'FLUSH') {
                     const { id, value } = msg;
 
@@ -1510,7 +1510,7 @@ const getMCCFRComputed = async (roundNumber) => {
                     await Promise.all([
                         fs.promises.mkdir(dirRegrets, { recursive: true }),
                         fs.promises.mkdir(dirStrategies, { recursive: true }),
-                        fs.promises.mkdir(dirStrategies, { recursive: true })
+                        fs.promises.mkdir(dirEvs, { recursive: true })
                     ]);
             
                     const pathRegrets = path.join(dirRegrets, `regrets-${id}.ndjson`);
