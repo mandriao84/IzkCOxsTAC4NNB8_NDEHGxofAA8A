@@ -1498,21 +1498,65 @@ const getMCCFRComputed = async (roundNumber) => {
             cluster.fork({ WORKER_ID: id });
         }
 
+        for (let i = 0; i < cluster.workers.length; i++) {
+            cluster.workers[i].on('message', async (message) => {
+                if (message.key === 'FLUSH') {
+                    const { id, value } = msg;
+
+                    const dirRegrets = path.join(PATH_RESULTS, `regrets`);
+                    const dirStrategies = path.join(PATH_RESULTS, `strategies`);
+                    const dirEvs = path.join(PATH_RESULTS, `evs`);
+            
+                    await Promise.all([
+                        fs.promises.mkdir(dirRegrets, { recursive: true }),
+                        fs.promises.mkdir(dirStrategies, { recursive: true }),
+                        fs.promises.mkdir(dirStrategies, { recursive: true })
+                    ]);
+            
+                    const pathRegrets = path.join(dirRegrets, `regrets-${id}.ndjson`);
+                    const pathStrategies = path.join(dirStrategies, `strategies-${id}.ndjson`);
+                    const pathEvs = path.join(dirEvs, `evs-${id}.ndjson`);
+            
+                    await Promise.all([
+                        fs.promises.writeFile(pathRegrets, value.regrets),
+                        fs.promises.writeFile(pathStrategies, value.strategies),
+                        fs.promises.writeFile(pathEvs, value.evs)
+                    ]);
+
+                    console.log(`[MCCFR] DATA FLUSHED FROM WORKER_ID=${threadId}`);
+                }
+            })
+        }
+
         cluster.on('exit', (worker, code) => {
             console.log(`[MCCFR] WORKER | PID=${worker.process.pid} | EXIT_CODE=${code}`);
         });
     } else {
+        function mapsAsLines() {
+            const toLines = (map) =>
+                Array.from(map.entries())
+                    .map(([key, values]) => JSON.stringify({
+                        key,
+                        values: values instanceof Float64Array ? [...values] : values
+                    }))
+                    .join('\n') + '\n';
+
+            return {
+                regrets: toLines(regretSum),
+                strategies: toLines(strategySum),
+                evs: toLines(evSum)
+            };
+        }
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
 
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
 
-        const flushInterval = 1;
+        const flushInterval = 10;
         const iterations = 100_000;
+        let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
-            const timeStart = performance.now();
-
             for (let i = 0; i < hands.length; ++i) {
                 const h0 = hands[i];
                 const deck = Object.values(DECK).filter(card => !h0.includes(card));
@@ -1524,8 +1568,10 @@ const getMCCFRComputed = async (roundNumber) => {
             }
 
             if ((s+1) % flushInterval === 0) {
-                getDataFlushed(workerId);
-                const timeElapsed = (performance.now() - timeStart).safe("ROUND", 2);
+                // await getDataFlushed(workerId);
+                const timeElapsed = (performance.now() - timeNow).safe("ROUND", 2);
+                timeNow = performance.now();
+                process.send({ id: workerId, key: `FLUSH`, value: mapsAsLines() });
                 console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
             }
         }
