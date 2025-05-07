@@ -1517,7 +1517,7 @@ const getMCCFRComputed = async (roundNumber) => {
         getDataLoaded([PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys);
 
         let timeStart = performance.now();
-        let iteration = 200;
+        let iteration = 100_000;
         let index = 0;
         function run() {
             if (index >= hands.length) {
@@ -1552,10 +1552,11 @@ const getMCCFRComputed = async (roundNumber) => {
 
 (async () => {
     // train();
-    getMCCFRComputed(1);
+    // getMCCFRComputed(1);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
+    getDataLoaded();
 })();
 // const [n, evSum] = evSum.get(infoKey);
 // const avgEV = evSum / n;
