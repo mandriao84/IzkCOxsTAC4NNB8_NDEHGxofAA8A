@@ -1495,11 +1495,11 @@ const getMCCFRComputed = async (roundNumber) => {
         }
 
         cluster.on('exit', (worker, code) => {
-            console.log(`[MCCFR] Worker ${worker.process.pid} exited (code=${code})`);
+            console.log(`[MCCFR] WORKER | PID=${worker.process.pid} | EXIT_CODE=${code}`);
         });
     } else {
         const workerId = Number(process.env.WORKER_ID);
-        console.log(`[MCCFR] WORKER | ${workerId} | PID=${process.pid} | START`);
+        console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
 
         getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
         const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
@@ -1522,7 +1522,7 @@ const getMCCFRComputed = async (roundNumber) => {
             if ((s + 1) % flushInterval === 0) {
                 getDataFlushed(workerId);
                 const timeElapsed = (performance.now() - timeStart).safe("ROUND", 2);
-                console.log(`[MCCFR] ${workerId} | ${s} | ${timeElapsed}ms`);
+                console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s} | TIME_ELAPSED=${timeElapsed}ms`);
             }
         }
     }
