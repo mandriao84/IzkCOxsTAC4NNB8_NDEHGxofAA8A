@@ -1306,13 +1306,15 @@ function getDataFlushedMerged(dir) {
 }
 
 function getDataNashed() {
+    getDataLoaded();
+
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
     for (const [key, values] of regretSum.entries()) {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
         const regretMax = Math.max(0, ...values);
         const regretAvg = regretMax / visitAcc;
-        if (regretAvg <= 0.02 && visitAcc > 100_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
+        if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
         regretSumAvg += regretAvg;
         if (regretAvg > regretMaxAvg) regretMaxAvg = regretAvg;
     }
@@ -1556,7 +1558,8 @@ const getMCCFRComputed = async (roundNumber) => {
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
-    getDataLoaded();
+    // getDataLoaded();
+    getDataNashed();
 })();
 // const [n, evSum] = evSum.get(infoKey);
 // const avgEV = evSum / n;
