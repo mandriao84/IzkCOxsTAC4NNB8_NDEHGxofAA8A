@@ -1526,7 +1526,7 @@ const getMCCFRComputed = async (roundNumber) => {
             }
 
             const h0 = hands[index][1].hand;
-            const deck = Object.values(DECK).filter(card => !hand.includes(card));
+            const deck = Object.values(DECK).filter(card => !h0.includes(card));
             getArrayShuffled(deck);
             const h1 = deck.splice(0, 5);
             const hkey0 = keysMap.get([...h0].sort().join(''));
