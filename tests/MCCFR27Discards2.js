@@ -2,7 +2,6 @@ const fs = require('fs');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 const os = require('os');
 const cluster = require('cluster');
-const { LRUCache } = require('lru-cache');
 const path = require('path');
 
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr');
@@ -22,15 +21,6 @@ const DECK = {
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const cardsLength = Object.keys(CARDS).length
-const CACHE = new LRUCache({
-    max: 10000000,
-    // maxSize: 5000000000, // ~5GB
-    // sizeCalculation: (value, key) => {
-    //     return key.length * 2 + value.length * 2 + 8;
-    // },
-    // ttl: 0,
-    allowStale: false
-});
 const keysMap = new Map();
 const scoresMap = new Map();
 const discardskMap = new Map();

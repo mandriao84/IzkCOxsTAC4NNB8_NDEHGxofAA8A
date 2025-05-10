@@ -3,29 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "gh:pw:tests": "npx playwright test --project gh_pw_tests",
-    "run": "npx playwright test --project=chromium --workers=1",
-    "work": "npx playwright test --project=chromium --workers=12",
-    "stress": "npx playwright test --project=chromium --workers=12 --repeat-each=12",
-    "dev": "npx playwright test --debug --project=chromium"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@playwright/browser-chromium": "^1.38.1",
-    "@playwright/browser-firefox": "^1.38.1",
-    "@playwright/browser-webkit": "^1.38.1",
-    "@playwright/test": "1.37",
-    "dayjs": "^1.11.10",
-    "dotenv": "^16.3.1"
-  },
-  "dependencies": {
-    "lru-cache": "^11.1.0",
-    "mathjs": "^13.0.2",
-    "piscina": "^4.9.2",
-    "random": "^4.1.0",
-    "redis": "^4.7.0"
-  }
+  "license": "ISC"
 }
