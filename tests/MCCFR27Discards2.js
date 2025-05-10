@@ -969,8 +969,7 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
-const 
-getCacheLoadedFromNDJSON = (paths) => {
+const getCacheLoadedFromNDJSON = (paths) => {
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
         fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -1373,6 +1372,10 @@ function getBestActionIndex(strat) {
     return result.index;
 }
 
+function getRandomActionIndex(strat) {
+    return (Math.random() * strat.length).safe("FLOOR", 0);
+}
+
 function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
     const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
     const key0 = `${hkey0.value}:R${roundNumber}`;
@@ -1411,8 +1414,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         sum1[i] += strat1[i];
     }
 
-    const a0 = getBestActionIndex(strat0);
-    const a1 = getBestActionIndex(strat1);
+    const a0 = getRandomActionIndex(strat0);
+    const a1 = getRandomActionIndex(strat1);
 
     const deckNext = [...deck];
     const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
@@ -1461,6 +1464,22 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     evSum.get(key1)[1] += ev1;
 
     return util0;
+
+    // let ev0 = 0, ev1 = 0;
+    // for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+    //     ev0 += strat0[ai] * altUtil0[ai];
+    //     ev1 += strat1[ai] * altUtil1[ai];
+    // }
+
+    // for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+    //     reg0[ai] += altUtil0[ai] - ev0;   // ★ changed baseline
+    //     reg1[ai] += altUtil1[ai] - ev1;   // ★ changed baseline
+    // }
+
+    // evSum.get(key0)[1] += v0;            // ★ changed: store v0, not util0
+    // evSum.get(key1)[1] += v1;            // ★ changed: store v1, not util1
+
+    // return v0;  
 }
 
 function train(iterations = 1_000_000, flushInterval = 999_999) {
