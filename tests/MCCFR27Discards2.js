@@ -1384,6 +1384,23 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
     if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
 
+    ++evSum.get(key0)[0];
+    ++evSum.get(key1)[0];
+
+    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
+    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+
+    const strat0 = regretMatching(reg0);
+    const strat1 = regretMatching(reg1);
+
+    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
+    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+
+    for (let i = 0; i < ACTION_COUNT; ++i) {
+        sum0[i] += strat0[i];
+        sum1[i] += strat1[i];
+    }
+
     if (isRoundNumberFrozen) {
         let util0 = 0;
         for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
@@ -1408,30 +1425,10 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     
         const util1 = -util0;
 
-        evSum.get(key0)[0]++;
-        evSum.get(key1)[0]++;
-
         evSum.get(key0)[1] += util0;
         evSum.get(key1)[1] += util1;
     
         return util0;
-    }
-
-    ++evSum.get(key0)[0];
-    ++evSum.get(key1)[0];
-
-    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
-    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
-
-    const strat0 = regretMatching(reg0);
-    const strat1 = regretMatching(reg1);
-
-    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
-    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
-
-    for (let i = 0; i < ACTION_COUNT; ++i) {
-        sum0[i] += strat0[i];
-        sum1[i] += strat1[i];
     }
 
     const a0 = getRandomActionIndex(strat0);
