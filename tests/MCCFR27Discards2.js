@@ -1384,18 +1384,18 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
     if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
 
-    if (isRoundNumberFrozen) {
-        const [n0, evSum0] = evSum.get(key0);
-        // const [n1, evSum1] = evSum.get(key1);
+    // if (isRoundNumberFrozen) {
+    //     const [n0, evSum0] = evSum.get(key0);
+    //     // const [n1, evSum1] = evSum.get(key1);
 
-        // if (n0 >= 500_000 && n1 >= 500_000) {
-        //     return (evSum0 / n0) - (evSum1 / n1);
-        // }
+    //     // if (n0 >= 500_000 && n1 >= 500_000) {
+    //     //     return (evSum0 / n0) - (evSum1 / n1);
+    //     // }
 
-        if (n0 >= 500_000) {
-            return (evSum0 / n0);
-        }
-    }
+    //     if (n0 >= 500_000) {
+    //         return (evSum0 / n0);
+    //     }
+    // }
 
     ++evSum.get(key0)[0];
     ++evSum.get(key1)[0];
@@ -1426,6 +1426,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         ? getScores(hkey0Next.hand, hkey1Next.hand)
         : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     const util1 = -util0;
+
+    if (isRoundNumberFrozen) { return util0; }
 
     const altUtil0 = new Float64Array(ACTION_COUNT);
     const altUtil1 = new Float64Array(ACTION_COUNT);
