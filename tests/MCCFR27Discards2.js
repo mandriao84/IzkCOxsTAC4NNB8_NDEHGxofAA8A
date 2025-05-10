@@ -1488,7 +1488,7 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
     }
 }
 
-const getMCCFRComputed = async (roundNumber) => {
+const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
         const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
 
@@ -1525,7 +1525,7 @@ const getMCCFRComputed = async (roundNumber) => {
                 const h1 = deck.splice(0, 5);
                 const hkey0 = keysMap.get([...h0].sort().join(''));
                 const hkey1 = keysMap.get([...h1].sort().join(''));
-                getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, []);
+                getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen);
             }
 
             if ((s+1) % flushInterval === 0) {
@@ -1540,7 +1540,7 @@ const getMCCFRComputed = async (roundNumber) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(2);
+    getMCCFRComputed(2, [1]);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
