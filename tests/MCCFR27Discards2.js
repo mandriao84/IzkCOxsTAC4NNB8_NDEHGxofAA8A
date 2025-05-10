@@ -1512,13 +1512,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const hands = Array.from(scoresMap.entries()).reduce((arr, entry) => {
             const key = entry[0];
             const hand = entry[1].hand;
-            const evKey = `${key}:R${roundNumber - 1}`;
+            const evKey = `${key}:R1`;
             const ev = evsMap.get(evKey);
             if (!ev || ev[0] < 700_000) arr.push(hand);
             return arr;
         }, []);
 
-        const flushInterval = 100;
+        const flushInterval = 1;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
@@ -1544,7 +1544,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(2, [1]);
+    getMCCFRComputed(3, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
