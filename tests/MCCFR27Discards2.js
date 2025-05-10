@@ -1466,22 +1466,6 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     evSum.get(key1)[1] += ev1;
 
     return util0;
-
-    // let ev0 = 0, ev1 = 0;
-    // for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-    //     ev0 += strat0[ai] * altUtil0[ai];
-    //     ev1 += strat1[ai] * altUtil1[ai];
-    // }
-
-    // for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-    //     reg0[ai] += altUtil0[ai] - ev0;   // ★ changed baseline
-    //     reg1[ai] += altUtil1[ai] - ev1;   // ★ changed baseline
-    // }
-
-    // evSum.get(key0)[1] += v0;            // ★ changed: store v0, not util0
-    // evSum.get(key1)[1] += v1;            // ★ changed: store v1, not util1
-
-    // return v0;  
 }
 
 function train(iterations = 1_000_000, flushInterval = 999_999) {
