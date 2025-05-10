@@ -1552,7 +1552,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(2, [1]);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
