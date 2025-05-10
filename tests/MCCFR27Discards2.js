@@ -36,6 +36,7 @@ const scoresMap = new Map();
 const discardskMap = new Map();
 const discardsMap = new Map();
 const standsevMap = new Map();
+const evsMap = new Map();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -968,7 +969,8 @@ const getMCSDataComputed = async (roundNumber, simulationNumber) => {
 
 
 
-const getCacheLoadedFromNDJSON = (paths) => {
+const 
+getCacheLoadedFromNDJSON = (paths) => {
     for (let i = 0; i < paths.length; i++) {
         const p = paths[i];
         fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -993,6 +995,8 @@ const getCacheLoadedFromNDJSON = (paths) => {
                     discardsMap.set(entry.key, { cards: entry.cards, value: entry.value });
                 } else if (p.includes("standsev.ndjson")) {
                     standsevMap.set(entry.key, entry.value);
+                } else if (p.includes("evs.ndjson")) {
+                    evsMap.set(entry.key, entry.values);
                 }
             }
         }
@@ -1235,7 +1239,7 @@ async function getDataFlushed(threadId = null) {
         return lines.join('\n') + '\n';
     }
 
-    if (threadId) {
+    if (threadId >= 0) {
         const dirRegrets = path.join(PATH_RESULTS, `regrets`);
         const dirStrategies = path.join(PATH_RESULTS, `strategies`);
         const dirEvs = path.join(PATH_RESULTS, `evs`);
@@ -1492,67 +1496,31 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
 
 const getMCCFRComputed = async (roundNumber) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 2/3).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
         }
 
-        // const workers = Object.values(cluster.workers);
-        // for (let i = 0; i < workers.length; i++) {
-        //     workers[i].on('message', async (message) => {
-        //         if (message.key === 'FLUSH') {
-        //             const { id, value } = message;
-
-        //             const dirRegrets = path.join(PATH_RESULTS, `regrets`);
-        //             const dirStrategies = path.join(PATH_RESULTS, `strategies`);
-        //             const dirEvs = path.join(PATH_RESULTS, `evs`);
-            
-        //             await Promise.all([
-        //                 fs.promises.mkdir(dirRegrets, { recursive: true }),
-        //                 fs.promises.mkdir(dirStrategies, { recursive: true }),
-        //                 fs.promises.mkdir(dirEvs, { recursive: true })
-        //             ]);
-            
-        //             const pathRegrets = path.join(dirRegrets, `regrets-${id}.ndjson`);
-        //             const pathStrategies = path.join(dirStrategies, `strategies-${id}.ndjson`);
-        //             const pathEvs = path.join(dirEvs, `evs-${id}.ndjson`);
-            
-        //             await Promise.all([
-        //                 fs.promises.writeFile(pathRegrets, value.regrets),
-        //                 fs.promises.writeFile(pathStrategies, value.strategies),
-        //                 fs.promises.writeFile(pathEvs, value.evs)
-        //             ]);
-        //         }
-        //     })
-        // }
-
         cluster.on('exit', (worker, code) => {
             console.log(`[MCCFR] WORKER | PID=${worker.process.pid} | EXIT_CODE=${code}`);
         });
     } else {
-        // function mapsAsLines() {
-        //     const toLines = (map) =>
-        //         Array.from(map.entries())
-        //             .map(([key, values]) => JSON.stringify({
-        //                 key,
-        //                 values: values instanceof Float64Array ? [...values] : values
-        //             }))
-        //             .join('\n') + '\n';
-
-        //     return {
-        //         regrets: toLines(regretSum),
-        //         strategies: toLines(strategySum),
-        //         evs: toLines(evSum)
-        //     };
-        // }
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
 
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-        const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
+        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS]);
+        // const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
+        const hands = Array.from(scoresMap.entries()).reduce((arr, entry) => {
+            const key = entry[0];
+            const hand = entry[1].hand;
+            const evKey = `${key}:R${roundNumber}`;
+            const ev = evsMap.get(evKey);
+            if (!ev || ev[0] < 500_000) arr.push(hand);
+            return arr;
+        }, []);
 
-        const flushInterval = 1;
+        const flushInterval = 100;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
@@ -1570,7 +1538,6 @@ const getMCCFRComputed = async (roundNumber) => {
                 await getDataFlushed(workerId);
                 const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
                 timeNow = performance.now();
-                // process.send({ id: workerId, key: `FLUSH`, value: mapsAsLines() });
                 console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
             }
         }
@@ -1579,15 +1546,13 @@ const getMCCFRComputed = async (roundNumber) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(1);
-    // getDataFlushedMerged(".results/mccfr/evs")
-    // getDataFlushedMerged(".results/mccfr/regrets")
-    // getDataFlushedMerged(".results/mccfr/strategies")
+    // getMCCFRComputed(1);
+    getDataFlushedMerged(".results/mccfr/evs")
+    getDataFlushedMerged(".results/mccfr/regrets")
+    getDataFlushedMerged(".results/mccfr/strategies")
     // getDataLoaded();
     // getDataNashed();
 })();
-// const [n, evSum] = evSum.get(infoKey);
-// const avgEV = evSum / n;
 
 
 // const getLeafExpectedValue = () => {
