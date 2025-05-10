@@ -1424,7 +1424,6 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         }
     
         const util1 = -util0;
-
         evSum.get(key0)[1] += util0;
         evSum.get(key1)[1] += util1;
     
