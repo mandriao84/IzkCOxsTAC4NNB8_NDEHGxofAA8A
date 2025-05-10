@@ -1385,7 +1385,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         const [n0, evSum0] = evSum.get(key0);
         const [n1, evSum1] = evSum.get(key1);
 
-        if (n0 >= 1_000_000 && n1 >= 1_000_000) {
+        if (n0 >= 500_000 && n1 >= 500_000) {
             return (evSum0 / n0) - (evSum1 / n1);
         }
     }
@@ -1467,22 +1467,16 @@ function train(iterations = 1_000_000, flushInterval = 999_999) {
     const handsAll = Array.from(scoresMap.entries());
     const hands = handsAll.map(([key, value]) => value);
     flushInterval = 999
-    // const hand = ["Kc","Jc","8c","2d","2c"];
 
     for (let s = 0; s < iterations; ++s) {
         for (let i = 0; i < hands.length; ++i) {
-            // const timeStartIteration = performance.now();
-            // let deck = Object.values(DECK);
-            // getArrayShuffled(deck);
-            // const h0 = hand.length === 5 ? hand : deck.splice(0, 5);
-            // if (hand.length === 5) deck = deck.filter(card => !hand.includes(card));
             const h0 = hands[i].hand;
             const deck = Object.values(DECK).filter(card => !h0.includes(card));
             getArrayShuffled(deck);
             const h1 = deck.splice(0, 5);
             const hkey0 = keysMap.get([...h0].sort().join(''));
             const hkey1 = keysMap.get([...h1].sort().join(''));
-            getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+            getDiscardsSimulated(hkey0, hkey1, deck, 2, [1]);
         }
 
         if (s > 0 && s % flushInterval === 0) {
@@ -1547,10 +1541,10 @@ const getMCCFRComputed = async (roundNumber) => {
 (async () => {
     // train();
     // getMCCFRComputed(1);
-    getDataFlushedMerged(".results/mccfr/evs")
-    getDataFlushedMerged(".results/mccfr/regrets")
-    getDataFlushedMerged(".results/mccfr/strategies")
-    // getDataLoaded();
+    // getDataFlushedMerged(".results/mccfr/evs")
+    // getDataFlushedMerged(".results/mccfr/regrets")
+    // getDataFlushedMerged(".results/mccfr/strategies")
+    getDataLoaded();
     // getDataNashed();
 })();
 
