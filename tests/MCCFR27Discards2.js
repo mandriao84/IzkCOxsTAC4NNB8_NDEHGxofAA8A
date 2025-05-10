@@ -1383,10 +1383,11 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
 
     if (isRoundNumberFrozen) {
         const [n0, evSum0] = evSum.get(key0);
-        const [n1, evSum1] = evSum.get(key1);
+        // const [n1, evSum1] = evSum.get(key1);
 
         if (n0 >= 500_000 && n1 >= 500_000) {
-            return (evSum0 / n0) - (evSum1 / n1);
+            // return (evSum0 / n0) - (evSum1 / n1);
+            return (evSum0 / n0);
         }
     }
 
