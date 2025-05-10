@@ -1,6 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
+COPY package-lock.json ./ 2>/dev/null || true
 RUN if [ -f package-lock.json ] && [ -s package-lock.json ]; then \
       npm ci; \
     else \
