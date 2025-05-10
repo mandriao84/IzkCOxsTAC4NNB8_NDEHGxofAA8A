@@ -1508,9 +1508,9 @@ const getMCCFRComputed = async (roundNumber) => {
         const hands = Array.from(scoresMap.entries()).reduce((arr, entry) => {
             const key = entry[0];
             const hand = entry[1].hand;
-            const evKey = `${key}:R${roundNumber}`;
+            const evKey = `${key}:R${roundNumber - 1}`;
             const ev = evsMap.get(evKey);
-            if (!ev || ev[0] < 500_000) arr.push(hand);
+            if (!ev || ev[0] < 700_000) arr.push(hand);
             return arr;
         }, []);
 
@@ -1525,7 +1525,7 @@ const getMCCFRComputed = async (roundNumber) => {
                 const h1 = deck.splice(0, 5);
                 const hkey0 = keysMap.get([...h0].sort().join(''));
                 const hkey1 = keysMap.get([...h1].sort().join(''));
-                getDiscardsSimulated(hkey0, hkey1, deck, 1, []);
+                getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, []);
             }
 
             if ((s+1) % flushInterval === 0) {
@@ -1540,11 +1540,11 @@ const getMCCFRComputed = async (roundNumber) => {
                 
 (async () => {
     // train();
-    // getMCCFRComputed(1);
+    getMCCFRComputed(2);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
-    getDataLoaded();
+    // getDataLoaded();
     // getDataNashed();
 })();
 
