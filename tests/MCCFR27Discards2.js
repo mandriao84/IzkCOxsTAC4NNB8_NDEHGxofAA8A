@@ -1385,8 +1385,11 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         const [n0, evSum0] = evSum.get(key0);
         // const [n1, evSum1] = evSum.get(key1);
 
-        if (n0 >= 500_000 && n1 >= 500_000) {
-            // return (evSum0 / n0) - (evSum1 / n1);
+        // if (n0 >= 500_000 && n1 >= 500_000) {
+        //     return (evSum0 / n0) - (evSum1 / n1);
+        // }
+
+        if (n0 >= 500_000) {
             return (evSum0 / n0);
         }
     }
@@ -1414,7 +1417,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     const deckNext = [...deck];
     const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
     const hkey1Next = getActionApplied(hkey1.hand, deckNext, a1);
-    if (!hkey0Next?.hand || !hkey1Next?.hand) console.log(deckNext.length, hkey0Next?.hand, hkey1Next?.hand)
+    // if (!hkey0Next?.hand || !hkey1Next?.hand) console.log(deckNext.length, hkey0Next?.hand, hkey1Next?.hand)
 
     const util0 = roundNumber <= 1
         ? getScores(hkey0Next.hand, hkey1Next.hand)
@@ -1428,7 +1431,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         const deckA = [...deck];
         const hkey0Alt = getActionApplied(hkey0.hand, deckA, ai);
         const hkey1Fix = getActionApplied(hkey1.hand, deckA, a1);
-        if (!hkey0Alt?.hand || !hkey1Fix?.hand) console.log(deckA.length, hkey0Alt?.hand, hkey1Fix?.hand)
+        // if (!hkey0Alt?.hand || !hkey1Fix?.hand) console.log(deckA.length, hkey0Alt?.hand, hkey1Fix?.hand)
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(hkey0Alt.hand, hkey1Fix.hand)
@@ -1439,7 +1442,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         const deckA = [...deck];
         const hkey0Fix = getActionApplied(hkey0.hand, deckA, a0);
         const hkey1Alt = getActionApplied(hkey1.hand, deckA, ai);
-        if (!hkey0Fix?.hand || !hkey1Alt?.hand) console.log(deckA.length, hkey0Fix?.hand, hkey1Alt?.hand)
+        // if (!hkey0Fix?.hand || !hkey1Alt?.hand) console.log(deckA.length, hkey0Fix?.hand, hkey1Alt?.hand)
 
         altUtil1[ai] = roundNumber <= 1
             ? -getScores(hkey0Fix.hand, hkey1Alt.hand)
