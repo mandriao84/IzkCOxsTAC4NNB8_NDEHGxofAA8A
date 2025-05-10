@@ -1523,7 +1523,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
             return arr;
         }, []);
 
-        const flushInterval = 1;
+        const flushInterval = 100;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
