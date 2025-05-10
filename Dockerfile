@@ -11,3 +11,12 @@ RUN mkdir -p .results/mccfr
 COPY .results/mccfr/keys.ndjson .results/mccfr/keys.ndjson
 COPY .results/mccfr/scores.ndjson  .results/mccfr/scores.ndjson
 CMD ["node", "tests/MCCFR27Discards2.js"]
+
+
+
+# docker build -t mccfr:latest .
+
+# docker run --rm -it \
+#   -v $(pwd)/.results/mccfr:/app/.results/mccfr \
+#   mccfr:latest \
+#   sh
