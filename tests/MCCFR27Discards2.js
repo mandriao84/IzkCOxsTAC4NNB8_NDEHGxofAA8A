@@ -1384,18 +1384,38 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
     if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
 
-    // if (isRoundNumberFrozen) {
-    //     const [n0, evSum0] = evSum.get(key0);
-    //     // const [n1, evSum1] = evSum.get(key1);
+    if (isRoundNumberFrozen) {
+        let util0 = 0;
+        for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
+            const p0 = strat0[a0];
+            if (p0 === 0) continue;
+            for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
+                const p1 = strat1[a1];
+                if (p1 === 0) continue;
+                const pj = p0 * p1;
+    
+                const deckNext  = [...deck];
+                const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
+                const hkey1Next = getActionApplied(hkey1.hand, deckNext, a1);
+    
+                const leaf = roundNumber <= 1
+                    ? getScores(hkey0Next.hand, hkey1Next.hand)
+                    : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
+    
+                util0 += pj * leaf;
+            }
+        }
+    
+        const util1 = -util0;
 
-    //     // if (n0 >= 500_000 && n1 >= 500_000) {
-    //     //     return (evSum0 / n0) - (evSum1 / n1);
-    //     // }
+        evSum.get(key0)[0]++;
+        evSum.get(key1)[0]++;
 
-    //     if (n0 >= 500_000) {
-    //         return (evSum0 / n0);
-    //     }
-    // }
+        evSum.get(key0)[1] += util0;
+        evSum.get(key1)[1] += util1;
+    
+        return util0;
+    }
 
     ++evSum.get(key0)[0];
     ++evSum.get(key1)[0];
@@ -1454,16 +1474,13 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
             : -getDiscardsSimulated(hkey0Fix, hkey1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
     }
 
-    let ev0 = 0, ev1 = 0;
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         reg0[ai] += altUtil0[ai] - util0;
         reg1[ai] += altUtil1[ai] - util1;
-        ev0 += strat0[ai] * altUtil0[ai];
-        ev1 += strat1[ai] * altUtil1[ai];
     }
 
-    evSum.get(key0)[1] += ev0;
-    evSum.get(key1)[1] += ev1;
+    evSum.get(key0)[1] += util0;
+    evSum.get(key1)[1] += util1;
 
     return util0;
 }
