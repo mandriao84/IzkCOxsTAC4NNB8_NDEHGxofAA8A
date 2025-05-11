@@ -40,3 +40,19 @@ CMD ["node", "tests/MCCFR27Discards2.js"]
 ## PUSH DOCKER IMAGE TO AWS ECR REPOSITORY URI
 # docker push \
 #     159541763424.dkr.ecr.us-east-1.amazonaws.com/izkcoxstac4nnb8_ndehgxofaa8a
+
+## LOAD TASK DEFINITION FOR AWS ECS
+# aws ecs register-task-definition \
+#   --cli-input-json file://.aws/task.json \
+#   --region $(aws configure get region)
+
+# aws ec2 describe-instances \
+#   --filters \
+#     "Name=instance-type,Values=c7g.medium" \
+#     "Name=instance-state-name,Values=pending,running" \
+#   --query "Reservations[].Instances[].InstanceId" \
+#   --output text
+# >> i-0123abcd4567ef890 i-0fedcba9876543210
+# aws ec2 terminate-instances \
+#   --instance-ids i-0123abcd4567ef890 i-0fedcba9876543210 \
+#   --region $(aws configure get region)
