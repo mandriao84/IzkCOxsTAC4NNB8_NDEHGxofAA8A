@@ -14,9 +14,9 @@ CMD ["node", "tests/MCCFR27Discards2.js"]
 
 
 
-# docker build -t mccfr:latest .
+# docker build -t izkcoxstac4nnb8_ndehgxofaa8a:latest .
 
 # docker run --rm -it \
 #   -v $(pwd)/.results/mccfr:/app/.results/mccfr \
-#   mccfr:latest \
+#   izkcoxstac4nnb8_ndehgxofaa8a:latest \
 #   sh
