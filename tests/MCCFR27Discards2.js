@@ -1308,16 +1308,21 @@ function getDataNashed() {
 
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
+    let count = 0;
     for (const [key, values] of regretSum.entries()) {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
-        const regretMax = Math.max(0, ...values);
-        const regretAvg = regretMax / visitAcc;
-        if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
+        const regretAcc = values.reduce((acc, value) => acc + Math.max(0, value), 0);
+        const regretAvg = regretAcc / (values.length * visitAcc);
         regretSumAvg += regretAvg;
-        if (regretAvg > regretMaxAvg) regretMaxAvg = regretAvg;
+        regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
+        count++;
+        if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
+
+    const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
+
     console.log(`[MCCFR] max avg regret per node: ${regretMaxAvg}`);
-    console.log(`[MCCFR] sum avg regret (≤ exploit): ${regretSumAvg}`);
+    console.log(`[MCCFR] sum avg regret (≤ exploit): ${regretAvgMean}`);
 }
 
 function getScores(handA, handB) {
