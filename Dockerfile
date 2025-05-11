@@ -41,6 +41,11 @@ CMD ["node", "tests/MCCFR27Discards2.js"]
 # docker push \
 #     159541763424.dkr.ecr.us-east-1.amazonaws.com/izkcoxstac4nnb8_ndehgxofaa8a
 
+## READ DOCKER IMAGE SCRIPT FILE
+# docker run --rm \
+#   159541763424.dkr.ecr.us-east-1.amazonaws.com/izkcoxstac4nnb8_ndehgxofaa8a:latest \
+#   sh -c "cat /app/tests/MCCFR27Discards2.js"
+
 ## LOAD TASK DEFINITION FOR AWS ECS
 # aws ecs register-task-definition \
 #   --cli-input-json file://.aws/task.json \
