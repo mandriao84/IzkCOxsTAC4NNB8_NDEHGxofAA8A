@@ -1531,7 +1531,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
             return arr;
         }, []);
 
-        const flushInterval = 1;
+        const flushInterval = 100;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
@@ -1544,17 +1544,20 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const hkey1 = keysMap.get([...h1].sort().join(''));
                 getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen);
 
-                // const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                // timeNow = performance.now();
-                // console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                if ((i+1) % flushInterval === 0) {
+                    await getDataFlushed(workerId);
+                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                    timeNow = performance.now();
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                }
             }
 
-            if ((s+1) % flushInterval === 0) {
-                await getDataFlushed(workerId);
-                const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                timeNow = performance.now();
-                console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
-            }
+            // if ((s+1) % flushInterval === 0) {
+            //     await getDataFlushed(workerId);
+            //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+            //     timeNow = performance.now();
+            //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
+            // }
         }
     }       
 };
