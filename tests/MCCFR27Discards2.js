@@ -1316,6 +1316,7 @@ function getDataNashed() {
         regretSumAvg += regretAvg;
         regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
         count++;
+        console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
         if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
 
@@ -1323,6 +1324,13 @@ function getDataNashed() {
 
     console.log(`[MCCFR] max avg regret per node: ${regretMaxAvg}`);
     console.log(`[MCCFR] sum avg regret (≤ exploit): ${regretAvgMean}`);
+}
+
+function getNashEquilibrium(key, regret, strategy) {
+    const visitAcc = strategy.reduce((acc, strat) => acc + strat, 0);
+    const regretAcc = regret.reduce((acc, value) => acc + Math.max(0, value), 0);
+    const regretAvg = regretAcc / (regret.length * visitAcc);
+    console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
 }
 
 function getScores(handA, handB) {
@@ -1387,6 +1395,9 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
 
     const strat0 = getStrategyFromRegret(reg0);
     const strat1 = getStrategyFromRegret(reg1);
+
+    // getNashEquilibrium(key0, reg0, strat0);
+    // getNashEquilibrium(key1, reg1, strat1);
 
     const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
     const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
