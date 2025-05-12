@@ -886,29 +886,28 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 const SUITS = ['c', 'd', 'h', 's'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-
 const getHandAsKey = (hand) => {
-    const ranksLength = RANKS.length;
-    const key = new Uint8Array(hand.length);
+    let key = 0;
     for (let i = 0; i < hand.length; i++) {
         const rank = RANKS.indexOf(hand[i][0]);
         const suit = SUITS.indexOf(hand[i][1]);
-        key[i] = (suit * ranksLength) + rank;
+        const cardIndex = suit * RANKS.length + rank;
+        key |= cardIndex << (6 * (4 - i));
     }
-    return key;
+    return key >>> 0;
 };
 const getKeyAsHand = (key) => {
-    const ranksLength = RANKS.length;
-    const hand = new Array(key.length);
-    for (let i = 0; i < key.length; i++) {
-        const index = key[i];
-        const rank = RANKS[index % ranksLength];
-        const suit = SUITS[Math.floor(index / ranksLength)];
+    const hand = new Array(5);
+    for (let i = 0; i < hand.length; i++) {
+        const shift = 6 * (4 - i);
+        const cardIndex = (key >>> shift) & 0b111111;
+        const rank = RANKS[cardIndex % RANKS.length];
+        const suit = SUITS[(cardIndex / RANKS.length).safe("FLOOR", 0)];
         hand[i] = rank + suit;
     }
     return hand;
 };
 
-const key = ["As", "7c", "Ac", "Qd", "Kh"]
+const key = ["As", "7c", "Ac", "As", "Ah"]
 console.log(getHandAsKey(key));
 console.log(getKeyAsHand(getHandAsKey(key)));
