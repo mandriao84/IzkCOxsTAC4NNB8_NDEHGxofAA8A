@@ -823,10 +823,38 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getDataNashed();
 })();
 
-
+const DECK2 = Uint8Array.from({ length: 52 }, (_, i) => i)
 const SUITS = ['c', 'd', 'h', 's'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-const getHandAsKey = (hand) => {
+function* getAllHandsAsUint32() {
+    const getHandAsUint32 = (hand) => {
+        let key = 0;
+        for (let i = 0; i < 5; i++) {
+            key |= hand[i] << ((4 - i) * 6);
+        }
+        return key >>> 0;
+    };
+
+    const k = 5;
+    const n = DECK2.length;
+    const idx = new Uint8Array(k);
+    for (let i = 0; i < k; i++) idx[i] = i;
+
+    const hand = new Uint8Array(5);
+
+    while (true) {
+        for (let i = 0; i < k; i++) hand[i] = DECK2[idx[i]];
+        yield getHandAsUint32(hand);
+
+        let i = k - 1;
+        while (i >= 0 && idx[i] === n - k + i) i--;
+        if (i < 0) break;
+        idx[i]++;
+        for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
+    }
+}
+
+const getHandReadableAsUint32 = (hand) => {
     let key = 0;
     for (let i = 0; i < hand.length; i++) {
         const rank = RANKS.indexOf(hand[i][0]);
@@ -836,7 +864,7 @@ const getHandAsKey = (hand) => {
     }
     return key >>> 0;
 };
-const getKeyAsHand = (key) => {
+const getHandUint32AsReadable = (key) => {
     const hand = new Array(5);
     for (let i = 0; i < hand.length; i++) {
         const shift = 6 * (4 - i);
@@ -848,6 +876,6 @@ const getKeyAsHand = (key) => {
     return hand;
 };
 
-const key = ["As", "7c", "Ac", "As", "Ah"]
-console.log(getHandAsKey(key));
-console.log(getKeyAsHand(getHandAsKey(key)));
+// const key = ["As", "7c", "Ac", "As", "Ah"]
+// console.log(getHandAsKey(key));
+// console.log(getKeyAsHand(getHandAsKey(key)));
