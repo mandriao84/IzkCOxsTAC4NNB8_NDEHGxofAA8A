@@ -213,66 +213,6 @@ const getHandKey = (hand) => {
     return { key, hand: handCopy, cardsValue, cardsSuit, type: details.type, ranks: details.ranks };
 }
 
-const getHandFromKey = (key, discards = []) => {
-    const [ranksPart, suitCountStr] = key.split(':');
-    const ranks = ranksPart.split('|');
-    const suitCount = parseInt(suitCountStr, 10);
-    const suitsUniq = ['c', 'd', 'h', 's'].slice(0, suitCount);
-
-    const used = {};
-    const hand = [];
-
-    for (const rank of ranks) {
-        if (!used[rank]) used[rank] = new Set();
-        const availableSuits = suitsUniq.filter(s => !used[rank].has(s));
-        const suit = availableSuits.length > 0
-            ? availableSuits[Math.floor(Math.random() * availableSuits.length)]
-            : suitsUniq[Math.floor(Math.random() * suitsUniq.length)];
-        used[rank].add(suit);
-        hand.push(`${rank}${suit}`);
-    }
-
-    const getCardsDiscarded = (hand, suitsUniq, discards) => {
-        const suitsCount = hand.reduce((obj, card) => {
-            const suit = card.slice(-1);
-            obj[suit] = (obj[suit] || 0) + 1;
-            return obj;
-        }, {});
-
-        const discardedSet = new Set();
-        const result = [];
-
-        for (const rank of discards) {
-            let candidates = hand.filter(c => c.slice(0, -1) === rank && !discardedSet.has(c));
-            if (candidates.length === 0) {
-                candidates = suitsUniq.map(s => `${rank}${s}`).filter(c => !discardedSet.has(c));
-            }
-
-            if (candidates.length === 0) {
-                result.push(null);
-                continue;
-            }
-
-            const candidate = candidates.reduce((best, card) => {
-                const suit = card.slice(-1);
-                return (suitsCount[suit] || 0) > (suitsCount[best.slice(-1)] || 0) ? card : best;
-            }, candidates[0]);
-
-            result.push(candidate);
-            discardedSet.add(candidate);
-
-            if (hand.includes(candidate)) {
-                const candidateSuit = candidate.slice(-1);
-                suitsCount[candidateSuit]--;
-            }
-        }
-
-        return result;
-    };
-
-    return { hand, discards: getCardsDiscarded(hand, suitsUniq, discards) };
-};
-
 const getHandScore = (keyDetails) => {
     var { key, type, ranks } = keyDetails;
 
