@@ -875,10 +875,40 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
     // getDataLoaded();
     // getDataNashed();
 })();
+
+
+const SUITS = ['c', 'd', 'h', 's'];
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+
+const getHandAsKey = (hand) => {
+    const ranksLength = RANKS.length;
+    const key = new Uint8Array(hand.length);
+    for (let i = 0; i < hand.length; i++) {
+        const rank = RANKS.indexOf(hand[i][0]);
+        const suit = SUITS.indexOf(hand[i][1]);
+        key[i] = (suit * ranksLength) + rank;
+    }
+    return key;
+};
+const getKeyAsHand = (key) => {
+    const ranksLength = RANKS.length;
+    const hand = new Array(key.length);
+    for (let i = 0; i < key.length; i++) {
+        const index = key[i];
+        const rank = RANKS[index % ranksLength];
+        const suit = SUITS[Math.floor(index / ranksLength)];
+        hand[i] = rank + suit;
+    }
+    return hand;
+};
+
+const key = ["As", "7c", "Ac", "Qd", "Kh"]
+console.log(getHandAsKey(key));
+console.log(getKeyAsHand(getHandAsKey(key)));
