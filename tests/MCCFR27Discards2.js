@@ -464,18 +464,6 @@ const getCacheLoadedFromNDJSON = (paths) => {
 
 
 
-(async () => {
-    // getNDJSONKeysDuplicatedDeleted(PATH_DISCARDSEV);
-    // getAllHandsKeySaved();
-    // getAllHandsScoreSaved();
-    // getAllDiscardsKSaved();
-    // getExpectedValueDataComputed(1);
-    // getNDJSONDirRead('.results/mccfr/discardsev')
-})();
-
-
-
-
 
 
 
@@ -884,7 +872,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-    // train();
+        // getAllHandsKeySaved();
+    // getAllHandsScoreSaved();
+    // getAllDiscardsKSaved();
     getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
