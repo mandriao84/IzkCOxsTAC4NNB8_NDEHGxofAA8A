@@ -1487,35 +1487,6 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     return util0;
 }
 
-function train(iterations = 1_000_000, flushInterval = 999_999) {
-    getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES]);
-    getDataLoaded();
-    let timeStart = performance.now();
-
-    const handsAll = Array.from(scoresMap.entries());
-    const hands = handsAll.map(([key, value]) => value);
-    flushInterval = 999
-
-    for (let s = 0; s < iterations; ++s) {
-        for (let i = 0; i < hands.length; ++i) {
-            const h0 = hands[i].hand;
-            const deck = Object.values(DECK).filter(card => !h0.includes(card));
-            getArrayShuffled(deck);
-            const h1 = deck.splice(0, 5);
-            const hkey0 = keysMap.get([...h0].sort().join(''));
-            const hkey1 = keysMap.get([...h1].sort().join(''));
-            getDiscardsSimulated(hkey0, hkey1, deck, 2, [1]);
-        }
-
-        if (s > 0 && s % flushInterval === 0) {
-            getDataFlushed();
-            const timeEnd = performance.now();
-            console.log(`[MCCFR] train(${(hands.length)}/${s}) took ${(timeEnd - timeStart).safe("ROUND", 2)}ms`);
-            timeStart = performance.now();
-        }
-    }
-}
-
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
         const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);

@@ -51,6 +51,14 @@ CMD ["node", "tests/MCCFR27Discards2.js"]
 #   --cli-input-json file://.aws/task.json \
 #   --region $(aws configure get region)
 
+# aws ecs run-task \
+#   --cluster default \
+#   --launch-type EC2 \
+#   --capacity-provider-strategy capacityProvider=c7g-medium-spot-cp,weight=1 \
+#   --task-definition izkcoxstac4nnb8_ndehgxofaa8a-runner \
+#   --count 1 \
+#   --region $(aws configure get region)
+
 # aws ec2 describe-instances \
 #   --filters \
 #     "Name=instance-type,Values=c7g.medium" \
