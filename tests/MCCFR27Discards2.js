@@ -1489,7 +1489,7 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1/7).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -1546,7 +1546,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // train();
-    getMCCFRComputed(3, []);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
