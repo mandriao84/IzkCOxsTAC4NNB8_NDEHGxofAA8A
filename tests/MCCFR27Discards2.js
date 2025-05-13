@@ -208,8 +208,7 @@ const getHandKey2 = (hand) => {
     }()
 
     const key = getHandKeyReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
-
-    return { key, type: details.type };
+    return key;
 }
 
 
@@ -977,9 +976,9 @@ const getHandKeyUint32AsReadable = (uint32) => {
     return { type, ranksValue, suitPattern };
 };
 
-const hand = ["As", "7c", "Ac", "As", "Ah"]
+const hand = ["As", "7c", "Ac", "Ad", "Ah"]
 // console.log(getHandReadableAsUint32(hand));
 // console.log(getHandUint32AsReadable(getHandReadableAsUint32(hand)));
 const handKey = getHandKey2(hand)
-console.log(handKey);
+console.log(hand, handKey);
 console.log(getHandKeyUint32AsReadable(handKey));
