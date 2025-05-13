@@ -654,34 +654,34 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
         sum1[i] += strat1[i];
     }
 
-    if (isRoundNumberFrozen) {
-        let util0 = 0;
-        for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
-            const p0 = strat0[a0];
-            if (p0 === 0) continue;
-            for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
-                const p1 = strat1[a1];
-                if (p1 === 0) continue;
-                const pj = p0 * p1;
+    // if (isRoundNumberFrozen) {
+    //     let util0 = 0;
+    //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
+    //         const p0 = strat0[a0];
+    //         if (p0 === 0) continue;
+    //         for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
+    //             const p1 = strat1[a1];
+    //             if (p1 === 0) continue;
+    //             const pj = p0 * p1;
     
-                const deckNext  = [...deck];
-                const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
-                const hkey1Next = getActionApplied(hkey1.hand, deckNext, a1);
+    //             const deckNext  = [...deck];
+    //             const hkey0Next = getActionApplied(hkey0.hand, deckNext, a0);
+    //             const hkey1Next = getActionApplied(hkey1.hand, deckNext, a1);
     
-                const leaf = roundNumber <= 1
-                    ? getScores(hkey0Next.hand, hkey1Next.hand)
-                    : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
+    //             const leaf = roundNumber <= 1
+    //                 ? getScores(hkey0Next.hand, hkey1Next.hand)
+    //                 : getDiscardsSimulated(hkey0Next, hkey1Next, deckNext, roundNumber - 1, roundNumbersFrozen);
     
-                util0 += pj * leaf;
-            }
-        }
+    //             util0 += pj * leaf;
+    //         }
+    //     }
     
-        const util1 = -util0;
-        evSum.get(key0)[1] += util0;
-        evSum.get(key1)[1] += util1;
+    //     const util1 = -util0;
+    //     evSum.get(key0)[1] += util0;
+    //     evSum.get(key1)[1] += util1;
     
-        return util0;
-    }
+    //     return util0;
+    // }
 
     const a0 = getRandomActionIndex(strat0);
     const a1 = getRandomActionIndex(strat1);
@@ -758,9 +758,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < handsDetailsUint32Uniq.length; ++i) {
                 const handDetailsUint32 = handsDetailsUint32Uniq[i];
+                const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
                 const handIndex = HANDS_DETAILS_UINT32.indexOf(handDetailsUint32);
                 const handUint32 = HANDS_UINT32[handIndex];
                 const hand = getHandUint32AsReadable(handUint32);
+                const handScore = HANDS_SCORE[handIndex];
+                const handObj = { handIndex, hand, handDetails, handScore };
+
 
                 const deck = Object.values(DECK).filter(card => !hand.includes(card));
                 getArrayShuffled(deck);
@@ -769,12 +773,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 handX.sort();
                 const handXUint32 = getHandReadableAsUint32(handX);
                 const handXIndex = HANDS_UINT32.indexOf(handXUint32);
+                const handXDetails = HANDS_DETAILS_UINT32[handXIndex];
+                const handXScore = HANDS_SCORE[handXIndex];
+                const handXObj = { handIndex: handXIndex, hand: handX, handDetails: handXDetails, handScore: handXScore };
 
-
-
-                // const hkey0 = keysMap.get([...hand].sort().join(''));
-                // const hkey1 = keysMap.get([...h1].sort().join(''));
-                // getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen);
+                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
                 // if ((i+1) % flushInterval === 0) {
                 //     await getDataFlushed(workerId);
