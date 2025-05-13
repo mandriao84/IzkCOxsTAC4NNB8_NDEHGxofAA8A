@@ -19,9 +19,6 @@ const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7'
 const cardsLength = Object.keys(CARDS).length
 const keysMap = new Map();
 const scoresMap = new Map();
-const discardskMap = new Map();
-const discardsMap = new Map();
-const standsevMap = new Map();
 const evsMap = new Map();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
@@ -790,7 +787,6 @@ const getHandDetailsUint32AsReadable = (uint32) => {
     }
     return { type, ranksValue, suitPattern };
 };
-
 const getIndex = (arr, target) => {
     let low = 0, high = arr.length - 1;
     while (low <= high) {
@@ -808,5 +804,5 @@ const hand = ["6s", "4h", "6d", "4s", "7c"]
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
 // getCacheSaved();
 const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
-const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
+// const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
 // console.log(idx, "ENDS");
