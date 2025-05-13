@@ -22,7 +22,7 @@ const cardsLength = Object.keys(CARDS).length
 const keysMap = new Map();
 const scoresMap = new Map();
 const evsMap = new Map();
-const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -361,9 +361,9 @@ const getCacheCreated = () => {
 
     cache.sort((a, b) => a[0] - b[0]);
     const N = cache.length;
-    const HANDS_UINT32 = new Uint32Array(N);
-    const HANDS_DETAILS_UINT32 = new Uint32Array(N);
-    const HANDS_SCORE = new Uint32Array(N);
+    HANDS_UINT32 = new Uint32Array(N);
+    HANDS_DETAILS_UINT32 = new Uint32Array(N);
+    HANDS_SCORE = new Uint32Array(N);
 
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
@@ -371,11 +371,11 @@ const getCacheCreated = () => {
         HANDS_SCORE[i] = cache[i][2];
     }
 
-    return {
-        HANDS_UINT32,
-        HANDS_DETAILS_UINT32,
-        HANDS_SCORE
-    };
+    // return {
+    //     HANDS_UINT32,
+    //     HANDS_DETAILS_UINT32,
+    //     HANDS_SCORE
+    // };
 };
 
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
