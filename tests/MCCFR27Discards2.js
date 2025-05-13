@@ -22,7 +22,7 @@ const cardsLength = Object.keys(CARDS).length
 const keysMap = new Map();
 const scoresMap = new Map();
 const evsMap = new Map();
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -365,17 +365,35 @@ const getCacheCreated = () => {
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
 
+    const handsCanonicalSeen = new Set();
+    const handsCanonical = [];
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
         HANDS_SCORE[i] = cache[i][2];
+        if (!handsCanonicalSeen.has(cache[i][1])) {
+            handsCanonicalSeen.add(cache[i][1]);
+            handsCanonical.push(i);
+        }
     }
 
-    // return {
-    //     HANDS_UINT32,
-    //     HANDS_DETAILS_UINT32,
-    //     HANDS_SCORE
-    // };
+    HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
+};
+
+const getIndexByBinarySearch = (arr, target) => {
+    let low = 0;
+    let high = arr.length - 1;
+    while (low <= high) {
+        const mid = (low + high) >>> 1;
+        const val = arr[mid];
+        if (val === target) return mid;
+        if (val < target) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return -1;
 };
 
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
@@ -593,7 +611,8 @@ function getActionApplied(hand, deck, actionIndex) {
     handNew.sort();
 
     const handUint32 = getHandReadableAsUint32(handNew);
-    const handIndex = HANDS_UINT32.indexOf(handUint32);
+    // const handIndex = HANDS_UINT32.indexOf(handUint32);
+    const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
     const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
     const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
     const handScore = HANDS_SCORE[handIndex];
@@ -753,21 +772,20 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
         getCacheCreated();
-        const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
+        // const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = 100;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
-            for (let i = 0; i < handsDetailsUint32Uniq.length; ++i) {
-                const handDetailsUint32 = handsDetailsUint32Uniq[i];
-                const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
-                const handIndex = HANDS_DETAILS_UINT32.indexOf(handDetailsUint32);
+            for (let i = 0; i < HANDS_CANONICAL_INDEX.length; ++i) {
+                const handIndex = HANDS_CANONICAL_INDEX[i];
                 const handUint32 = HANDS_UINT32[handIndex];
-                const hand = getHandUint32AsReadable(handUint32);
+                const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
                 const handScore = HANDS_SCORE[handIndex];
+                const hand = getHandUint32AsReadable(handUint32);
+                const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
                 const handObj = { index: handIndex, hand: hand, details: handDetails, score: handScore };
-
 
                 const deck = Object.values(DECK).filter(card => !hand.includes(card));
                 getArrayShuffled(deck);
@@ -775,20 +793,20 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const handX = deck.splice(0, 5);
                 handX.sort();
                 const handXUint32 = getHandReadableAsUint32(handX);
-                const handXIndex = HANDS_UINT32.indexOf(handXUint32);
+                const handXIndex = getIndexByBinarySearch(HANDS_UINT32, handXUint32);
                 const handXDetailsUint32 = HANDS_DETAILS_UINT32[handXIndex];
                 const handXDetails = getHandDetailsUint32AsReadable(handXDetailsUint32);
                 const handXScore = HANDS_SCORE[handXIndex];
                 const handXObj = { index: handXIndex, hand: handX, details: handXDetails, score: handXScore };
 
-                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
+                // getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
-                if ((i+1) % flushInterval === 0) {
-                    await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
-                }
+                // if ((i+1) % flushInterval === 0) {
+                //     await getDataFlushed(workerId);
+                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                //     timeNow = performance.now();
+                //     console.log(`[MCCFR] WORKER_ID=${workerId} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                // }
             }
 
             // if ((s+1) % flushInterval === 0) {
