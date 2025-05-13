@@ -630,8 +630,8 @@ function getRandomActionIndex(strat) {
 
 function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
-    const key0 = `${h0.details.ranksValue}:${h0.details.suitPattern},${roundNumber}`;
-    const key1 = `${h1.details.ranksValue}:${h1.details.suitPattern},${roundNumber}`;
+    const key0 = `${h0.details.ranksValue.join('|')}:${h0.details.suitPattern},${roundNumber}`;
+    const key1 = `${h1.details.ranksValue.join('|')}:${h1.details.suitPattern},${roundNumber}`;
 
     if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
     if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
