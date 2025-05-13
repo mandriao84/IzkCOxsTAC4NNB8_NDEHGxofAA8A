@@ -136,10 +136,75 @@ const getArrayShuffled = (array) => {
 };
 
 const getHandKey = (hand) => {
+    // let cardsRankValue = [];
+    // const cardsSuitValue = [];
+
+    // let cardRankValueMax = -1;
+    // let cardSuitByRankValueMax = null;
+    // for (let i = 0; i < hand.length; i++) {
+    //     const rankChar = hand[i][0];
+    //     const rankValue = CARDS[rankChar];
+    //     const suitChar = hand[i][1];
+    //     if (rankValue > cardRankValueMax) {
+    //         cardRankValueMax = rankValue;
+    //         cardSuitByRankValueMax = suitChar;
+    //     }
+    //     cardsRankValue.push(rankValue);
+    //     cardsSuitValue.push(suitChar);
+    // }
+    // cardsRankValue.sort((a, b) => b - a);
+    // cardsSuitValue.sort((a, b) => b - a);
+
+    // const cardsRankValueCount = cardsRankValue.reduce((obj, rank) => {
+    //     obj[rank] = (obj[rank] || 0) + 1;
+    //     return obj
+    // }, {})
+    // const cardsSuitValueCount = cardsSuitValue.reduce((obj, suit) => {
+    //     obj[suit] = (obj[suit] || 0) + 1;
+    //     return obj;
+    // }, {});
+
+    // const cardsSuitValueCountKeys = Object.keys(cardsSuitValueCount);
+    // const straightWithAs = [13, 4, 3, 2, 1];
+    // const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
+    // if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
+
+    // const cardsRankValueCountKeys = Object.keys(cardsRankValueCount);
+    // const cardsRankValueCountKey1 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 1).sort((a, b) => b - a);
+    // const cardsRankValueCountKey2 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 2).sort((a, b) => b - a);
+    // const cardsRankValueCountKey3 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 3).sort((a, b) => b - a);
+    // const cardsRankValueCountKey4 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 4).sort((a, b) => b - a);
+
+    // const isHigh = cardsRankValueCountKey1.length === 5;
+    // const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
+    // const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
+    // const isThree = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2;
+    // const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    // const isFlush = cardsSuit.every(suit => suit === cardsSuit[0]);
+    // const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
+    // const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
+    // const isStraightFlush = isStraight && isFlush;
+    // const details = function () {
+    //     if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardsRankValueCountKey1] };
+    //     else if (isFour) return { type: 'four', ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] };
+    //     else if (isFull) return { type: 'full', ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] };
+    //     else if (isFlush) return { type: 'flush', ranks: [...cardsRankValueCountKey1] };
+    //     else if (isStraight) return { type: 'straight', ranks: [...cardsRankValueCountKey1] };
+    //     else if (isThree) return { type: 'three', ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] };
+    //     else if (isPairs) return { type: 'pairs', ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] };
+    //     else if (isPair) return { type: 'pair', ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] };
+    //     else return { type: 'high', ranks: [...cardsRankValueCountKey1] };
+    // }();
+
+
+
+
+
     let handCopy = [...hand];
     const getCardRank = (card) => card.slice(0, -1);
     const getCardValue = (card) => CARDS[getCardRank(card)];
     const getCardSuit = (card) => card.slice(-1);
+
     const cardsRank = handCopy.map(getCardRank).sort((a, b) => CARDS[b] - CARDS[a]);
     const cardsRankPattern = cardsRank.join('|');
     let cardsValue = handCopy.map(getCardValue).sort((a, b) => b - a);
@@ -169,7 +234,7 @@ const getHandKey = (hand) => {
     const isPairs = cardsCountKey2.length === 2 && cardsCountKey1.length === 1;
     const isThree = cardsCountKey3.length === 1 && cardsCountKey1.length === 2;
     const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = new Set(cardsSuit).size === 1
+    const isFlush = cardsSuit.every(suit => suit === cardsSuit[0]);
     const isFull = cardsCountKey3.length === 1 && cardsCountKey2.length === 1;
     const isFour = cardsCountKey4.length === 1 && cardsCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
@@ -459,12 +524,12 @@ function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys =
                 const { key, values } = JSON.parse(trimmed);
 
                 if (p.endsWith('regrets.ndjson')) {
-                    if (keys?.includes(key)) regretSum.set(key, Float64Array.from(values));
-                    if (!keys) regretSum.set(key, Float64Array.from(values));
+                    if (keys?.includes(key)) regretSum.set(key, Float32Array.from(values));
+                    if (!keys) regretSum.set(key, Float32Array.from(values));
                 } else if (p.endsWith('strategies.ndjson')) {
-                    if (keys?.includes(key)) strategySum.set(key, Float64Array.from(values));
+                    if (keys?.includes(key)) strategySum.set(key, Float32Array.from(values));
                     if (!keys) {
-                        strategySum.set(key, Float64Array.from(values));
+                        strategySum.set(key, Float32Array.from(values));
                         const strategy = getStrategyReadable(key);
                         ndjsons[i] += (JSON.stringify(strategy) + '\n');
                     }
@@ -488,7 +553,7 @@ async function getDataFlushed(threadId = null) {
         const lines = entries.map(([key, values]) => {
             const entry = { 
                 key, 
-                values: values instanceof Float64Array ? [...values] : values 
+                values: values instanceof Float32Array ? [...values] : values 
             };
             return JSON.stringify(entry);
         });
@@ -548,7 +613,7 @@ function getDataFlushedMerged(dir) {
                 if (!trimmed) continue;
                 const { key, values } = JSON.parse(line);
                 if (!map.has(key)) {
-                    if (values instanceof Float64Array) map.set(key, Float64Array.from(values));
+                    if (values instanceof Float32Array) map.set(key, Float32Array.from(values));
                     else map.set(key, values);
                 } else {
                     const arr = map.get(key);
@@ -618,7 +683,7 @@ function getActionApplied(hand, deck, actionIdx) {
 }
 
 function getStrategyFromRegret(regrets) {
-    const strat = new Float64Array(ACTION_COUNT);
+    const strat = new Float32Array(ACTION_COUNT);
     let normaliser = 0;
     for (let i = 0; i < ACTION_COUNT; ++i) {
         strat[i] = Math.max(0, regrets[i]);
@@ -657,8 +722,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     ++evSum.get(key0)[0];
     ++evSum.get(key1)[0];
 
-    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float64Array(ACTION_COUNT)), regretSum.get(key0));
-    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float64Array(ACTION_COUNT)), regretSum.get(key1));
+    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float32Array(ACTION_COUNT)), regretSum.get(key0));
+    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float32Array(ACTION_COUNT)), regretSum.get(key1));
 
     const strat0 = getStrategyFromRegret(reg0);
     const strat1 = getStrategyFromRegret(reg1);
@@ -666,8 +731,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
     // getNashEquilibrium(key0, reg0, strat0);
     // getNashEquilibrium(key1, reg1, strat1);
 
-    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float64Array(ACTION_COUNT)), strategySum.get(key0));
-    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float64Array(ACTION_COUNT)), strategySum.get(key1));
+    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float32Array(ACTION_COUNT)), strategySum.get(key0));
+    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float32Array(ACTION_COUNT)), strategySum.get(key1));
 
     for (let i = 0; i < ACTION_COUNT; ++i) {
         sum0[i] += strat0[i];
@@ -718,8 +783,8 @@ function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFroze
 
     if (isRoundNumberFrozen) { return util0; }
 
-    const altUtil0 = new Float64Array(ACTION_COUNT);
-    const altUtil1 = new Float64Array(ACTION_COUNT);
+    const altUtil0 = new Float32Array(ACTION_COUNT);
+    const altUtil1 = new Float32Array(ACTION_COUNT);
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         const deckA = [...deck];
