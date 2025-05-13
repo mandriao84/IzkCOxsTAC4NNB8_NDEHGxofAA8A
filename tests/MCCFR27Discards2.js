@@ -241,31 +241,43 @@ const getHandScore = ({ type, ranksValue }) => {
 const getCacheSaved = () => {
     fs.mkdirSync(path.dirname(PATH_KEYS), { recursive: true });
     fs.closeSync(fs.openSync(PATH_KEYS, 'a'));
+    const ALL_HANDS_UINT32 = getAllHandsAsUint32();
 
     let ndjson = "";
-    for (const handUint32 of getAllHandsAsUint32()) {
-        const hand = getHandUint32AsReadable(handUint32);
+    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
+        const handUint32Raw = ALL_HANDS_UINT32[i];
+        const hand = getHandUint32AsReadable(handUint32Raw).sort();
+        const handId = hand.join('');
         const { detailsUint32, score } = getHandDetails(hand);
-        ndjson += JSON.stringify({ hand, handUint32, detailsUint32, score }) + "\n";
+        const handUint32 = getHandReadableAsUint32(hand);
+        ndjson += JSON.stringify({ handId, hand, handUint32, detailsUint32, score }) + "\n";
     }
     fs.writeFileSync(PATH_KEYS, ndjson, 'utf8');
 }
 
 const getCacheCreated = () => {
-    const HANDS_UINT32 = [];
-    const HANDS = [];
-    const HANDS_DETAILS_UINT32 = [];
-    const HANDS_SCORE = [];
-    for (const handUint32 of getAllHandsAsUint32()) {
-        const hand = getHandUint32AsReadable(handUint32);
+    const ALL_HANDS_UINT32 = getAllHandsAsUint32();
+    const N = ALL_HANDS_UINT32.length;
+    const HANDS_UINT32 = new Uint32Array(N);
+    const HANDS_DETAILS_UINT32 = new Uint32Array(N);
+    const HANDS_SCORE = new Uint32Array(N);
+
+    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
+        const handUint32Raw = ALL_HANDS_UINT32[i];
+        const hand = getHandUint32AsReadable(handUint32Raw).sort();
         const { detailsUint32, score } = getHandDetails(hand);
-        HANDS_UINT32.push(handUint32);
-        HANDS.push(hand);
-        HANDS_DETAILS_UINT32.push(detailsUint32);
-        HANDS_SCORE.push(score);
+        const handUint32 = getHandReadableAsUint32(hand);
+        HANDS_UINT32[i] = handUint32;
+        HANDS_DETAILS_UINT32[i] = detailsUint32;
+        HANDS_SCORE[i] = score;
     }
-    return { HANDS_UINT32, HANDS, HANDS_DETAILS_UINT32, HANDS_SCORE };
-}
+
+    return {
+        HANDS_UINT32,
+        HANDS_DETAILS_UINT32,
+        HANDS_SCORE
+    };
+};
 
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
 // sudo pkill -9 -f "MCCFR27Discards2.js"
@@ -693,10 +705,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getDataNashed();
 })();
 
-const DECK2 = Uint8Array.from({ length: 52 }, (_, i) => i)
+
 const SUITS = ['c', 'd', 'h', 's'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-function* getAllHandsAsUint32() {
+
+const getAllHandsAsUint32 = () => {
     const getHandAsUint32 = (hand) => {
         let key = 0;
         for (let i = 0; i < 5; i++) {
@@ -705,16 +718,21 @@ function* getAllHandsAsUint32() {
         return key >>> 0;
     };
 
+    const DECK = Uint8Array.from({ length: 52 }, (_, i) => i);
     const k = 5;
-    const n = DECK2.length;
+    const n = DECK.length;
+
+    const total = (52 * 51 * 50 * 49 * 48) / (5 * 4 * 3 * 2 * 1); // C(52, 5)
+    const result = new Uint32Array(total);
+
     const idx = new Uint8Array(k);
     for (let i = 0; i < k; i++) idx[i] = i;
 
-    const hand = new Uint8Array(5);
-
+    const hand = new Uint8Array(k);
+    let pos = 0;
     while (true) {
-        for (let i = 0; i < k; i++) hand[i] = DECK2[idx[i]];
-        yield getHandAsUint32(hand);
+        for (let i = 0; i < k; i++) hand[i] = DECK[idx[i]];
+        result[pos++] = getHandAsUint32(hand);
 
         let i = k - 1;
         while (i >= 0 && idx[i] === n - k + i) i--;
@@ -722,7 +740,9 @@ function* getAllHandsAsUint32() {
         idx[i]++;
         for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
     }
-}
+
+    return result;
+};
 
 const getHandReadableAsUint32 = (hand) => {
     let uint32 = 0;
@@ -766,11 +786,24 @@ const getHandDetailsUint32AsReadable = (uint32) => {
     return { type, ranksValue, suitPattern };
 };
 
-// const hand = ["6s", "4h", "6d", "4s", "6c"]
-// // console.log(getHandReadableAsUint32(hand));
+const getIndex = (arr, target) => {
+    let low = 0, high = arr.length - 1;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (arr[mid] === target) return mid;
+        if (arr[mid] < target) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+};
+
+const hand = ["6s", "4h", "6d", "4s", "6c"]
 // // console.log(getHandUint32AsReadable(getHandReadableAsUint32(hand)));
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
-const { HANDS_UINT32, HANDS, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
-console.log("ENDS")
+// getCacheSaved();
+const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
+const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
+console.log(idx, HANDS_UINT32.findIndex(r => r === getHandReadableAsUint32(hand.sort())));
+// console.log(idx, "ENDS");
