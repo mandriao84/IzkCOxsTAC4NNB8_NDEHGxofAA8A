@@ -598,7 +598,6 @@ function getActionApplied(hand, deck, actionIndex) {
     const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
     const handScore = HANDS_SCORE[handIndex];
     const handObj = { index: handIndex, hand: handNew, details: handDetails, score: handScore };
-    console.log(hand, handObj)
     return handObj;
 }
 
