@@ -242,6 +242,7 @@ const getCacheSaved = () => {
     fs.mkdirSync(path.dirname(PATH_KEYS), { recursive: true });
     fs.closeSync(fs.openSync(PATH_KEYS, 'a'));
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
+    ALL_HANDS_UINT32.sort();
 
     let ndjson = "";
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
@@ -257,6 +258,7 @@ const getCacheSaved = () => {
 
 const getCacheCreated = () => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
+    ALL_HANDS_UINT32.sort();
     const N = ALL_HANDS_UINT32.length;
     const HANDS_UINT32 = new Uint32Array(N);
     const HANDS_DETAILS_UINT32 = new Uint32Array(N);
