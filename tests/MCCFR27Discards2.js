@@ -135,6 +135,7 @@ const getArrayShuffled = (array) => {
     return array;
 };
 const getHandKey2 = (hand) => {
+    const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
     let cardsRankValue = [];
     const cardsSuitValue = [];
 
@@ -198,11 +199,11 @@ const getHandKey2 = (hand) => {
     const cardsSuitPattern = function () {
         const cardsSuitByRankValueMax = cardsSuitValue.filter(suit => suit === cardSuitByRankValueMax);
         if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 2 && cardsSuitByRankValueMax.length === 1) {
-            return '!';
+            return 2; // 4 SUITED + 1 OFFSUITED (HIGHEST CARD)
         } else if (cardsSuitValueCountKeys.length === 1) {
-            return '-';
+            return 1; // SUITED
         } else {
-            return '*';
+            return 0; // OFFSUITED
         }
     }()
 
@@ -210,6 +211,9 @@ const getHandKey2 = (hand) => {
 
     // return { key, hand: handCopy, cardsValue, cardsSuit, type: details.type, ranks: details.ranks };
 }
+
+
+
 const getHandKey = (hand) => {
     let handCopy = [...hand];
     const getCardRank = (card) => card.slice(0, -1);
@@ -931,25 +935,43 @@ function* getAllHandsAsUint32() {
 }
 
 const getHandReadableAsUint32 = (hand) => {
-    let key = 0;
+    let uint32 = 0;
     for (let i = 0; i < hand.length; i++) {
         const rank = RANKS.indexOf(hand[i][0]);
         const suit = SUITS.indexOf(hand[i][1]);
         const cardIndex = suit * RANKS.length + rank;
-        key |= cardIndex << (6 * (4 - i));
+        uint32 |= cardIndex << (6 * (4 - i));
     }
-    return key >>> 0;
+    return uint32 >>> 0;
 };
-const getHandUint32AsReadable = (key) => {
+const getHandUint32AsReadable = (uint32) => {
     const hand = new Array(5);
     for (let i = 0; i < hand.length; i++) {
         const shift = 6 * (4 - i);
-        const cardIndex = (key >>> shift) & 0b111111;
+        const cardIndex = (uint32 >>> shift) & 0b111111;
         const rank = RANKS[cardIndex % RANKS.length];
         const suit = SUITS[(cardIndex / RANKS.length).safe("FLOOR", 0)];
         hand[i] = rank + suit;
     }
     return hand;
+};
+const getHandKeyReadableAsUint32 = ({ ranksValue, suitPattern }) => {
+    let uint32 = 0;
+    for (let i = 0; i < ranksValue.length; i++) {
+        uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
+    }
+    uint32 = (uint32 << 2) | (suitPattern & 0b11);
+    return uint32 >>> 0;
+};
+const getHandKeyUint32AsReadable = (uint32) => {
+    const suitPattern = uint32 & 0b11;
+    const rankBits = uint32 >>> 2;
+    const ranksValue = new Array(5);
+    for (let i = 0; i < ranksValue.length; i++) {
+        const shift = 5 * (4 - i);
+        ranksValue[i] = (rankBits >>> shift) & 0b11111;
+    }
+    return { ranksValue, suitPattern };
 };
 
 // const key = ["As", "7c", "Ac", "As", "Ah"]
