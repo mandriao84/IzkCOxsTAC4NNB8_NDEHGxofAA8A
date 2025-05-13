@@ -784,12 +784,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
-                // if ((i+1) % flushInterval === 0) {
-                //     await getDataFlushed(workerId);
-                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                //     timeNow = performance.now();
-                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
-                // }
+                if ((i+1) % flushInterval === 0) {
+                    await getDataFlushed(workerId);
+                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                    timeNow = performance.now();
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                }
             }
 
             // if ((s+1) % flushInterval === 0) {
