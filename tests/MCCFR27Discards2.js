@@ -16,6 +16,8 @@ const DECK = {
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: '10c', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
 const keysMap = new Map();
 const scoresMap = new Map();
@@ -131,6 +133,98 @@ const getArrayShuffled = (array) => {
     }
     return array;
 };
+
+const getAllHandsAsUint32 = () => {
+    const getHandAsUint32 = (hand) => {
+        let key = 0;
+        for (let i = 0; i < 5; i++) {
+            key |= hand[i] << (6 * (4 - i));
+        }
+        return key >>> 0;
+    };
+
+    const DECK = Uint8Array.from({ length: 52 }, (_, i) => i);
+    const k = 5;
+    const n = DECK.length;
+
+    const total = (52 * 51 * 50 * 49 * 48) / (5 * 4 * 3 * 2 * 1); // C(52, 5)
+    const result = new Uint32Array(total);
+
+    const idx = new Uint8Array(k);
+    for (let i = 0; i < k; i++) idx[i] = i;
+
+    const hand = new Uint8Array(k);
+    let pos = 0;
+    while (true) {
+        for (let i = 0; i < k; i++) hand[i] = DECK[idx[i]];
+        result[pos++] = getHandAsUint32(hand);
+
+        let i = k - 1;
+        while (i >= 0 && idx[i] === n - k + i) i--;
+        if (i < 0) break;
+        idx[i]++;
+        for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
+    }
+
+    return result;
+};
+
+const getHandReadableAsUint32 = (hand) => {
+    let uint32 = 0;
+    for (let i = 0; i < hand.length; i++) {
+        const rank = RANKS.indexOf(hand[i][0]);
+        const suit = SUITS.indexOf(hand[i][1]);
+        const cardIndex = suit * RANKS.length + rank;
+        uint32 |= cardIndex << (6 * (4 - i));
+    }
+    return uint32 >>> 0;
+};
+
+const getHandUint32AsReadable = (uint32) => {
+    const hand = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const shift = 6 * (4 - i);
+        const cardIndex = (uint32 >>> shift) & 0b111111;
+        const rank = RANKS[cardIndex % RANKS.length];
+        const suit = SUITS[(cardIndex / RANKS.length).safe("FLOOR", 0)];
+        hand[i] = rank + suit;
+    }
+    return hand;
+};
+
+const getHandDetailsReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
+    let uint32 = 0;
+    for (let i = 0; i < ranksValue.length; i++) {
+        uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
+    }
+    uint32 = (uint32 << 2) | (suitPattern & 0b11);
+    uint32 = (uint32 << 4) | (type & 0b1111);
+    return uint32 >>> 0;
+};
+
+const getHandDetailsUint32AsReadable = (uint32) => {
+    const type = uint32 & 0b1111;
+    const suitPattern = (uint32 >>> 4) & 0b11;
+    const rankBits = uint32 >>> 6;
+    const ranksValue = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const shift = 5 * (4 - i);
+        ranksValue[i] = (rankBits >>> shift) & 0b11111;
+    }
+    return { type, ranksValue, suitPattern };
+};
+
+const getIndex = (arr, target) => {
+    let low = 0, high = arr.length - 1;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (arr[mid] === target) return mid;
+        if (arr[mid] < target) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+};
+
 const getHandDetails = (hand) => {
     const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
     let cardsRankValue = [];
@@ -653,36 +747,39 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
 
-        getCacheLoadedFromNDJSON([PATH_KEYS, PATH_SCORES, PATH_EVS]);
-        // const hands = Array.from(scoresMap.values()).map(entry => entry.hand);
-        const hands = Array.from(scoresMap.entries()).reduce((arr, entry) => {
-            const key = entry[0];
-            const hand = entry[1].hand;
-            const evKey = `${key}:R1`;
-            const ev = evsMap.get(evKey);
-            if (!ev || ev[0] < 700_000) arr.push(hand);
-            return arr;
-        }, []);
+        const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
+        const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = 100;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
-            for (let i = 0; i < hands.length; ++i) {
-                const h0 = hands[i];
-                const deck = Object.values(DECK).filter(card => !h0.includes(card));
-                getArrayShuffled(deck);
-                const h1 = deck.splice(0, 5);
-                const hkey0 = keysMap.get([...h0].sort().join(''));
-                const hkey1 = keysMap.get([...h1].sort().join(''));
-                getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen);
+            for (let i = 0; i < handsDetailsUint32Uniq.length; ++i) {
+                const handDetails = getHandDetailsUint32AsReadable(handsDetailsUint32Uniq[i]);
+                const handIndex = getIndex(HANDS_DETAILS_UINT32, handDetails);
+                const handUint32 = HANDS_UINT32[handIndex];
+                const hand = getHandUint32AsReadable(handUint32);
 
-                if ((i+1) % flushInterval === 0) {
-                    await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
-                }
+                const deck = Object.values(DECK).filter(card => !hand.includes(card));
+                getArrayShuffled(deck);
+
+                const handX = deck.splice(0, 5);
+                handX.sort();
+                const handXUint32 = getHandReadableAsUint32(handX);
+                const handXIndex = getIndex(HANDS_UINT32, handXUint32);
+
+
+
+                // const hkey0 = keysMap.get([...hand].sort().join(''));
+                // const hkey1 = keysMap.get([...h1].sort().join(''));
+                // getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen);
+
+                // if ((i+1) % flushInterval === 0) {
+                //     await getDataFlushed(workerId);
+                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                //     timeNow = performance.now();
+                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                // }
             }
 
             // if ((s+1) % flushInterval === 0) {
@@ -707,97 +804,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getDataNashed();
 })();
 
-
-const SUITS = ['c', 'd', 'h', 's'];
-const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-
-const getAllHandsAsUint32 = () => {
-    const getHandAsUint32 = (hand) => {
-        let key = 0;
-        for (let i = 0; i < 5; i++) {
-            key |= hand[i] << (6 * (4 - i));
-        }
-        return key >>> 0;
-    };
-
-    const DECK = Uint8Array.from({ length: 52 }, (_, i) => i);
-    const k = 5;
-    const n = DECK.length;
-
-    const total = (52 * 51 * 50 * 49 * 48) / (5 * 4 * 3 * 2 * 1); // C(52, 5)
-    const result = new Uint32Array(total);
-
-    const idx = new Uint8Array(k);
-    for (let i = 0; i < k; i++) idx[i] = i;
-
-    const hand = new Uint8Array(k);
-    let pos = 0;
-    while (true) {
-        for (let i = 0; i < k; i++) hand[i] = DECK[idx[i]];
-        result[pos++] = getHandAsUint32(hand);
-
-        let i = k - 1;
-        while (i >= 0 && idx[i] === n - k + i) i--;
-        if (i < 0) break;
-        idx[i]++;
-        for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
-    }
-
-    return result;
-};
-
-const getHandReadableAsUint32 = (hand) => {
-    let uint32 = 0;
-    for (let i = 0; i < hand.length; i++) {
-        const rank = RANKS.indexOf(hand[i][0]);
-        const suit = SUITS.indexOf(hand[i][1]);
-        const cardIndex = suit * RANKS.length + rank;
-        uint32 |= cardIndex << (6 * (4 - i));
-    }
-    return uint32 >>> 0;
-};
-const getHandUint32AsReadable = (uint32) => {
-    const hand = new Array(5);
-    for (let i = 0; i < 5; i++) {
-        const shift = 6 * (4 - i);
-        const cardIndex = (uint32 >>> shift) & 0b111111;
-        const rank = RANKS[cardIndex % RANKS.length];
-        const suit = SUITS[(cardIndex / RANKS.length).safe("FLOOR", 0)];
-        hand[i] = rank + suit;
-    }
-    return hand;
-};
-const getHandDetailsReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
-    let uint32 = 0;
-    for (let i = 0; i < ranksValue.length; i++) {
-        uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
-    }
-    uint32 = (uint32 << 2) | (suitPattern & 0b11);
-    uint32 = (uint32 << 4) | (type & 0b1111);
-    return uint32 >>> 0;
-};
-const getHandDetailsUint32AsReadable = (uint32) => {
-    const type = uint32 & 0b1111;
-    const suitPattern = (uint32 >>> 4) & 0b11;
-    const rankBits = uint32 >>> 6;
-    const ranksValue = new Array(5);
-    for (let i = 0; i < 5; i++) {
-        const shift = 5 * (4 - i);
-        ranksValue[i] = (rankBits >>> shift) & 0b11111;
-    }
-    return { type, ranksValue, suitPattern };
-};
-const getIndex = (arr, target) => {
-    let low = 0, high = arr.length - 1;
-    while (low <= high) {
-        const mid = (low + high) >> 1;
-        if (arr[mid] === target) return mid;
-        if (arr[mid] < target) low = mid + 1;
-        else high = mid - 1;
-    }
-    return -1;
-};
-
 const hand = ["6s", "4h", "6d", "4s", "7c"]
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
@@ -805,4 +811,6 @@ const hand = ["6s", "4h", "6d", "4s", "7c"]
 // getCacheSaved();
 const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
 // const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
-// console.log(idx, "ENDS");
+
+const hands = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
+console.log(hands.length)
