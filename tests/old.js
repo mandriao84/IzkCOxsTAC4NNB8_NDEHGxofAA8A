@@ -44,6 +44,39 @@ const getHandsDealed = (deck, cardsNumberPerHand, handsNumber) => {
     return hands;
 };
 
+const getAllHandsPossible = (handCardsNumber = 5) => {
+    const deck = Object.values(DECK);
+    const results = getAllCombinations(deck, handCardsNumber);
+    return results;
+}
+
+const getAllDiscardsK = (hand) => {
+    const n = hand.length;
+    const result = {
+        counts: Array(n + 1).fill(0),
+        k: Array(n + 1).fill().map(() => [])
+    };
+
+    const k = 1 << n; // 2^n
+
+    for (let mask = 0; mask < k; mask++) {
+        const subset = [];
+        let count = 0;
+
+        for (let i = 0; i < n; i++) {
+            if ((mask & (1 << i)) !== 0) {
+                subset.push(hand[i]);
+                count++;
+            }
+        }
+
+        result.k[count].push(subset);
+        result.counts[count]++;
+    }
+
+    return result;
+}
+
 const getAllDiscardsKSaved = () => {
     fs.mkdirSync(path.dirname(PATH_DISCARDSK), { recursive: true });
     fs.closeSync(fs.openSync(PATH_DISCARDSK, 'a'));
@@ -58,6 +91,77 @@ const getAllDiscardsKSaved = () => {
     }, '');
 
     fs.writeFileSync(PATH_DISCARDSK, result, 'utf8');
+}
+
+const getAllCombinations = (arr, k) => {
+    const nChooseK = (n, k) => {
+        if (k > n) return 0;
+        if (k > n - k) k = n - k;
+        let res = 1;
+        for (let i = 1; i <= k; i++) {
+            res = (res * (n - k + i)) / i;
+        }
+        return res | 0;
+    }
+
+    const n = arr.length;
+    if (k === 0) return [[]];
+    if (k > n) return [];
+
+    const total = nChooseK(n, k);    //  e.g. C(52,5) = 2 598 960
+    const out = new Array(total);
+
+    const idx = new Uint32Array(k);
+    for (let i = 0; i < k; i++) idx[i] = i;
+
+    let pos = 0;
+
+    while (true) {
+        const combo = new Array(k);
+        for (let i = 0; i < k; i++) combo[i] = arr[idx[i]];
+        out[pos++] = combo;
+
+        let i = k - 1;
+        while (i >= 0 && idx[i] === n - k + i) i--;
+        if (i < 0) break;
+        idx[i]++;
+        for (let j = i + 1; j < k; j++) idx[j] = idx[j - 1] + 1;
+    }
+
+    return out;
+}
+
+const getCacheLoadedFromNDJSON = (paths) => {
+    for (let i = 0; i < paths.length; i++) {
+        const p = paths[i];
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.closeSync(fs.openSync(p, 'a'));
+        const content = fs.readFileSync(p, 'utf8');
+        const lines = content.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            const entry = trimmed ? JSON.parse(trimmed) : null;
+            if (entry?.key) {
+                if (p.includes("keys.ndjson")) {
+                    const obj = { hand: entry.hand, value: entry.value };
+                    Object.freeze(obj.value);
+                    Object.freeze(obj.hand);   
+                    keysMap.set(entry.key, obj);
+                } else if (p.includes("scores.ndjson")) {
+                    scoresMap.set(entry.key, { hand: entry.hand, value: entry.value });
+                } else if (p.includes("discardsk.ndjson")) {
+                    discardskMap.set(entry.key, entry.value);
+                } else if (p.includes("discardsev.ndjson")) {
+                    discardsMap.set(entry.key, { cards: entry.cards, value: entry.value });
+                } else if (p.includes("standsev.ndjson")) {
+                    standsevMap.set(entry.key, entry.value);
+                } else if (p.includes("evs.ndjson")) {
+                    evsMap.set(entry.key, entry.values);
+                }
+            }
+        }
+    }
 }
 
 const getHandExpectedValue = (hand, deckLeft, roundNumber) => {
