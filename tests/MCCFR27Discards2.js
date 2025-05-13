@@ -22,6 +22,7 @@ const cardsLength = Object.keys(CARDS).length
 const keysMap = new Map();
 const scoresMap = new Map();
 const evsMap = new Map();
+const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -580,23 +581,24 @@ function getNashEquilibrium(key, regret, strategy) {
     console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
 }
 
-function getScores(handA, handB) {
-    const keyA = keysMap.get([...handA].sort().join('')).value;
-    const scoreA = scoresMap.get(keyA).value;
-    const keyB = keysMap.get([...handB].sort().join('')).value;
-    const scoreB = scoresMap.get(keyB).value;
+function getScores(scoreA, scoreB) {
     return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
 }
 
-function getActionApplied(hand, deck, actionIdx) {
-    const discardIndices = ACTIONS[actionIdx];
+function getActionApplied(hand, deck, actionIndex) {
+    const discardIndices = ACTIONS[actionIndex];
     const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
     const cardsReceived = deck.splice(0, discardIndices.length);
     const handNew = [...cardsKept, ...cardsReceived];
+    handNew.sort();
 
-
-    const handNewKey = keysMap.get([...handNew].sort().join(''));
-    return handNewKey;
+    const handUint32 = getHandReadableAsUint32(handNew);
+    const handIndex = HANDS_UINT32.indexOf(handUint32);
+    const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
+    const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
+    const handScore = HANDS_SCORE[handIndex];
+    const handObj = { index: handIndex, hand: handNew, details: handDetails, score: handScore };
+    return handObj;
 }
 
 function getStrategyFromRegret(regrets) {
@@ -691,7 +693,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const deckNext = [...deck];
     const h0Next = getActionApplied(h0.hand, deckNext, a0);
     const h1Next = getActionApplied(h1.hand, deckNext, a1);
-    // if (!hkey0Next?.hand || !hkey1Next?.hand) console.log(deckNext.length, hkey0Next?.hand, hkey1Next?.hand)
+    // if (!h0Next?.hand || !h1Next?.hand) console.log(deckNext.length, h0Next?.hand, h1Next?.hand)
 
     const util0 = roundNumber <= 1
         ? getScores(h0Next.score, h1Next.score)
@@ -707,7 +709,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
         const deckA = [...deck];
         const h0Alt = getActionApplied(h0.hand, deckA, ai);
         const h1Fix = getActionApplied(h1.hand, deckA, a1);
-        // if (!hkey0Alt?.hand || !hkey1Fix?.hand) console.log(deckA.length, hkey0Alt?.hand, hkey1Fix?.hand)
+        // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckA.length, h0Alt?.hand, h1Fix?.hand)
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(h0Alt.score, h1Fix.score)
@@ -718,7 +720,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
         const deckA = [...deck];
         const h0Fix = getActionApplied(h0.hand, deckA, a0);
         const h1Alt = getActionApplied(h1.hand, deckA, ai);
-        // if (!hkey0Fix?.hand || !hkey1Alt?.hand) console.log(deckA.length, hkey0Fix?.hand, hkey1Alt?.hand)
+        // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckA.length, h0Fix?.hand, h1Alt?.hand)
 
         altUtil1[ai] = roundNumber <= 1
             ? -getScores(h0Fix.score, h1Alt.score)
@@ -750,8 +752,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     } else {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
-
-        const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
         const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = 100;
