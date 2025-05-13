@@ -246,8 +246,7 @@ const getCacheSaved = () => {
 
     let ndjson = "";
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-        const handUint32Raw = ALL_HANDS_UINT32[i];
-        const hand = getHandUint32AsReadable(handUint32Raw).sort();
+        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
         const handId = hand.join('');
         const { detailsUint32, score } = getHandDetails(hand);
         const handUint32 = getHandReadableAsUint32(hand);
@@ -257,21 +256,25 @@ const getCacheSaved = () => {
 }
 
 const getCacheCreated = () => {
-    const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    ALL_HANDS_UINT32.sort();
-    const N = ALL_HANDS_UINT32.length;
+    const allHands = getAllHandsAsUint32();
+    const cache = [];
+    for (let i = 0; i < allHands.length; i++) {
+        const hand = getHandUint32AsReadable(allHands[i]).sort();
+        const handUint32 = getHandReadableAsUint32(hand);
+        const { detailsUint32, score } = getHandDetails(hand);
+        cache.push([handUint32, detailsUint32, score]);
+    }
+
+    cache.sort((a, b) => a[0] - b[0]);
+    const N = cache.length;
     const HANDS_UINT32 = new Uint32Array(N);
     const HANDS_DETAILS_UINT32 = new Uint32Array(N);
     const HANDS_SCORE = new Uint32Array(N);
 
-    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-        const handUint32Raw = ALL_HANDS_UINT32[i];
-        const hand = getHandUint32AsReadable(handUint32Raw).sort();
-        const { detailsUint32, score } = getHandDetails(hand);
-        const handUint32 = getHandReadableAsUint32(hand);
-        HANDS_UINT32[i] = handUint32;
-        HANDS_DETAILS_UINT32[i] = detailsUint32;
-        HANDS_SCORE[i] = score;
+    for (let i = 0; i < N; i++) {
+        HANDS_UINT32[i] = cache[i][0];
+        HANDS_DETAILS_UINT32[i] = cache[i][1];
+        HANDS_SCORE[i] = cache[i][2];
     }
 
     return {
@@ -799,13 +802,11 @@ const getIndex = (arr, target) => {
     return -1;
 };
 
-const hand = ["6s", "4h", "6d", "4s", "6c"]
-// // console.log(getHandUint32AsReadable(getHandReadableAsUint32(hand)));
+const hand = ["6s", "4h", "6d", "4s", "7c"]
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
 // getCacheSaved();
 const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
 const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
-console.log(idx, HANDS_UINT32.findIndex(r => r === getHandReadableAsUint32(hand.sort())));
 // console.log(idx, "ENDS");
