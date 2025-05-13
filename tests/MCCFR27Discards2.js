@@ -10,10 +10,10 @@ const PATH_STRATEGIES = path.join(PATH_RESULTS, 'strategies.ndjson');
 const PATH_REGRETS = path.join(PATH_RESULTS, 'regrets.ndjson');
 const PATH_EVS = path.join(PATH_RESULTS, 'evs.ndjson');
 const DECK = {
-    1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: '10s', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
-    14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: '10h', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
-    27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: '10d', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
-    40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: '10c', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
+    1: '2s', 2: '3s', 3: '4s', 4: '5s', 5: '6s', 6: '7s', 7: '8s', 8: '9s', 9: 'Ts', 10: 'Js', 11: 'Qs', 12: 'Ks', 13: 'As',
+    14: '2h', 15: '3h', 16: '4h', 17: '5h', 18: '6h', 19: '7h', 20: '8h', 21: '9h', 22: 'Th', 23: 'Jh', 24: 'Qh', 25: 'Kh', 26: 'Ah',
+    27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
+    40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
@@ -215,13 +215,15 @@ const getHandDetailsUint32AsReadable = (uint32) => {
 };
 
 const getIndex = (arr, target) => {
-    let low = 0, high = arr.length - 1;
-    while (low <= high) {
-        const mid = (low + high) >> 1;
-        if (arr[mid] === target) return mid;
-        if (arr[mid] < target) low = mid + 1;
-        else high = mid - 1;
+    let i = 0, j = arr.length - 1;
+
+    while (i <= j) {
+        if (arr[i] === target) return i;
+        if (arr[j] === target) return j;
+        i++;
+        j--;
     }
+
     return -1;
 };
 
@@ -751,12 +753,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = 100;
-        const iterations = 100_000;
+        const iterations = 100;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < handsDetailsUint32Uniq.length; ++i) {
-                const handDetails = getHandDetailsUint32AsReadable(handsDetailsUint32Uniq[i]);
-                const handIndex = getIndex(HANDS_DETAILS_UINT32, handDetails);
+                const handDetailsUint32 = handsDetailsUint32Uniq[i];
+                const handIndex = HANDS_DETAILS_UINT32.indexOf(handDetailsUint32);
                 const handUint32 = HANDS_UINT32[handIndex];
                 const hand = getHandUint32AsReadable(handUint32);
 
@@ -766,7 +768,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const handX = deck.splice(0, 5);
                 handX.sort();
                 const handXUint32 = getHandReadableAsUint32(handX);
-                const handXIndex = getIndex(HANDS_UINT32, handXUint32);
+                const handXIndex = HANDS_UINT32.indexOf(handXUint32);
 
 
 
@@ -793,10 +795,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-        // getAllHandsKeySaved();
+    // getAllHandsKeySaved();
     // getAllHandsScoreSaved();
     // getAllDiscardsKSaved();
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
@@ -804,13 +806,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getDataNashed();
 })();
 
-const hand = ["6s", "4h", "6d", "4s", "7c"]
+// const hand = ["6s", "4h", "6d", "4s", "7c"]
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
 // getCacheSaved();
-const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
+// const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
 // const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
-
-const hands = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
-console.log(hands.length)
