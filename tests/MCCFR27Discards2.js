@@ -215,18 +215,18 @@ const getHandDetailsUint32AsReadable = (uint32) => {
     return { type, ranksValue, suitPattern };
 };
 
-const getIndex = (arr, target) => {
-    let i = 0, j = arr.length - 1;
+// const getIndex = (arr, target) => {
+//     let i = 0, j = arr.length - 1;
 
-    while (i <= j) {
-        if (arr[i] === target) return i;
-        if (arr[j] === target) return j;
-        i++;
-        j--;
-    }
+//     while (i <= j) {
+//         if (arr[i] === target) return i;
+//         if (arr[j] === target) return j;
+//         i++;
+//         j--;
+//     }
 
-    return -1;
-};
+//     return -1;
+// };
 
 const getHandDetails = (hand) => {
     const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
@@ -598,6 +598,7 @@ function getActionApplied(hand, deck, actionIndex) {
     const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
     const handScore = HANDS_SCORE[handIndex];
     const handObj = { index: handIndex, hand: handNew, details: handDetails, score: handScore };
+    console.log(hand, handObj)
     return handObj;
 }
 
@@ -780,11 +781,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const handXDetails = getHandDetailsUint32AsReadable(handXDetailsUint32);
                 const handXScore = HANDS_SCORE[handXIndex];
                 const handXObj = { index: handXIndex, hand: handX, details: handXDetails, score: handXScore };
-                console.log(handObj);
-                console.log(handXObj);
 
-
-                // getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
+                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
                 // if ((i+1) % flushInterval === 0) {
                 //     await getDataFlushed(workerId);
@@ -805,9 +803,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-    // getAllHandsKeySaved();
-    // getAllHandsScoreSaved();
-    // getAllDiscardsKSaved();
+    // getCacheSaved();
     getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
