@@ -626,10 +626,10 @@ function getRandomActionIndex(strat) {
     return (Math.random() * strat.length).safe("FLOOR", 0);
 }
 
-function getDiscardsSimulated(hkey0, hkey1, deck, roundNumber, roundNumbersFrozen) {
+function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
-    const key0 = `${hkey0.value}:R${roundNumber}`;
-    const key1 = `${hkey1.value}:R${roundNumber}`;
+    const key0 = `${h0.handDetailsUint32},${roundNumber}`;
+    const key1 = `${h1.handDetailsUint32},${roundNumber}`;
 
     if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
     if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
@@ -753,7 +753,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = 100;
-        const iterations = 100;
+        const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < handsDetailsUint32Uniq.length; ++i) {
@@ -763,7 +763,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const handUint32 = HANDS_UINT32[handIndex];
                 const hand = getHandUint32AsReadable(handUint32);
                 const handScore = HANDS_SCORE[handIndex];
-                const handObj = { handIndex, hand, handDetails, handScore };
+                const handObj = { handIndex, hand, handDetailsUint32, handDetails, handScore };
 
 
                 const deck = Object.values(DECK).filter(card => !hand.includes(card));
@@ -773,11 +773,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 handX.sort();
                 const handXUint32 = getHandReadableAsUint32(handX);
                 const handXIndex = HANDS_UINT32.indexOf(handXUint32);
-                const handXDetails = HANDS_DETAILS_UINT32[handXIndex];
+                const handXDetailsUint32 = HANDS_DETAILS_UINT32[handXIndex];
+                const handXDetails = getHandDetailsUint32AsReadable(handXDetailsUint32);
                 const handXScore = HANDS_SCORE[handXIndex];
-                const handXObj = { handIndex: handXIndex, hand: handX, handDetails: handXDetails, handScore: handXScore };
+                const handXObj = { handIndex: handXIndex, hand: handX, handDetailsUint32: handXDetailsUint32, handDetails: handXDetails, handScore: handXScore };
+                console.log(handObj);
+                console.log(handXObj);
 
-                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
+
+                // getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
                 // if ((i+1) % flushInterval === 0) {
                 //     await getDataFlushed(workerId);
