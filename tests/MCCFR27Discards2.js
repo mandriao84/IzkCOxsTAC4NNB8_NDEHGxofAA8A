@@ -832,6 +832,3 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
-// getCacheSaved();
-// const { HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE } = getCacheCreated();
-// const idx = getIndex(HANDS_UINT32, getHandReadableAsUint32(hand.sort()));
