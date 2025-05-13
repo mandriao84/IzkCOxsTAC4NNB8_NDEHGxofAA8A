@@ -611,7 +611,6 @@ function getActionApplied(hand, deck, actionIndex) {
     handNew.sort();
 
     const handUint32 = getHandReadableAsUint32(handNew);
-    // const handIndex = HANDS_UINT32.indexOf(handUint32);
     const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
     const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
     const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
@@ -799,14 +798,14 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const handXScore = HANDS_SCORE[handXIndex];
                 const handXObj = { index: handXIndex, hand: handX, details: handXDetails, score: handXScore };
 
-                // getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
+                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
 
-                // if ((i+1) % flushInterval === 0) {
-                //     await getDataFlushed(workerId);
-                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                //     timeNow = performance.now();
-                //     console.log(`[MCCFR] WORKER_ID=${workerId} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
-                // }
+                if ((i+1) % flushInterval === 0) {
+                    await getDataFlushed(workerId);
+                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                    timeNow = performance.now();
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                }
             }
 
             // if ((s+1) % flushInterval === 0) {
