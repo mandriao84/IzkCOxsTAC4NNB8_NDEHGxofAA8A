@@ -298,23 +298,23 @@ const getHandScore = (keyDetails) => {
 
     let score = 0
     const multiplier = cardsLength + 1
-    if (type === 'straightFlush') {
+    if (type === 8) { // straightFlush
         score = 8000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'four') {
+    } else if (type === 7) { // four
         score = 7000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'full') {
+    } else if (type === 6) { // full
         score = 6000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'flush') {
+    } else if (type === 5) { // flush
         score = 5000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'straight') {
+    } else if (type === 4) { // straight
         score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'three') {
+    } else if (type === 3) { // three
         score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'pairs') {
+    } else if (type === 2) { // pairs
         score = 2000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 'pair') {
+    } else if (type === 1) { // pair
         score = 1000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else {
+    } else if (type === 0) { // high
         score = ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     }
 
@@ -955,25 +955,29 @@ const getHandUint32AsReadable = (uint32) => {
     }
     return hand;
 };
-const getHandKeyReadableAsUint32 = ({ ranksValue, suitPattern }) => {
+const getHandKeyReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
     let uint32 = 0;
     for (let i = 0; i < ranksValue.length; i++) {
         uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
     }
     uint32 = (uint32 << 2) | (suitPattern & 0b11);
+    uint32 = (uint32 << 4) | (type & 0b1111);
     return uint32 >>> 0;
 };
 const getHandKeyUint32AsReadable = (uint32) => {
+    const type = uint32 & 0b1111;
+    uint32 >>>= 4;
     const suitPattern = uint32 & 0b11;
-    const rankBits = uint32 >>> 2;
+    uint32 >>>= 2;
     const ranksValue = new Array(5);
     for (let i = 0; i < ranksValue.length; i++) {
         const shift = 5 * (4 - i);
-        ranksValue[i] = (rankBits >>> shift) & 0b11111;
+        ranksValue[i] = (uint32 >>> shift) & 0b11111;
     }
-    return { ranksValue, suitPattern };
+    return { type, ranksValue, suitPattern };
 };
 
-// const key = ["As", "7c", "Ac", "As", "Ah"]
-// console.log(getHandAsKey(key));
-// console.log(getKeyAsHand(getHandAsKey(key)));
+const hand = ["As", "7c", "Ac", "As", "Ah"]
+// console.log(getHandReadableAsUint32(hand));
+// console.log(getHandUint32AsReadable(getHandReadableAsUint32(hand)));
+const handKey = 
