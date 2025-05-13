@@ -179,8 +179,8 @@ const getHandKey2 = (hand) => {
     const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
     const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
     const isThree = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2;
-    const isStraight = cardsValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = cardsSuit.every(suit => suit === cardsSuit[0]);
+    const isStraight = cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = cardsSuitValue.every(suit => suit === cardsSuitValue[0]);
     const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
     const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
@@ -193,7 +193,7 @@ const getHandKey2 = (hand) => {
         else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] }; // THREE
         else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIRS
         else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIR
-        else return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
+        else if (isHigh) return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
     }();
 
     const cardsSuitPattern = function () {
@@ -980,4 +980,6 @@ const getHandKeyUint32AsReadable = (uint32) => {
 const hand = ["As", "7c", "Ac", "As", "Ah"]
 // console.log(getHandReadableAsUint32(hand));
 // console.log(getHandUint32AsReadable(getHandReadableAsUint32(hand)));
-const handKey = 
+const handKey = getHandKey2(hand)
+console.log(handKey);
+console.log(getHandKeyUint32AsReadable(handKey));
