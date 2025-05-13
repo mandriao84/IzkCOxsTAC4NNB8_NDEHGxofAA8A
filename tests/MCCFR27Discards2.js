@@ -763,7 +763,6 @@ const getHandDetailsUint32AsReadable = (uint32) => {
         const shift = 5 * (4 - i);
         ranksValue[i] = (rankBits >>> shift) & 0b11111;
     }
-
     return { type, ranksValue, suitPattern };
 };
 
