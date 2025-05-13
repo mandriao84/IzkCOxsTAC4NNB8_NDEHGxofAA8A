@@ -185,15 +185,15 @@ const getHandKey2 = (hand) => {
     const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
     const details = function () {
-        if (isStraightFlush) return { type: 'straightFlush', ranks: [...cardsRankValueCountKey1] };
-        else if (isFour) return { type: 'four', ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] };
-        else if (isFull) return { type: 'full', ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] };
-        else if (isFlush) return { type: 'flush', ranks: [...cardsRankValueCountKey1] };
-        else if (isStraight) return { type: 'straight', ranks: [...cardsRankValueCountKey1] };
-        else if (isThree) return { type: 'three', ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] };
-        else if (isPairs) return { type: 'pairs', ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] };
-        else if (isPair) return { type: 'pair', ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] };
-        else return { type: 'high', ranks: [...cardsRankValueCountKey1] };
+        if (isStraightFlush) return { type: 8, ranks: [...cardsRankValueCountKey1] }; // STRAIGHTFLUSH
+        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] }; // FOUR
+        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] }; // FULL
+        else if (isFlush) return { type: 5, ranks: [...cardsRankValueCountKey1] }; // FLUSH
+        else if (isStraight) return { type: 4, ranks: [...cardsRankValueCountKey1] }; // STRAIGHT
+        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] }; // THREE
+        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIRS
+        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIR
+        else return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
     }();
 
     const cardsSuitPattern = function () {
@@ -207,9 +207,9 @@ const getHandKey2 = (hand) => {
         }
     }()
 
-    // const key = `${cardsRankPattern}:${cardsSuitPattern}`;
+    const key = getHandKeyReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
 
-    // return { key, hand: handCopy, cardsValue, cardsSuit, type: details.type, ranks: details.ranks };
+    return { key, type: details.type };
 }
 
 
@@ -298,23 +298,23 @@ const getHandScore = (keyDetails) => {
 
     let score = 0
     const multiplier = cardsLength + 1
-    if (type === 8) { // straightFlush
+    if (type === 8) { // STRAIGHTFLUSH
         score = 8000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 7) { // four
+    } else if (type === 7) { // FOUR
         score = 7000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 6) { // full
+    } else if (type === 6) { // FULL
         score = 6000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 5) { // flush
+    } else if (type === 5) { // FLUSH
         score = 5000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 4) { // straight
+    } else if (type === 4) { // STRAIGHT
         score = 4000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 3) { // three
+    } else if (type === 3) { // THREE
         score = 3000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 2) { // pairs
+    } else if (type === 2) { // PAIRS
         score = 2000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 1) { // pair
+    } else if (type === 1) { // PAIR
         score = 1000000 + ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
-    } else if (type === 0) { // high
+    } else if (type === 0) { // HIGH
         score = ranks.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranks.length - 1 - index)), 0);
     }
 
