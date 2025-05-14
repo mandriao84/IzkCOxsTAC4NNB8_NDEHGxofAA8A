@@ -615,7 +615,6 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
         const h0Alt = getActionApplied(h0.hand, deckA, ai);
         const h1Fix = getActionApplied(h1.hand, deckA, a1);
         // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckA.length, h0Alt?.hand, h1Fix?.hand)
-        console.log(h0Alt.hand, h1Fix.hand, h0Alt.score < h1Fix.score)
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(h0Alt.score, h1Fix.score)
@@ -646,7 +645,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1/7).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 4/7).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
