@@ -700,7 +700,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    // getMCCFRComputed(2, []);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
