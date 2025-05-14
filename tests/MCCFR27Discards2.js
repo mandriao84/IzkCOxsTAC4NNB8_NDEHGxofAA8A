@@ -658,7 +658,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
         getCacheCreated();
-        // const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
         const iterations = 100_000;
