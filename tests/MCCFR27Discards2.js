@@ -416,10 +416,6 @@ async function getDataFlushed(threadId = null) {
         fs.writeFileSync(PATH_STRATEGIES, toLines(strategySum));
         fs.writeFileSync(PATH_EVS, toLines(evSum));
     }
-
-    // console.log(`[MCCFR] flushed ${regretSum.size} regrets to disk`);
-    // console.log(`[MCCFR] flushed ${strategySum.size} strategies to disk`);
-    // console.log(`[MCCFR] flushed ${evSum.size} evs to disk`);
 }
 
 function getDataFlushedMerged(dir) {
@@ -429,17 +425,16 @@ function getDataFlushedMerged(dir) {
     }
 
     const files = fs.readdirSync(dir);
-    const results = files.reduce((map, filePath) => {
+    const result = files.reduce((map, filePath) => {
         const filePathParsed = path.parse(filePath);
         if (filePathParsed.ext === '.ndjson') {
             const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
-            const lines = data.split('\n');
+            const entries = data.split('\n');
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const trimmed = line.trim();
+            for (let i = 0; i < entries.length; i++) {
+                const trimmed = entries[i].trim();
                 if (!trimmed) continue;
-                const { key, values } = JSON.parse(line);
+                const { key, values } = JSON.parse(trimmed);
                 if (!map.has(key)) {
                     if (values instanceof Float32Array) map.set(key, Float32Array.from(values));
                     else map.set(key, values);
@@ -457,7 +452,7 @@ function getDataFlushedMerged(dir) {
 
     const outPath = path.join(dir, '__merged__.ndjson');
     let outData = "";
-    for (const [key, values] of results.entries()) {
+    for (const [key, values] of result) {
         outData += JSON.stringify({ key, values: [...values] }) + '\n';
     }
     fs.writeFileSync(outPath, outData, 'utf8');
@@ -705,7 +700,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    getStrategiesReadableSaved()
+    // getStrategiesReadableSaved()
     // getMCCFRComputed(2, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
