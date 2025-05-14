@@ -42,6 +42,12 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
+function getArrayCopied(from, to) {
+    for (let i = 0; i < from.length; ++i) {
+        to[i] = from[i];
+    }
+}
+
 const getNDJSONAsMap = (filePath) => {
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf8');
