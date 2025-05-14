@@ -483,7 +483,7 @@ function getNashEquilibrium(key, regret, strategy) {
     const visitAcc = strategy.reduce((acc, strat) => acc + strat, 0);
     const regretAcc = regret.reduce((acc, value) => acc + Math.max(0, value), 0);
     const regretAvg = regretAcc / (regret.length * visitAcc);
-    console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
+    console.log(`[MCCFR] ${key} | COUNT=${visitAcc} | REGRETAVG=${regretAvg}`);
 }
 
 function getScores(scoreA, scoreB) {
