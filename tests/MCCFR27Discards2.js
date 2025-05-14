@@ -15,7 +15,7 @@ const DECK = {
     27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
-const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, '10': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
@@ -215,21 +215,7 @@ const getHandDetailsUint32AsReadable = (uint32) => {
     return { type, ranksValue, suitPattern };
 };
 
-// const getIndex = (arr, target) => {
-//     let i = 0, j = arr.length - 1;
-
-//     while (i <= j) {
-//         if (arr[i] === target) return i;
-//         if (arr[j] === target) return j;
-//         i++;
-//         j--;
-//     }
-
-//     return -1;
-// };
-
 const getHandDetails = (hand) => {
-    const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
     let cardsRankValue = [];
     const cardsSuitValue = [];
 
@@ -773,7 +759,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated();
         // const handsDetailsUint32Uniq = Uint32Array.from(new Set(HANDS_DETAILS_UINT32));
 
-        const flushInterval = 100;
+        const flushInterval = HANDS_CANONICAL_INDEX.length;
         const iterations = 100_000;
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
