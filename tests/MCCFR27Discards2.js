@@ -790,16 +790,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                     await getDataFlushed(workerId);
                     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
                     timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
                 }
             }
-
-            // if ((s+1) % flushInterval === 0) {
-            //     await getDataFlushed(workerId);
-            //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-            //     timeNow = performance.now();
-            //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | TIME_ELAPSED=${timeElapsed}ms`);
-            // }
         }
     }       
 };
