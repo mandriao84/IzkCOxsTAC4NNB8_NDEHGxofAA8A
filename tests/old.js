@@ -27,6 +27,102 @@ const discardsMap = new Map();
 const standsevMap = new Map();
 const evsMap = new Map();
 
+const getNDJSONKeysDuplicatedDeleted = (filePath) => {
+    const content = getNDJSONRead(filePath);
+    const data = Array.from(content.values());
+    // data.sort((a, b) => a.score - b.score);
+    data.sort((a, b) => b.score - a.score);
+
+    // const scoresAsMap = new Map();
+    // const dataWithoutScoresDuplicated = data.reduce((arr, entry) => {
+    //     const count = scoresAsMap.get(entry.score) || 0;
+    //     scoresAsMap.set(entry.score, count + 1);
+
+    //     if (count === 1) {
+    //        const j = arr.findIndex(e => e.score === entry.score)
+    //        const entryPast = arr[j];
+    //        let entryPastKeyParts = entryPast.key.split(':');
+    //        entryPastKeyParts[1] += "+"
+    //        const keyNew = entryPastKeyParts.join(':');
+    //        arr[j] = {
+    //             ...entry,
+    //             key: keyNew
+    //         };
+    //     } if (count === 0) {
+    //         arr.push(entry);
+    //     }
+    //     return arr;
+    // }, []);
+
+    const filePathParsed = path.parse(filePath);
+    const filePathNew = path.join(filePathParsed.dir, `${filePathParsed.name}_${filePathParsed.ext}`);
+    fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+}
+
+const getNDJSONDirRead = (dir) => {
+    if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir);
+        const results = files.reduce((map, filePath) => {
+            const filePathParsed = path.parse(filePath);
+            if (filePathParsed.ext === '.ndjson') {
+                const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
+                const lines = data.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+                    const data = trimmed ? JSON.parse(trimmed) : {};
+                    if (!data.key) continue;
+                    if (!map.has(data.key)) {
+                        map.set(data.key, data);
+                    }
+                }
+            }
+            return map;
+        }, new Map())
+
+        const filePathNew = path.join(path.dirname(dir), '__results__.ndjson');
+        const data = Array.from(results.values());
+        data.sort((a, b) => b.value - a.value);
+        fs.writeFileSync(filePathNew, data.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+    }
+}
+
+function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys = null) {
+    const ndjsons = Array.from({ length: paths.length }, () => '');
+    for (let i = 0; i < paths.length; i++) {
+        const p = paths[i];
+        if (fs.existsSync(p)) {
+            const raw = fs.readFileSync(p, 'utf8');
+            const data = raw.split('\n');
+            for (let j = 0; j < data.length; j++) {
+                const line = data[j];
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                const { key, values } = JSON.parse(trimmed);
+
+                if (p.endsWith('regrets.ndjson')) {
+                    if (keys?.includes(key)) regretSum.set(key, Float32Array.from(values));
+                    if (!keys) regretSum.set(key, Float32Array.from(values));
+                } else if (p.endsWith('strategies.ndjson')) {
+                    if (keys?.includes(key)) strategySum.set(key, Float32Array.from(values));
+                    if (!keys) {
+                        strategySum.set(key, Float32Array.from(values));
+                        const strategy = getStrategyReadable(key);
+                        ndjsons[i] += (JSON.stringify(strategy) + '\n');
+                    }
+                } else if (p.endsWith('evs.ndjson')) {
+                    if (keys?.includes(key)) evSum.set(key, values);
+                    if (!keys) evSum.set(key, values);
+                }
+            }
+
+            if (ndjsons[i]) fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjsons[i]);
+        }
+    }
+    console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
+    console.log(`[MCCFR] loaded ${strategySum.size} strategies from disk`);
+    console.log(`[MCCFR] loaded ${evSum.size} evs from disk`);
+}
 
 const getTimeElapsed = (timeStart, signal, error) => {
     const timeElapsed = process.hrtime(timeStart);
