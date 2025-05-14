@@ -511,11 +511,11 @@ function getActionApplied(hand, deck, actionIndex) {
     return handObj;
 }
 
-function getStrategyFromRegret(regrets) {
+function getStrategyFromRegret(regret) {
     const strat = new Float32Array(ACTION_COUNT);
     let normaliser = 0;
     for (let i = 0; i < ACTION_COUNT; ++i) {
-        strat[i] = Math.max(0, regrets[i]);
+        strat[i] = Math.max(0, regret[i]);
         normaliser += strat[i];
     }
     if (normaliser === 0) {
