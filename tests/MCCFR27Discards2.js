@@ -377,16 +377,16 @@ const evSum = new Map();
 
 async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
-        const entries = Array.from(map.entries());
-        const lines = entries.map(([key, values]) => {
+        let lines = '';
+        for (const [key, values] of map) {
             const entry = { 
                 key, 
                 values: values instanceof Float32Array ? [...values] : values 
             };
-            return JSON.stringify(entry);
-        });
-        return lines.join('\n') + '\n';
-    }
+            lines += JSON.stringify(entry) + '\n';
+        }
+        return lines;
+    };
 
     if (threadId >= 0) {
         const dirRegrets = path.join(PATH_RESULTS, `regrets`);
@@ -420,7 +420,7 @@ async function getDataFlushed(threadId = null) {
 
 function getDataFlushedMerged(dir) {
     if (!fs.existsSync(dir)) {
-        console.log(`getDataFlushedMerged.Directory(${dir}).Error`);
+        console.log(`getDataFlushedMerged.Dir(${dir}).Error`);
         return;
     }
 
