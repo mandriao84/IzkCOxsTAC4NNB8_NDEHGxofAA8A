@@ -487,7 +487,7 @@ function getNashEquilibrium(key, regret, strategy) {
 }
 
 function getScores(scoreA, scoreB) {
-    return scoreA === scoreB ? 0 : scoreA > scoreB ? 1 : -1;
+    return scoreA === scoreB ? 0 : scoreA < scoreB ? 1 : -1;
 }
 
 function getActionApplied(hand, deck, actionIndex) {
@@ -615,6 +615,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
         const h0Alt = getActionApplied(h0.hand, deckA, ai);
         const h1Fix = getActionApplied(h1.hand, deckA, a1);
         // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckA.length, h0Alt?.hand, h1Fix?.hand)
+        console.log(h0Alt.hand, h1Fix.hand, h0Alt.score < h1Fix.score)
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(h0Alt.score, h1Fix.score)
