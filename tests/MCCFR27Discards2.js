@@ -42,6 +42,55 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
+const getNDJSONAsMap = (filePath) => {
+    if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, 'utf8');
+        const entries = data.split('\n');
+        const map = new Map();
+        for (let i = 0; i < entries.length; i++) {
+            const trimmed = entries[i].trim();
+            if (!trimmed) continue;
+            const { key, values } = JSON.parse(trimmed);
+            map.set(key, values);
+        }
+        return map;
+    } else {
+        console.error(`getNDJSONRead.Path.Error: ${filePath}`);
+    }
+}
+
+const getStrategiesReadableSaved = () => {
+    const getStrategyReadable = (key) => {
+        const getStrategyAveraged = (key) => {
+            const values = strategySum.get(key);
+            if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
+            const total = values.reduce((acc, value) => acc + value, 0);
+            return values.map(v => v / total);
+        };
+    
+        const strat = getStrategyAveraged(key);
+        const result = strat.reduce((obj, value, index) => {
+            obj.key = key;
+            obj.discards = obj.discards || [];
+            const d = ACTIONS[index].length ? ACTIONS[index].join('') : '–';
+            const v = value.safe("ROUND", 4);
+            obj.discards.push([d, v]);
+            return obj;
+        }, {});
+        result.discards.sort((a, b) => b[1] - a[1]);
+    
+        return result;
+    }
+    
+    const strategiesAsMap = getNDJSONAsMap(PATH_STRATEGIES);
+    let ndjson = "";
+    for (const [key, value] of strategiesAsMap) {
+        const strategy = getStrategyReadable(key);
+        ndjson += (JSON.stringify(strategy) + '\n');
+    }
+    fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson, 'utf8');
+}
+
 const getArrayShuffled = (array) => {
     for (let c1 = array.length - 1; c1 > 0; c1--) {
         let c2 = Math.floor(Math.random() * (c1 + 1));
@@ -325,56 +374,6 @@ const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
 const evSum = new Map();
-
-
-const getNDJSONAsMap = (filePath) => {
-    if (fs.existsSync(filePath)) {
-        const data = fs.readFileSync(filePath, 'utf8');
-        const entries = data.split('\n');
-        const map = new Map();
-        for (let i = 0; i < entries.length; i++) {
-            const trimmed = entries[i].trim();
-            if (!trimmed) continue;
-            const { key, values } = JSON.parse(trimmed);
-            map.set(key, values);
-        }
-        return map;
-    } else {
-        console.error(`getNDJSONRead.Path.Error: ${filePath}`);
-    }
-}
-
-const getStrategiesReadableSaved = () => {
-    const getStrategyReadable = (key) => {
-        const getStrategyAveraged = (key) => {
-            const values = strategySum.get(key);
-            if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
-            const total = values.reduce((acc, value) => acc + value, 0);
-            return values.map(v => v / total);
-        };
-    
-        const strat = getStrategyAveraged(key);
-        const result = strat.reduce((obj, value, index) => {
-            obj.key = key;
-            obj.discards = obj.discards || [];
-            const d = ACTIONS[index].length ? ACTIONS[index].join('') : '–';
-            const v = value.safe("ROUND", 4);
-            obj.discards.push([d, v]);
-            return obj;
-        }, {});
-        result.discards.sort((a, b) => b[1] - a[1]);
-    
-        return result;
-    }
-    
-    const strategiesAsMap = getNDJSONAsMap(PATH_STRATEGIES);
-    let ndjson = "";
-    for (const [key, value] of strategiesAsMap) {
-        const strategy = getStrategyReadable(key);
-        ndjson += (JSON.stringify(strategy) + '\n');
-    }
-    fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson, 'utf8');
-}
 
 async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
