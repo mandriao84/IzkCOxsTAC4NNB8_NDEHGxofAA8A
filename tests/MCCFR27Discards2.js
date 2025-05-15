@@ -42,12 +42,21 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
-Array.prototype.filterBySet = function (set) {
+Array.prototype.filterBySet = function (arg, set) {
     const result = new Array(this.length);
+    let condition = null;
+    switch (arg) {
+        case "":
+            condition = (value) => set.has(value); break;
+        case "!":
+            condition = (value) => !set.has(value); break;
+        default: throw new Error("Array.prototype.filterBySet.arg.Error: ['', '!']");
+    }
+
     let index = 0;
     for (let i = 0; i < this.length; ++i) {
         const value = this[i];
-        if (!set.has(value)) result[index++] = value;
+        if (condition(value)) result[index++] = value;
     }
     result.length = index;
     return result;
@@ -772,7 +781,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
@@ -786,18 +795,29 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
 
-// const iterations = 100;
-// const ref = [1,2,3,4,5,6,7,8,9,10];
-// const a = [1,2,3,4,5];
-// const aSet = new Set(a);
+const iterations = 10000;
+const ref = [1,2,3,4,5,6,7,8,9,10];
+const a = [1,2,3,4,5];
+const aSet = new Set(a);
 
 // for (let i = 0; i < iterations; ++i) {
 //     aSet.clear();
 //     for (let j = 0; j < a.length; ++j) aSet.add(a[j]);
-//     console.log([...aSet])
 // }
 
+for (let i = 0; i < iterations; ++i) {
+    const n = ref.filterBySet("!", aSet);
+    console.log(n)
+}
+
+// console.time('Array.filter performance');
 // for (let i = 0; i < iterations; ++i) {
-//     const n = ref.filterBySet(aSet);
-//     console.log(n)
+//     const r = ref.filter(x => !a.includes(x));
 // }
+// console.timeEnd('Array.filter performance');
+
+// console.time('filterBySet performance'); 
+// for (let i = 0; i < iterations; ++i) {
+//     const r = ref.filterBySet(aSet);
+// }
+// console.timeEnd('filterBySet performance');
