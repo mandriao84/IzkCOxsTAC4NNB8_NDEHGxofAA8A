@@ -570,6 +570,8 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
         sum1[i] += strat1[i];
     }
 
+    const deckNext = new Array(deck.length);
+
     // if (isRoundNumberFrozen) {
     //     let util0 = 0;
     //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
@@ -580,7 +582,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     //             if (p1 === 0) continue;
     //             const pj = p0 * p1;
     
-    //             const deckNext  = [...deck];
+    //             getArrayCopied(deck, deckNext);
     //             const h0Next = getActionApplied(h0.hand, deckNext, a0);
     //             const h1Next = getActionApplied(h1.hand, deckNext, a1);
     
@@ -602,7 +604,6 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const a0 = getRandomActionIndex(strat0);
     const a1 = getRandomActionIndex(strat1);
 
-    const deckNext = new Array(deck.length);
     getArrayCopied(deck, deckNext);
     const h0Next = getActionApplied(h0.hand, deckNext, a0);
     const h1Next = getActionApplied(h1.hand, deckNext, a1);
