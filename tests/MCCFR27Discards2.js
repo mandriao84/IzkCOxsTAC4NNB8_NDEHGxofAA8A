@@ -107,6 +107,10 @@ const getArrayShuffled = (array) => {
     return array;
 };
 
+const getDeckAsUint8Array = () => {
+    return Uint8Array.from({ length: 52 }, (_, i) => i);
+};
+
 const getAllHandsAsUint32 = () => {
     const getHandAsUint32 = (hand) => {
         let key = 0;
@@ -162,6 +166,28 @@ const getHandUint32AsReadable = (uint32) => {
         const suit = SUITS[(cardIndex / RANKS.length).safe("FLOOR", 0)];
         hand[i] = rank + suit;
     }
+    return hand;
+};
+
+const getHandReadableAsUint8 = (hand) => {
+    const uint8 = new Uint8Array(hand.length);
+    for (let i = 0; i < hand.length; i++) {
+        const rank = RANKS.indexOf(hand[i][0]);
+        const suit = SUITS.indexOf(hand[i][1]);
+        const cardIndex = suit * RANKS.length + rank;
+        uint8[i] = cardIndex;
+    }
+    return uint8;
+}
+
+const getHandUint8AsReadable = (uint8) => {
+    const hand = new Array(uint8.length);
+    for (let i = 0; i < uint8.length; i++) {
+        const cardIndex = uint8[i];
+        const rank = RANKS[cardIndex % RANKS.length];
+        const suit = SUITS[Math.floor(cardIndex / RANKS.length)];
+        hand[i] = rank + suit;
+      }
     return hand;
 };
 
@@ -622,6 +648,8 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     // const h0Next = { index: null, hand: null, details: null, score: null };
     // const h1Next = { index: null, hand: null, details: null, score: null };
 
+    // const p0HandNext = 
+
     if (roundNumber <= 1) {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
             getArrayCopied(deck, deckNext);
@@ -722,9 +750,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
+    const d = getDeckAsUint8Array();
+    getArrayShuffled(d);
+    const h8a = d.slice(0, 5);
+    const h = getHandUint8AsReadable(h8a);
+    const h8b = getHandReadableAsUint8(h);
+    console.log(h8a, h, h8b);
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
