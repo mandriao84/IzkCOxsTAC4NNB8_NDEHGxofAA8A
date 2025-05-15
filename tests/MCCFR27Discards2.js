@@ -107,7 +107,7 @@ const getArrayShuffled = (array) => {
     return array;
 };
 
-const getDeckAsUint8Array = () => {
+const getDeckAsUint8 = () => {
     return Uint8Array.from({ length: 52 }, (_, i) => i);
 };
 
@@ -750,12 +750,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-    const d = getDeckAsUint8Array();
-    getArrayShuffled(d);
-    const h8a = d.slice(0, 5);
-    const h = getHandUint8AsReadable(h8a);
-    const h8b = getHandReadableAsUint8(h);
-    console.log(h8a, h, h8b);
     // getCacheSaved();
     // getStrategiesReadableSaved()
     // getMCCFRComputed(1, []);
