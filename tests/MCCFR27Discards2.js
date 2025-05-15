@@ -42,21 +42,21 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
-Array.prototype.filterBySet = function (arg, set) {
+Array.prototype.filterBySet = function (set) {
     const result = new Array(this.length);
-    let condition = null;
-    switch (arg) {
-        case "":
-            condition = (value) => set.has(value); break;
-        case "!":
-            condition = (value) => !set.has(value); break;
-        default: throw new Error("Array.prototype.filterBySet.arg.Error: ['', '!']");
-    }
+    // let condition = null;
+    // switch (arg) {
+    //     case "":
+    //         condition = (value) => set.has(value); break;
+    //     case "!":
+    //         condition = (value) => !set.has(value); break;
+    //     default: throw new Error("Array.prototype.filterBySet.arg.Error: ['', '!']");
+    // }
 
     let index = 0;
     for (let i = 0; i < this.length; ++i) {
         const value = this[i];
-        if (condition(value)) result[index++] = value;
+        if (!set.has(value)) result[index++] = value;
     }
     result.length = index;
     return result;
@@ -736,7 +736,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
-        const p0hSet = new Set();
 
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < HANDS_CANONICAL_INDEX.length; ++i) {
@@ -745,13 +744,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0h = getHandUint32AsReadable(p0hu32);
                 const p0hObj = { index: p0hi, hand: p0h };
 
-                // (RE)ALLOCATE (p0hSet)
-                p0hSet.reallocate(p0h);
-
                 const deck = deckRef.slice();
                 getArrayShuffled(deck);
 
-                const deckNext = deck.filterBySet(p0hSet);
+                const deckNext = deck.filter(card => !p0h.includes(card))
 
                 const p1h = deckNext.splice(0, 5);
                 p1h.sort();
@@ -781,7 +777,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
@@ -795,20 +791,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
 
-const iterations = 10000;
-const ref = [1,2,3,4,5,6,7,8,9,10];
-const a = [1,2,3,4,5];
-const aSet = new Set(a);
+// const iterations = 10000000;
+// const ref = [1,2,3,4,5,6,7,8,9,10];
+// const a = [1,2,3,4,5];
+// const aSet = new Set(a);
 
 // for (let i = 0; i < iterations; ++i) {
 //     aSet.clear();
 //     for (let j = 0; j < a.length; ++j) aSet.add(a[j]);
 // }
-
-for (let i = 0; i < iterations; ++i) {
-    const n = ref.filterBySet("!", aSet);
-    console.log(n)
-}
 
 // console.time('Array.filter performance');
 // for (let i = 0; i < iterations; ++i) {
