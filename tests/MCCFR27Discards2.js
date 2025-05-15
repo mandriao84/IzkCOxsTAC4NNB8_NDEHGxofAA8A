@@ -556,19 +556,6 @@ function getActionApplied(hand, deck, actionIndex) {
     const handObj = { index: handIndex, hand: handNew };
     return handObj;
 }
-function getActionApplied2(hand, deck, actionIndex, p) {
-    const discardIndices = ACTIONS[actionIndex];
-    const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
-    const cardsReceived = deck.splice(0, discardIndices.length);
-    const handNew = [...cardsKept, ...cardsReceived];
-    handNew.sort();
-    p.hand = handNew;
-
-    const handUint32 = getHandReadableAsUint32(handNew);
-    p.index = getIndexByBinarySearch(HANDS_UINT32, handUint32);
-    const handDetailsUint32 = HANDS_DETAILS_UINT32[p.index];
-    p.details  = getHandDetailsUint32AsReadable(handDetailsUint32);
-}
 
 function getStrategyFromRegret(regret) {
     const strat = new Float32Array(ACTION_COUNT);
@@ -637,7 +624,7 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     //             if (p1 === 0) continue;
     //             const pj = p0 * p1;
     
-    //             getArrayCopied(deck, deckNext);
+    //             const deckNext = deck.slice();
     //             const h0Next = getActionApplied(h0.hand, deckNext, a0);
     //             const h1Next = getActionApplied(h1.hand, deckNext, a1);
     
