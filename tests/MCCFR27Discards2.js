@@ -729,6 +729,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         const flushInterval = HANDS_CANONICAL_INDEX.length;
         const iterations = 100_000;
         let timeNow = performance.now();
+
+        const deckRef = Object.values(DECK);
+        const deck = new Array(deckRef.length);
+        const deckNext = new Array(deck.length);
+        const p0hSet = new Set();
+
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < HANDS_CANONICAL_INDEX.length; ++i) {
                 const p0hi = HANDS_CANONICAL_INDEX[i];
@@ -738,10 +744,23 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0hd = getHandDetailsUint32AsReadable(p0hdu32);
                 const p0hObj = { index: p0hi, hand: p0h, details: p0hd };
 
-                const deck = Object.values(DECK).filter(card => !p0h.includes(card));
+                // (RE)ALLOCATE (p0hSet)
+                p0hSet.clear();
+                for (let j = 0; j < p0h.length; ++j) p0hSet.add(p0h[j]);
+
+                // (RE)ALLOCATE AND (RE)SHUFFLE (deck) 
+                getArrayCopied(deckRef, deck);
                 getArrayShuffled(deck);
 
-                const p1h = deck.splice(0, 5);
+                // (RE)ALLOCATE (deckNext)
+                let deckNextIndex = 0;
+                for (let j = 0; j < deck.length; ++j) {
+                    const card = deck[j];
+                    if (!p0hSet.has(card)) deckNext[deckNextIndex++] = card;
+                }
+                deckNext.length = deckNextIndex;
+
+                const p1h = deckNext.splice(0, 5);
                 p1h.sort();
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
@@ -752,7 +771,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 getDiscardsSimulated(
                     p0hObj, 
                     p1hObj, 
-                    deck, 
+                    deckNext, 
                     roundNumber, 
                     roundNumbersFrozen
                 );
@@ -771,7 +790,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
