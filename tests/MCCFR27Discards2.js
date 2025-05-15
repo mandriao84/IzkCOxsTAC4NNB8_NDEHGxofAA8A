@@ -744,10 +744,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0h = getHandUint32AsReadable(p0hu32);
                 const p0hObj = { index: p0hi, hand: p0h };
 
-                const deck = deckRef.slice();
-                getArrayShuffled(deck);
+                getArrayShuffled(deckRef);
 
-                const deckNext = deck.filter(card => !p0h.includes(card))
+                const deckNext = deckRef.filter(card => !p0h.includes(card))
 
                 const p1h = deckNext.splice(0, 5);
                 p1h.sort();
