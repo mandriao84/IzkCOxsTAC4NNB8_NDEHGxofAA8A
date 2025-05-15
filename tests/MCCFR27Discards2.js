@@ -716,27 +716,33 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         let timeNow = performance.now();
         for (let s = 0; s < iterations; ++s) {
             for (let i = 0; i < HANDS_CANONICAL_INDEX.length; ++i) {
-                const handIndex = HANDS_CANONICAL_INDEX[i];
-                const handUint32 = HANDS_UINT32[handIndex];
-                const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
-                const handScore = HANDS_SCORE[handIndex];
-                const hand = getHandUint32AsReadable(handUint32);
-                const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
-                const handObj = { index: handIndex, hand: hand, details: handDetails, score: handScore };
+                const p0hi = HANDS_CANONICAL_INDEX[i];
+                const p0hu32 = HANDS_UINT32[p0hi];
+                const p0hdu32 = HANDS_DETAILS_UINT32[p0hi];
+                const p0hs = HANDS_SCORE[p0hi];
+                const p0h = getHandUint32AsReadable(p0hu32);
+                const p0hd = getHandDetailsUint32AsReadable(p0hdu32);
+                const p0hObj = { index: p0hi, hand: p0h, details: p0hd, score: p0hs };
 
-                const deck = Object.values(DECK).filter(card => !hand.includes(card));
+                const deck = Object.values(DECK).filter(card => !p0h.includes(card));
                 getArrayShuffled(deck);
 
-                const handX = deck.splice(0, 5);
-                handX.sort();
-                const handXUint32 = getHandReadableAsUint32(handX);
-                const handXIndex = getIndexByBinarySearch(HANDS_UINT32, handXUint32);
-                const handXDetailsUint32 = HANDS_DETAILS_UINT32[handXIndex];
-                const handXDetails = getHandDetailsUint32AsReadable(handXDetailsUint32);
-                const handXScore = HANDS_SCORE[handXIndex];
-                const handXObj = { index: handXIndex, hand: handX, details: handXDetails, score: handXScore };
+                const p1h = deck.splice(0, 5);
+                p1h.sort();
+                const p1hu32 = getHandReadableAsUint32(p1h);
+                const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
+                const p1hdu32 = HANDS_DETAILS_UINT32[p1hi];
+                const p1hd = getHandDetailsUint32AsReadable(p1hdu32);
+                const p1hs = HANDS_SCORE[p1hi];
+                const p1hObj = { index: p1hi, hand: p1h, details: p1hd, score: p1hs };
 
-                getDiscardsSimulated(handObj, handXObj, deck, roundNumber, roundNumbersFrozen);
+                getDiscardsSimulated(
+                    p0hObj, 
+                    p1hObj, 
+                    deck, 
+                    roundNumber, 
+                    roundNumbersFrozen
+                );
 
                 if ((i+1) % flushInterval === 0) {
                     await getDataFlushed(workerId);
