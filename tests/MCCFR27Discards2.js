@@ -602,7 +602,8 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const a0 = getRandomActionIndex(strat0);
     const a1 = getRandomActionIndex(strat1);
 
-    const deckNext = [...deck];
+    const deckNext = new Array(deck.length);
+    getArrayCopied(deck, deckNext);
     const h0Next = getActionApplied(h0.hand, deckNext, a0);
     const h1Next = getActionApplied(h1.hand, deckNext, a1);
     // if (!h0Next?.hand || !h1Next?.hand) console.log(deckNext.length, h0Next?.hand, h1Next?.hand)
@@ -618,25 +619,25 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const altUtil1 = new Float32Array(ACTION_COUNT);
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = [...deck];
-        const h0Alt = getActionApplied(h0.hand, deckA, ai);
-        const h1Fix = getActionApplied(h1.hand, deckA, a1);
-        // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckA.length, h0Alt?.hand, h1Fix?.hand)
+        getArrayCopied(deck, deckNext);
+        const h0Alt = getActionApplied(h0.hand, deckNext, ai);
+        const h1Fix = getActionApplied(h1.hand, deckNext, a1);
+        // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckNext.length, h0Alt?.hand, h1Fix?.hand)
 
         altUtil0[ai] = roundNumber <= 1
             ? getScores(h0Alt.score, h1Fix.score)
-            : getDiscardsSimulated(h0Alt, h1Fix, deckA, roundNumber - 1, roundNumbersFrozen);
+            : getDiscardsSimulated(h0Alt, h1Fix, deckNext, roundNumber - 1, roundNumbersFrozen);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        const deckA = [...deck];
-        const h0Fix = getActionApplied(h0.hand, deckA, a0);
-        const h1Alt = getActionApplied(h1.hand, deckA, ai);
-        // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckA.length, h0Fix?.hand, h1Alt?.hand)
+        getArrayCopied(deck, deckNext);
+        const h0Fix = getActionApplied(h0.hand, deckNext, a0);
+        const h1Alt = getActionApplied(h1.hand, deckNext, ai);
+        // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckNext.length, h0Fix?.hand, h1Alt?.hand)
 
         altUtil1[ai] = roundNumber <= 1
             ? -getScores(h0Fix.score, h1Alt.score)
-            : -getDiscardsSimulated(h0Fix, h1Alt, deckA, roundNumber - 1, roundNumbersFrozen);
+            : -getDiscardsSimulated(h0Fix, h1Alt, deckNext, roundNumber - 1, roundNumbersFrozen);
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
