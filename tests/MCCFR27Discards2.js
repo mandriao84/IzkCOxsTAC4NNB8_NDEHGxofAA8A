@@ -553,9 +553,7 @@ function getActionApplied(hand, deck, actionIndex) {
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
-    const handDetailsUint32 = HANDS_DETAILS_UINT32[handIndex];
-    const handDetails = getHandDetailsUint32AsReadable(handDetailsUint32);
-    const handObj = { index: handIndex, hand: handNew, details: handDetails };
+    const handObj = { index: handIndex, hand: handNew };
     return handObj;
 }
 function getActionApplied2(hand, deck, actionIndex, p) {
