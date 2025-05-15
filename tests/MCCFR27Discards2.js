@@ -619,26 +619,41 @@ function getDiscardsSimulated(h0, h1, deck, roundNumber, roundNumbersFrozen) {
     const altUtil0 = new Float32Array(ACTION_COUNT);
     const altUtil1 = new Float32Array(ACTION_COUNT);
 
-    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        getArrayCopied(deck, deckNext);
-        const h0Alt = getActionApplied(h0.hand, deckNext, ai);
-        const h1Fix = getActionApplied(h1.hand, deckNext, a1);
-        // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckNext.length, h0Alt?.hand, h1Fix?.hand)
+    // const h0Next = { index: null, hand: null, details: null, score: null };
+    // const h1Next = { index: null, hand: null, details: null, score: null };
 
-        altUtil0[ai] = roundNumber <= 1
-            ? getScores(h0Alt.score, h1Fix.score)
-            : getDiscardsSimulated(h0Alt, h1Fix, deckNext, roundNumber - 1, roundNumbersFrozen);
-    }
+    if (roundNumber <= 1) {
+        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+            getArrayCopied(deck, deckNext);
+            const h0Alt = getActionApplied(h0.hand, deckNext, ai); // ALT
+            const h1Fix = getActionApplied(h1.hand, deckNext, a1); // FIX
+            // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckNext.length, h0Alt?.hand, h1Fix?.hand)
+            altUtil0[ai] = getScores(h0Alt.score, h1Fix.score)
+        }
 
-    for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        getArrayCopied(deck, deckNext);
-        const h0Fix = getActionApplied(h0.hand, deckNext, a0);
-        const h1Alt = getActionApplied(h1.hand, deckNext, ai);
-        // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckNext.length, h0Fix?.hand, h1Alt?.hand)
-
-        altUtil1[ai] = roundNumber <= 1
-            ? -getScores(h0Fix.score, h1Alt.score)
-            : -getDiscardsSimulated(h0Fix, h1Alt, deckNext, roundNumber - 1, roundNumbersFrozen);
+        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+            getArrayCopied(deck, deckNext);
+            const h0Fix = getActionApplied(h0.hand, deckNext, a0); // FIX
+            const h1Alt = getActionApplied(h1.hand, deckNext, ai); // ALT
+            // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckNext.length, h0Fix?.hand, h1Alt?.hand)
+            altUtil1[ai] = -getScores(h0Fix.score, h1Alt.score)
+        }
+    } else {
+        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+            getArrayCopied(deck, deckNext);
+            const h0Alt = getActionApplied(h0.hand, deckNext, ai); // ALT
+            const h1Fix = getActionApplied(h1.hand, deckNext, a1); // FIX
+            // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deckNext.length, h0Alt?.hand, h1Fix?.hand)
+            altUtil0[ai] = getDiscardsSimulated(h0Alt, h1Fix, deckNext, roundNumber - 1, roundNumbersFrozen);
+        }
+    
+        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+            getArrayCopied(deck, deckNext);
+            const h0Fix = getActionApplied(h0.hand, deckNext, a0); // FIX
+            const h1Alt = getActionApplied(h1.hand, deckNext, ai); // ALT
+            // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deckNext.length, h0Fix?.hand, h1Alt?.hand)
+            altUtil1[ai] = -getDiscardsSimulated(h0Fix, h1Alt, deckNext, roundNumber - 1, roundNumbersFrozen);
+        }
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
