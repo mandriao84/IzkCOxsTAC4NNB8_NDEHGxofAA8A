@@ -89,7 +89,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
         const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + hd.suitPattern + ',' + keyParts[1];
-        
+
         const getStrategyAveraged = (key) => {
             const values = strategySum.get(key);
             console.log(key, values);
@@ -763,6 +763,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getStrategiesReadableSaved()
     // getMCCFRComputed(1, []);
 
+
+    getCacheCreated();
     [
         ".results/mccfr/evs",
         ".results/mccfr/regrets",
@@ -771,7 +773,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getDataFlushedMerged(dir)
     })
 
-    // getDataLoaded();
     // getDataNashed();
 })();
 
