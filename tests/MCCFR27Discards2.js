@@ -599,26 +599,26 @@ function getRandomActionIndex(strat) {
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
     const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
-    const key0 = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
-    const key1 = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
+    const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
+    const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    if (!evSum.has(key0)) evSum.set(key0, [0, 0]);
-    if (!evSum.has(key1)) evSum.set(key1, [0, 0]);
+    if (!evSum.has(p0key)) evSum.set(p0key, [0, 0]);
+    if (!evSum.has(p1key)) evSum.set(p1key, [0, 0]);
 
-    ++evSum.get(key0)[0];
-    ++evSum.get(key1)[0];
+    ++evSum.get(p0key)[0];
+    ++evSum.get(p1key)[0];
 
-    const reg0 = regretSum.get(key0) || (regretSum.set(key0, new Float32Array(ACTION_COUNT)), regretSum.get(key0));
-    const reg1 = regretSum.get(key1) || (regretSum.set(key1, new Float32Array(ACTION_COUNT)), regretSum.get(key1));
+    const p0reg = regretSum.get(p0key) || (regretSum.set(p0key, new Float32Array(ACTION_COUNT)), regretSum.get(p0key));
+    const p1reg = regretSum.get(p1key) || (regretSum.set(p1key, new Float32Array(ACTION_COUNT)), regretSum.get(p1key));
 
-    const strat0 = getStrategyFromRegret(reg0);
-    const strat1 = getStrategyFromRegret(reg1);
+    const strat0 = getStrategyFromRegret(p0reg);
+    const strat1 = getStrategyFromRegret(p1reg);
 
-    // getNashEquilibrium(key0, reg0, strat0);
-    // getNashEquilibrium(key1, reg1, strat1);
+    // getNashEquilibrium(p0key, p0reg, strat0);
+    // getNashEquilibrium(p1key, p1reg, strat1);
 
-    const sum0 = strategySum.get(key0) || (strategySum.set(key0, new Float32Array(ACTION_COUNT)), strategySum.get(key0));
-    const sum1 = strategySum.get(key1) || (strategySum.set(key1, new Float32Array(ACTION_COUNT)), strategySum.get(key1));
+    const sum0 = strategySum.get(p0key) || (strategySum.set(p0key, new Float32Array(ACTION_COUNT)), strategySum.get(p0key));
+    const sum1 = strategySum.get(p1key) || (strategySum.set(p1key, new Float32Array(ACTION_COUNT)), strategySum.get(p1key));
 
     for (let i = 0; i < ACTION_COUNT; ++i) {
         sum0[i] += strat0[i];
@@ -626,7 +626,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     }
 
     // if (isRoundNumberFrozen) {
-    //     let util0 = 0;
+    //     let p0util = 0;
     //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
     //         const p0 = strat0[a0];
     //         if (p0 === 0) continue;
@@ -635,80 +635,78 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     //             if (p1 === 0) continue;
     //             const pj = p0 * p1;
     
-    //             const h0Next = getActionApplied(h0.hand, deck, deckOffset, a0);
-    //             const h1Next = getActionApplied(h1.hand, deck, h0Next.deckOffset, a1);
+    //             const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
+    //             const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
     
     //             const leaf = roundNumber <= 1
-    //                 ? getScores(h0Next.index, h1Next.index)
-    //                 : getDiscardsSimulated(h0Next, h1Next, deck, h1Next.deckOffset, roundNumber - 1, roundNumbersFrozen);
+    //                 ? getScores(p0hLeaf.index, p1hLeaf.index)
+    //                 : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
     
-    //             util0 += pj * leaf;
+    //             p0util += pj * leaf;
     //         }
     //     }
     
-    //     const util1 = -util0;
-    //     evSum.get(key0)[1] += util0;
-    //     evSum.get(key1)[1] += util1;
+    //     const p1util = -p0util;
+    //     evSum.get(p0key)[1] += p0util;
+    //     evSum.get(p1key)[1] += p1util;
     
-    //     return util0;
+    //     return p0util;
     // }
 
     const a0 = getRandomActionIndex(strat0);
     const a1 = getRandomActionIndex(strat1);
 
-    const h0Next = getActionApplied(h0.hand, deck, deckOffset, a0);
-    const h1Next = getActionApplied(h1.hand, deck, h0Next.deckOffset, a1);
-    // if (!h0Next?.hand || !h1Next?.hand) console.log(deck.length, h0Next?.hand, h1Next?.hand)
+    const p0hRnd = getActionApplied(h0.hand, deck, deckOffset, a0);
+    const p1hRnd = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, a1);
+    // if (!p0hRnd?.hand || !p1hRnd?.hand) console.log(deck.length, p0hRnd?.hand, p1hRnd?.hand)
 
-    const util0 = roundNumber <= 1
-        ? getScores(h0Next.index, h1Next.index)
-        : getDiscardsSimulated(h0Next, h1Next, deck, h1Next.deckOffset, roundNumber - 1, roundNumbersFrozen);
-    const util1 = -util0;
+    const p0util = roundNumber <= 1
+        ? getScores(p0hRnd.index, p1hRnd.index)
+        : getDiscardsSimulated(p0hRnd, p1hRnd, deck, p1hRnd.deckOffset, roundNumber - 1, roundNumbersFrozen);
+    const p1util = -p0util;
 
-    if (isRoundNumberFrozen) { return util0; }
+    // if (isRoundNumberFrozen) { return p0util; }
 
-    const altUtil0 = new Float32Array(ACTION_COUNT);
-    const altUtil1 = new Float32Array(ACTION_COUNT);
+    const p0utilAlt = new Float32Array(ACTION_COUNT);
+    const p1utilAlt = new Float32Array(ACTION_COUNT);
 
     if (roundNumber <= 1) {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const h0Alt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const h1Fix = getActionApplied(h1.hand, deck, h0Alt.deckOffset, a1); // FIX
-            // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deck.length, h0Alt?.hand, h1Fix?.hand)
-            altUtil0[ai] = getScores(h0Alt.index, h1Fix.index)
+            const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
+            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, a1); // FIX
+            // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
+            p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index)
         }
 
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const h0Fix = getActionApplied(h0.hand, deck, deckOffset, a0); // FIX
-            const h1Alt = getActionApplied(h1.hand, deck, h0Fix.deckOffset, ai); // ALT
-            // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deck.length, h0Fix?.hand, h1Alt?.hand)
-            altUtil1[ai] = -getScores(h0Fix.index, h1Alt.index)
+            const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
+            // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
+            p1utilAlt[ai] = -getScores(p0hRnd.index, p1hAlt.index)
         }
     } else {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const h0Alt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const h1Fix = getActionApplied(h1.hand, deck, h0Alt.deckOffset, a1); // FIX
-            // if (!h0Alt?.hand || !h1Fix?.hand) console.log(deck.length, h0Alt?.hand, h1Fix?.hand)
-            altUtil0[ai] = getDiscardsSimulated(h0Alt, h1Fix, deck, h1Fix.deckOffset, roundNumber - 1, roundNumbersFrozen);
+            const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
+            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, a1); // FIX
+            // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
+            p0utilAlt[ai] = getDiscardsSimulated(p0hAlt, p1hFix, deck, p1hFix.deckOffset, roundNumber - 1, roundNumbersFrozen);
         }
     
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const h0Fix = getActionApplied(h0.hand, deck, deckOffset, a0); // FIX
-            const h1Alt = getActionApplied(h1.hand, deck, h0Fix.deckOffset, ai); // ALT
-            // if (!h0Fix?.hand || !h1Alt?.hand) console.log(deck.length, h0Fix?.hand, h1Alt?.hand)
-            altUtil1[ai] = -getDiscardsSimulated(h0Fix, h1Alt, deck, h1Alt.deckOffset, roundNumber - 1, roundNumbersFrozen);
+            const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
+            // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
+            p1utilAlt[ai] = -getDiscardsSimulated(p0hRnd, p1hAlt, deck, p1hAlt.deckOffset, roundNumber - 1, roundNumbersFrozen);
         }
     }
 
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-        reg0[ai] += altUtil0[ai] - util0;
-        reg1[ai] += altUtil1[ai] - util1;
+        p0reg[ai] += p0utilAlt[ai] - p0util;
+        p1reg[ai] += p1utilAlt[ai] - p1util;
     }
 
-    evSum.get(key0)[1] += util0;
-    evSum.get(key1)[1] += util1;
+    evSum.get(p0key)[1] += p0util;
+    evSum.get(p1key)[1] += p1util;
 
-    return util0;
+    return p0util;
 }
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
