@@ -658,7 +658,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
     const h0Next = getActionApplied(h0.hand, deck, deckOffset, a0);
     const h1Next = getActionApplied(h1.hand, deck, h0Next.deckOffset, a1);
-    // if (!h0Next?.hand || !h1Next?.hand) console.log(deckNext.length, h0Next?.hand, h1Next?.hand)
+    // if (!h0Next?.hand || !h1Next?.hand) console.log(deck.length, h0Next?.hand, h1Next?.hand)
 
     const util0 = roundNumber <= 1
         ? getScores(h0Next.index, h1Next.index)
@@ -744,17 +744,18 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 const deckNext = deckRef.filter(card => !p0h.includes(card))
 
-                const p1h = deckNext.splice(0, 5);
+                const deckOffset = 5;
+                const p1h = deckNext.slice(0, deckOffset);
                 p1h.sort();
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
-                const p1hObj = { index: p1hi, hand: p1h };
+                const p1hObj = { index: p1hi, hand: p1h, deckOffset: deckOffset };
 
                 getDiscardsSimulated(
                     p0hObj, 
                     p1hObj, 
                     deckNext,
-                    0,
+                    p1hObj.deckOffset,
                     roundNumber, 
                     roundNumbersFrozen
                 );
