@@ -95,7 +95,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
     
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ',' + keyParts[1];
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + d.suitPattern + ',' + keyParts[1];
 
         const strat = getStrategyAveraged(key);
         const result = strat.reduce((obj, value, index) => {
@@ -757,15 +757,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
 
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
+    [
+        ".results/mccfr/evs",
+        ".results/mccfr/regrets",
+        ".results/mccfr/strategies"
+    ].forEach(dir => {
+        getDataFlushedMerged(dir)
+    })
 
     // getDataLoaded();
     // getDataNashed();
@@ -805,5 +805,5 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const du32 = parseInt(keyParts[0]);
 // const rn = parseInt(keyParts[1]);
 // const d = getHandDetailsUint32AsReadable(du32);
-// const keyDecoded = d.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ',' + rn;
+// const keyDecoded = d.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + d.suitPattern + ',' + rn;
 // console.log(d, rn, keyDecoded);
