@@ -556,8 +556,8 @@ function getScores(p0i, p1i) {
 function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
     const discardIndices = ACTIONS[actionIndex];
     const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
-    // const cardsReceived = deck.splice(0, discardIndices.length);
     const deckOffsetNew = deckOffset + discardIndices.length;
+    if (deckOffsetNew > deck.length) throw new Error("DECK.EXHAUSTED");
     const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
     const handNew = [...cardsKept, ...cardsReceived];
     handNew.sort();
