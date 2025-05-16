@@ -640,7 +640,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     
     //             const leaf = roundNumber <= 1
     //                 ? getScores(h0Next.index, h1Next.index)
-    //                 : getDiscardsSimulated(h0Next, h1Next, deckNext, h1Next.deckOffset, roundNumber - 1, roundNumbersFrozen);
+    //                 : getDiscardsSimulated(h0Next, h1Next, deck, h1Next.deckOffset, roundNumber - 1, roundNumbersFrozen);
     
     //             util0 += pj * leaf;
     //         }
