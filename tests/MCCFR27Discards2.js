@@ -598,7 +598,6 @@ function getRandomActionIndex(strat) {
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
-    // const isRoundNumberFrozen = roundNumbersFrozen?.includes(roundNumber);
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
@@ -625,7 +624,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p1stratsum[i] += p1strat[i];
     }
 
-    // if (isRoundNumberFrozen) {
+    // if (roundNumbersFrozen?.includes(roundNumber);) {
     //     let p0util = 0;
     //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
     //         const p0 = p0strat[a0];
