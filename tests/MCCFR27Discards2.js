@@ -129,7 +129,6 @@ const getStrategiesReadableSaved = (strategiesMap) => {
 
         const getStrategyAveraged = (key) => {
             const values = strategiesMap.get(key);
-            console.log(key, values);
             if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
             const total = values.reduce((acc, value) => acc + value, 0);
             return values.map(v => v / total);
@@ -371,7 +370,6 @@ const getCacheSaved = () => {
     fs.mkdirSync(path.dirname(PATH_KEYS), { recursive: true });
     fs.closeSync(fs.openSync(PATH_KEYS, 'a'));
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    ALL_HANDS_UINT32.sort();
 
     let ndjson = "";
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
@@ -385,10 +383,10 @@ const getCacheSaved = () => {
 }
 
 const getCacheCreated = () => {
-    const allHands = getAllHandsAsUint32();
+    const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const cache = [];
-    for (let i = 0; i < allHands.length; i++) {
-        const hand = getHandUint32AsReadable(allHands[i]).sort();
+    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
+        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
         const handUint32 = getHandReadableAsUint32(hand);
         const { detailsUint32, score } = getHandDetails(hand);
         cache.push([handUint32, detailsUint32, score]);
@@ -591,6 +589,7 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
+    console.log(hand, handNew, handUint32)
     const handObj = { index: handIndex, hand: handNew, deckOffset: deckOffsetNew };
     return handObj;
 }
@@ -727,7 +726,6 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         p0reg[ai] += p0utilAlt[ai] - p0util;
         p1reg[ai] += p1utilAlt[ai] - p1util;
-        console.log(p0reg[ai], p1reg[ai])
     }
 
     evSum.get(p0key)[1] += p0util;
@@ -796,19 +794,19 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-    // getCacheSaved();
+    getCacheSaved();
     // getStrategiesReadableSaved()
     // getMCCFRComputed(1, []);
 
 
-    getCacheCreated();
-    [
-        ".results/mccfr/evs",
-        ".results/mccfr/regrets",
-        ".results/mccfr/strategies"
-    ].forEach(dir => {
-        getDataFlushedMerged(dir)
-    })
+    // getCacheCreated();
+    // [
+    //     ".results/mccfr/evs",
+    //     ".results/mccfr/regrets",
+    //     ".results/mccfr/strategies"
+    // ].forEach(dir => {
+    //     getDataFlushedMerged(dir)
+    // })
 
     // getDataNashed();
 })();
