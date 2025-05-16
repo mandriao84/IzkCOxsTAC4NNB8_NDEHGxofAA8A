@@ -84,6 +84,43 @@ const getNDJSONAsMap = (filePath) => {
     }
 }
 
+// function getDataLoaded(paths = [PATH_REGRETS, PATH_STRATEGIES, PATH_EVS], keys = null) {
+//     const ndjsons = Array.from({ length: paths.length }, () => '');
+//     for (let i = 0; i < paths.length; i++) {
+//         const p = paths[i];
+//         if (fs.existsSync(p)) {
+//             const raw = fs.readFileSync(p, 'utf8');
+//             const data = raw.split('\n');
+//             for (let j = 0; j < data.length; j++) {
+//                 const line = data[j];
+//                 const trimmed = line.trim();
+//                 if (!trimmed) continue;
+//                 const { key, values } = JSON.parse(trimmed);
+
+//                 if (p.endsWith('regrets.ndjson')) {
+//                     if (keys?.includes(key)) regretSum.set(key, Float32Array.from(values));
+//                     if (!keys) regretSum.set(key, Float32Array.from(values));
+//                 } else if (p.endsWith('strategies.ndjson')) {
+//                     if (keys?.includes(key)) strategySum.set(key, Float32Array.from(values));
+//                     if (!keys) {
+//                         strategySum.set(key, Float32Array.from(values));
+//                         const strategy = getStrategyReadable(key);
+//                         ndjsons[i] += (JSON.stringify(strategy) + '\n');
+//                     }
+//                 } else if (p.endsWith('evs.ndjson')) {
+//                     if (keys?.includes(key)) evSum.set(key, values);
+//                     if (!keys) evSum.set(key, values);
+//                 }
+//             }
+
+//             if (ndjsons[i]) fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjsons[i]);
+//         }
+//     }
+//     console.log(`[MCCFR] loaded ${regretSum.size} regrets from disk`);
+//     console.log(`[MCCFR] loaded ${strategySum.size} strategies from disk`);
+//     console.log(`[MCCFR] loaded ${evSum.size} evs from disk`);
+// }
+
 const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
         const keyParts = key.split(',');
@@ -91,7 +128,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
         const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 
         const getStrategyAveraged = (key) => {
-            const values = strategySum.get(key);
+            const values = strategiesMap.get(key);
             console.log(key, values);
             if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
             const total = values.reduce((acc, value) => acc + value, 0);
