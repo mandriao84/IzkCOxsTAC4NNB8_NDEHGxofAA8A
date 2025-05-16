@@ -15,7 +15,7 @@ const DECK = {
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
-const CARDS_FROM_VALUE = Object.fromEntries(Object.entries(CARDS).map(([k, v]) => [v, k]));
+const CARDS_FROM_VALUE = { 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 8: '9', 7: '8', 6: '7', 5: '6', 4: '5', 3: '4', 2: '3', 1: '2', 0: 'A' };
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
@@ -125,7 +125,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 
         const getStrategyAveraged = (key) => {
             const values = strategiesMap.get(key);
@@ -535,6 +535,7 @@ function getDataFlushedMerged(dir) {
     const outPath = path.join(dir, '__merged__.ndjson');
     let outData = "";
     for (const [key, values] of result) {
+        if (key.length === 4) { console.log(key); }
         outData += JSON.stringify({ key, values: [...values] }) + '\n';
     }
     fs.writeFileSync(outPath, outData, 'utf8');
@@ -794,19 +795,19 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
                 
 (async () => {
-    getCacheSaved();
+    // getCacheSaved();
     // getStrategiesReadableSaved()
     // getMCCFRComputed(1, []);
 
 
     // getCacheCreated();
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
+    [
+        ".results/mccfr/evs",
+        ".results/mccfr/regrets",
+        ".results/mccfr/strategies"
+    ].forEach(dir => {
+        getDataFlushedMerged(dir)
+    })
 
     // getDataNashed();
 })();
@@ -839,11 +840,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // }
 // console.timeEnd('filterBySet performance');
 
-
-// const key = "900487874,1"
+// getCacheCreated();
+// const key = "759775296,1"
 // const keyParts = key.split(',');
-// const du32 = parseInt(keyParts[0]);
-// const rn = parseInt(keyParts[1]);
-// const d = getHandDetailsUint32AsReadable(du32);
-// const keyDecoded = d.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + d.suitPattern + ',' + rn;
-// console.log(d, rn, keyDecoded);
+// const hdu32 = parseInt(keyParts[0]);
+// const hd = getHandDetailsUint32AsReadable(hdu32);
+// // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
+// // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
