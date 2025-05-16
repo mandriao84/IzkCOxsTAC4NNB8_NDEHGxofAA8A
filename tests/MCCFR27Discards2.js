@@ -611,33 +611,33 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p1stratsum[i] += p1strat[i];
     }
 
-    if (roundNumbersFrozen?.includes(roundNumber)) {
-        let p0util = 0;
-        for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
-            const p0prob = p0strat[a0];
-            if (p0prob === 0) continue;
-            for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
-                const p1prob = p1strat[a1];
-                if (p1prob === 0) continue;
-                const prob = p0prob * p1prob;
+    // if (roundNumbersFrozen?.includes(roundNumber)) {
+    //     let p0util = 0;
+    //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
+    //         const p0prob = p0strat[a0];
+    //         if (p0prob === 0) continue;
+    //         for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
+    //             const p1prob = p1strat[a1];
+    //             if (p1prob === 0) continue;
+    //             const prob = p0prob * p1prob;
     
-                const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
-                const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
+    //             const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
+    //             const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
     
-                const leaf = roundNumber <= 1
-                    ? getScores(p0hLeaf.index, p1hLeaf.index)
-                    : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
+    //             const leaf = roundNumber <= 1
+    //                 ? getScores(p0hLeaf.index, p1hLeaf.index)
+    //                 : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
     
-                p0util += prob * leaf;
-            }
-        }
+    //             p0util += prob * leaf;
+    //         }
+    //     }
     
-        const p1util = -p0util;
-        evSum.get(p0key)[1] += p0util;
-        evSum.get(p1key)[1] += p1util;
+    //     const p1util = -p0util;
+    //     evSum.get(p0key)[1] += p0util;
+    //     evSum.get(p1key)[1] += p1util;
     
-        return p0util;
-    }
+    //     return p0util;
+    // }
 
     const p0aRnd = getRandomActionIndex(p0strat);
     const p1aRnd = getRandomActionIndex(p1strat);
