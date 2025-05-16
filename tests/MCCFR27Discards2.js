@@ -624,39 +624,39 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p1stratsum[i] += p1strat[i];
     }
 
-    // if (roundNumbersFrozen?.includes(roundNumber);) {
-    //     let p0util = 0;
-    //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
-    //         const p0 = p0strat[a0];
-    //         if (p0 === 0) continue;
-    //         for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
-    //             const p1 = p1strat[a1];
-    //             if (p1 === 0) continue;
-    //             const pj = p0 * p1;
+    if (roundNumbersFrozen?.includes(roundNumber)) {
+        let p0util = 0;
+        for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
+            const p0prob = p0strat[a0];
+            if (p0prob === 0) continue;
+            for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
+                const p1prob = p1strat[a1];
+                if (p1prob === 0) continue;
+                const prob = p0prob * p1prob;
     
-    //             const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
-    //             const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
+                const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
+                const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
     
-    //             const leaf = roundNumber <= 1
-    //                 ? getScores(p0hLeaf.index, p1hLeaf.index)
-    //                 : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
+                const leaf = roundNumber <= 1
+                    ? getScores(p0hLeaf.index, p1hLeaf.index)
+                    : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
     
-    //             p0util += pj * leaf;
-    //         }
-    //     }
+                p0util += prob * leaf;
+            }
+        }
     
-    //     const p1util = -p0util;
-    //     evSum.get(p0key)[1] += p0util;
-    //     evSum.get(p1key)[1] += p1util;
+        const p1util = -p0util;
+        evSum.get(p0key)[1] += p0util;
+        evSum.get(p1key)[1] += p1util;
     
-    //     return p0util;
-    // }
+        return p0util;
+    }
 
-    const a0 = getRandomActionIndex(p0strat);
-    const a1 = getRandomActionIndex(p1strat);
+    const p0aRnd = getRandomActionIndex(p0strat);
+    const p1aRnd = getRandomActionIndex(p1strat);
 
-    const p0hRnd = getActionApplied(h0.hand, deck, deckOffset, a0);
-    const p1hRnd = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, a1);
+    const p0hRnd = getActionApplied(h0.hand, deck, deckOffset, p0aRnd);
+    const p1hRnd = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, p1aRnd);
     // if (!p0hRnd?.hand || !p1hRnd?.hand) console.log(deck.length, p0hRnd?.hand, p1hRnd?.hand)
 
     const p0util = roundNumber <= 1
@@ -672,7 +672,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     if (roundNumber <= 1) {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
             const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, a1); // FIX
+            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
             // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
             p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index)
         }
@@ -685,7 +685,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     } else {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
             const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, a1); // FIX
+            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
             // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
             p0utilAlt[ai] = getDiscardsSimulated(p0hAlt, p1hFix, deck, p1hFix.deckOffset, roundNumber - 1, roundNumbersFrozen);
         }
