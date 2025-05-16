@@ -42,24 +42,14 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     }
 };
 
-Array.prototype.filterBySet = function (set) {
-    const result = new Array(this.length);
-    // let condition = null;
-    // switch (arg) {
-    //     case "":
-    //         condition = (value) => set.has(value); break;
-    //     case "!":
-    //         condition = (value) => !set.has(value); break;
-    //     default: throw new Error("Array.prototype.filterBySet.arg.Error: ['', '!']");
-    // }
-
-    let index = 0;
-    for (let i = 0; i < this.length; ++i) {
-        const value = this[i];
-        if (!set.has(value)) result[index++] = value;
+Array.prototype.shuffleByFisherYates = function () {
+    for (let i = this.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = this[i];
+        this[i] = this[j];
+        this[j] = tmp;
     }
-    result.length = index;
-    return result;
+    // return this;
 };
 
 Set.prototype.reallocate = function (array) {
@@ -124,16 +114,6 @@ const getStrategiesReadableSaved = () => {
     }
     fs.writeFileSync(`${PATH_STRATEGIES}-readable`, ndjson, 'utf8');
 }
-
-const getArrayShuffled = (array) => {
-    for (let c1 = array.length - 1; c1 > 0; c1--) {
-        let c2 = Math.floor(Math.random() * (c1 + 1));
-        let tmp = array[c1];
-        array[c1] = array[c2];
-        array[c2] = tmp;
-    }
-    return array;
-};
 
 const getDeckAsUint8 = () => {
     return Uint8Array.from({ length: 52 }, (_, i) => i);
@@ -737,8 +717,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0h = getHandUint32AsReadable(p0hu32);
                 const p0 = { index: p0hi, hand: p0h };
 
-                getArrayShuffled(deckRef);
-
+                deckRef.shuffleByFisherYates();
                 const deck = deckRef.filter(card => !p0h.includes(card))
 
                 const deckOffset = 5;
