@@ -753,7 +753,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 getDiscardsSimulated(
                     p0hObj, 
                     p1hObj, 
-                    deckNext, 
+                    deckNext,
+                    0,
                     roundNumber, 
                     roundNumbersFrozen
                 );
