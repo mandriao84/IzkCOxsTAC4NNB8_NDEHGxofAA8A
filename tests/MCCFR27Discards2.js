@@ -395,7 +395,7 @@ const getIndexByBinarySearch = (arr, target) => {
 // pgrep -fl "caffeinate|MCCFR27Discards2.js"
 // sudo pkill -9 -f "MCCFR27Discards2.js"
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
-// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js &"
+// sudo caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js
 // ps ax -o pid,pcpu,pmem,command | grep 'MCCFR27Discards2.js'
 
 
