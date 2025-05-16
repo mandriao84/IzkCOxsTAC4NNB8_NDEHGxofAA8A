@@ -740,10 +740,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 getArrayShuffled(deckRef);
 
-                const deckNext = deckRef.filter(card => !p0h.includes(card))
+                const deck = deckRef.filter(card => !p0h.includes(card))
 
                 const deckOffset = 5;
-                const p1h = deckNext.slice(0, deckOffset);
+                const p1h = deck.slice(0, deckOffset);
                 p1h.sort();
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
@@ -752,7 +752,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 getDiscardsSimulated(
                     p0, 
                     p1, 
-                    deckNext,
+                    deck,
                     p1.deckOffset,
                     roundNumber, 
                     roundNumbersFrozen
