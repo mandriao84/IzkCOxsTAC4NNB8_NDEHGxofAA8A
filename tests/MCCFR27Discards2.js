@@ -15,6 +15,7 @@ const DECK = {
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
 const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+const CARDS_FROM_VALUE = Object.fromEntries(Object.entries(CARDS).map(([k, v]) => [v, k]));
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
@@ -92,11 +93,15 @@ const getStrategiesReadableSaved = () => {
             return values.map(v => v / total);
         };
     
+        const keyParts = key.split(',');
+        const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ',' + parseInt(keyParts[1]);
+
         const strat = getStrategyAveraged(key);
         const result = strat.reduce((obj, value, index) => {
-            obj.key = key;
+            obj.key = keyDecoded
             obj.discards = obj.discards || [];
-            const d = ACTIONS[index].length ? ACTIONS[index].join('') : '–';
+            const d = ACTIONS[index].length ? ACTIONS[index].join('') : '-';
             const v = value.safe("ROUND", 4);
             obj.discards.push([d, v]);
             return obj;
@@ -750,7 +755,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
     // getDataFlushedMerged(".results/mccfr/evs")
     // getDataFlushedMerged(".results/mccfr/regrets")
     // getDataFlushedMerged(".results/mccfr/strategies")
@@ -785,3 +790,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 //     const r = ref.filterBySet(aSet);
 // }
 // console.timeEnd('filterBySet performance');
+
+// console.log(CARDS_FROM_VALUE)
+const key = "900487874,1"
+const keyParts = key.split(',');
+const du32 = parseInt(keyParts[0]);
+const rn = parseInt(keyParts[1]);
+const d = getHandDetailsUint32AsReadable(du32);
+const keyDecoded = d.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ',' + rn;
+console.log(d, rn, keyDecoded);
