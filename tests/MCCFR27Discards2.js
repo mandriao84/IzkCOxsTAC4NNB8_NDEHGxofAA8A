@@ -554,7 +554,6 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
-    console.log(hand, handNew, handUint32)
     const handObj = { index: handIndex, hand: handNew, deckOffset: deckOffsetNew };
     return handObj;
 }
@@ -761,10 +760,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getStrategiesReadableSaved()
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, []);
 
 
-    getCacheCreated();
+    // getCacheCreated();
     // [
     //     ".results/mccfr/evs",
     //     ".results/mccfr/regrets",
