@@ -86,16 +86,17 @@ const getNDJSONAsMap = (filePath) => {
 
 const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
+        const keyParts = key.split(',');
+        const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+        
         const getStrategyAveraged = (key) => {
             const values = strategySum.get(key);
+            console.log(key, values);
             if (!values) return Array(ACTION_COUNT).fill(1 / ACTION_COUNT);
             const total = values.reduce((acc, value) => acc + value, 0);
             return values.map(v => v / total);
         };
-    
-        const keyParts = key.split(',');
-        const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + d.suitPattern + ',' + keyParts[1];
 
         const strat = getStrategyAveraged(key);
         const result = strat.reduce((obj, value, index) => {
@@ -503,7 +504,9 @@ function getDataFlushedMerged(dir) {
     }
     fs.writeFileSync(outPath, outData, 'utf8');
 
-    if (dir.includes('strategies')) getStrategiesReadableSaved(result);
+    if (dir.includes('strategies')) {
+        getStrategiesReadableSaved(result);
+    }
 }
 
 function getDataNashed() {
@@ -687,6 +690,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     for (let ai = 0; ai < ACTION_COUNT; ++ai) {
         p0reg[ai] += p0utilAlt[ai] - p0util;
         p1reg[ai] += p1utilAlt[ai] - p1util;
+        console.log(p0reg[ai], p1reg[ai])
     }
 
     evSum.get(p0key)[1] += p0util;
