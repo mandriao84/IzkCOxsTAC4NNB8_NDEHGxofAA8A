@@ -764,7 +764,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getCacheCreated();
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, []);
 
 
     // [
@@ -776,7 +776,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // })
 
 
-    getDataNashed();
+    // getDataNashed();
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
