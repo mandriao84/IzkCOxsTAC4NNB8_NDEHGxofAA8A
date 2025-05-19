@@ -510,10 +510,14 @@ function getDataFlushedMerged(dir) {
 }
 
 function getDataNashed() {
+    const regretSum = getNDJSONAsMap(".results/mccfr/regrets/regrets.ndjson");
+    const strategySum = getNDJSONAsMap(".results/mccfr/strategies/strategies.ndjson");
+    // const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
+
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
     let count = 0;
-    for (const [key, values] of regretSum.entries()) {
+    for (const [key, values] of regretSum) {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
         const regretAcc = values.reduce((acc, value) => acc + Math.max(0, value), 0);
         const regretAvg = regretAcc / (values.length * visitAcc);
@@ -521,7 +525,7 @@ function getDataNashed() {
         regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
         count++;
         console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
-        if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
+        // if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
 
     const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
@@ -700,7 +704,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 4/7).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -759,11 +763,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    // getStrategiesReadableSaved()
-    getMCCFRComputed(1, []);
-
-
     // getCacheCreated();
+    // getMCCFRComputed(1, []);
+
+
     // [
     //     ".results/mccfr/evs",
     //     ".results/mccfr/regrets",
@@ -772,7 +775,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    // getDataNashed();
+
+    getDataNashed();
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
