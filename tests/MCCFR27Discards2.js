@@ -14,8 +14,8 @@ const DECK = {
     27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
-const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
-const CARDS_FROM_VALUE = { 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 8: '9', 7: '8', 6: '7', 5: '6', 4: '5', 3: '4', 2: '3', 1: '2', 0: 'A' };
+const CARDS = { 'X': 14, 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+const CARDS_FROM_VALUE = { 14: 'X', 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 8: '9', 7: '8', 6: '7', 5: '6', 4: '5', 3: '4', 2: '3', 1: '2', 0: 'A' };
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
@@ -234,7 +234,13 @@ const getHandDetails = (hand) => {
     let cardSuitByRankValueMax = null;
     for (let i = 0; i < hand.length; i++) {
         const rankChar = hand[i][0];
-        const rankValue = CARDS[rankChar];
+        const rankValue = CARDS[rankChar]
+
+        // [A, K] = X
+        if (rankValue > 11) { 
+            continue;
+        }
+
         const suitChar = hand[i][1];
         if (rankValue > cardRankValueMax) {
             cardRankValueMax = rankValue;
@@ -270,8 +276,8 @@ const getHandDetails = (hand) => {
     const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
     const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
     const isThree = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2;
-    const isStraight = cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = cardsSuitValue.every(suit => suit === cardsSuitValue[0]);
+    const isStraight = cardsRankValueCountKey1.length === 5 && cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = cardsRankValueCountKey1.length === 5 && cardsSuitValue.every(suit => suit === cardsSuitValue[0]);
     const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
     const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
@@ -300,6 +306,7 @@ const getHandDetails = (hand) => {
 
     const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
     const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
+    console.log({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern })
     return { detailsUint32, score };
 }
 
@@ -764,7 +771,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 (async () => {
     // getCacheSaved();
     // getCacheCreated();
-    getMCCFRComputed(1, []);
+    // getMCCFRComputed(1, []);
 
 
     // [
@@ -774,7 +781,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // ].forEach(dir => {
     //     getDataFlushedMerged(dir)
     // })
-
 
     // getDataNashed();
 })();
@@ -815,3 +821,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
 // // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+
+const hand = ["6s", "4h", "6d", "As", "Kc"];
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+console.log(hdu32, hd, keyDecoded);
