@@ -307,8 +307,7 @@ const getHandDetails = (hand) => {
         }
     }()
 
-    console.log(cardsRankValue, cardsRankValueCountKeys)
-    if (isNotValid) cardsRankValue = [...cardsRankValue, ...Array(hand.length - cardsRankValue.length).fill(14)]
+    if (isNotValid) cardsRankValue = [...cardsRankValue, ...Array(hand.length - cardsRankValue.length).fill(14)];
 
     const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
     const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
@@ -775,7 +774,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated();
+    getCacheCreated();
+    // console.log(HANDS_CANONICAL_INDEX.length);
     // getMCCFRComputed(1, []);
 
 
@@ -827,9 +827,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 
-const hand = ["2s", "3h", "6d", "As", "Kc"];
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
-console.log(hdu32, hd);
-console.log(keyDecoded);
+// const hand = ["2s", "3h", "6d", "As", "Kc"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
