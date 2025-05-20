@@ -237,9 +237,9 @@ const getHandDetails = (hand) => {
         const rankValue = CARDS[rankChar]
 
         /** [A, K] ARE EXCLUDED AND EQUALS "X" */ 
-        if (rankValue > 11) { 
-            continue;
-        }
+        // if (rankValue > 11) { 
+        //     continue;
+        // }
 
         const suitChar = hand[i][1];
         if (rankValue > cardRankValueMax) {
@@ -530,6 +530,7 @@ function getDataNashed() {
     let count = 0;
     for (const [key, values] of regretSum) {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
+        if (visitAcc === 0) continue;
         const regretAcc = values.reduce((acc, value) => acc + Math.max(0, value), 0);
         const regretAvg = regretAcc / (values.length * visitAcc);
         regretSumAvg += regretAvg;
@@ -606,6 +607,13 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
+    if (roundNumbersFrozen?.has(roundNumber)) {
+        const [key, values] = evSum.get(p0key);
+        const ev = values[1] / values[0];
+        console.log(ev)
+        return ev;
+    }
+
     if (!evSum.has(p0key)) evSum.set(p0key, [0, 0]);
     if (!evSum.has(p1key)) evSum.set(p1key, [0, 0]);
 
@@ -618,9 +626,6 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0strat = getStrategyFromRegret(p0reg);
     const p1strat = getStrategyFromRegret(p1reg);
 
-    // getNashEquilibrium(p0key, p0reg, p0strat);
-    // getNashEquilibrium(p1key, p1reg, p1strat);
-
     const p0stratsum = strategySum.get(p0key) || (strategySum.set(p0key, new Float32Array(ACTION_COUNT)), strategySum.get(p0key));
     const p1stratsum = strategySum.get(p1key) || (strategySum.set(p1key, new Float32Array(ACTION_COUNT)), strategySum.get(p1key));
 
@@ -628,34 +633,6 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p0stratsum[i] += p0strat[i];
         p1stratsum[i] += p1strat[i];
     }
-
-    // if (roundNumbersFrozen?.includes(roundNumber)) {
-    //     let p0util = 0;
-    //     for (let a0 = 0; a0 < ACTION_COUNT; ++a0) {
-    //         const p0prob = p0strat[a0];
-    //         if (p0prob === 0) continue;
-    //         for (let a1 = 0; a1 < ACTION_COUNT; ++a1) {
-    //             const p1prob = p1strat[a1];
-    //             if (p1prob === 0) continue;
-    //             const prob = p0prob * p1prob;
-    
-    //             const p0hLeaf = getActionApplied(h0.hand, deck, deckOffset, a0);
-    //             const p1hLeaf = getActionApplied(h1.hand, deck, p0hLeaf.deckOffset, a1);
-    
-    //             const leaf = roundNumber <= 1
-    //                 ? getScores(p0hLeaf.index, p1hLeaf.index)
-    //                 : getDiscardsSimulated(p0hLeaf, p1hLeaf, deck, p1hLeaf.deckOffset, roundNumber - 1, roundNumbersFrozen);
-    
-    //             p0util += prob * leaf;
-    //         }
-    //     }
-    
-    //     const p1util = -p0util;
-    //     evSum.get(p0key)[1] += p0util;
-    //     evSum.get(p1key)[1] += p1util;
-    
-    //     return p0util;
-    // }
 
     const p0aRnd = getRandomActionIndex(p0strat);
     const p1aRnd = getRandomActionIndex(p1strat);
@@ -715,7 +692,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1/7).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -761,12 +738,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                     roundNumbersFrozen
                 );
 
-                if ((i+1) % flushInterval === 0) {
-                    await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
-                }
+                // if ((i+1) % flushInterval === 0) {
+                //     await getDataFlushed(workerId);
+                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                //     timeNow = performance.now();
+                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s+1} | HAND_ITERATION=${i+1} | TIME_ELAPSED=${timeElapsed}ms`);
+                // }
             }
         }
     }       
@@ -774,9 +751,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    getCacheCreated();
+    // getCacheCreated();
     // console.log(HANDS_CANONICAL_INDEX.length);
-    // getMCCFRComputed(1, []);
+    getMCCFRComputed(1, new Set([1]));
 
 
     // [
@@ -818,16 +795,23 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // }
 // console.timeEnd('filterBySet performance');
 
-// getCacheCreated();
-// const key = "759775296,1"
+// const key = "826941698,1"
 // const keyParts = key.split(',');
 // const hdu32 = parseInt(keyParts[0]);
 // const hd = getHandDetailsUint32AsReadable(hdu32);
 // // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
 // // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+// console.log(keyDecoded)
 
 // const hand = ["2s", "3h", "6d", "As", "Kc"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
+
+// const hand = ["5s", "8h", "Jd", "Qs", "Kc"];
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
