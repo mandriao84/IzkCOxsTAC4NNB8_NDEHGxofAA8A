@@ -607,12 +607,12 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    if (roundNumbersFrozen?.has(roundNumber)) {
-        const [key, values] = evSum.get(p0key);
-        const ev = values[1] / values[0];
-        console.log(ev)
-        return ev;
-    }
+    // if (roundNumbersFrozen?.has(roundNumber)) {
+    //     const [key, values] = evSum.get(p0key);
+    //     const ev = values[1] / values[0];
+    //     console.log(ev)
+    //     return ev;
+    // }
 
     if (!evSum.has(p0key)) evSum.set(p0key, [0, 0]);
     if (!evSum.has(p1key)) evSum.set(p1key, [0, 0]);
