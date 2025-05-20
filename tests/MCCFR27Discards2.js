@@ -237,9 +237,9 @@ const getHandDetails = (hand) => {
         const rankValue = CARDS[rankChar]
 
         // [A, K] = X
-        if (rankValue > 11) { 
-            continue;
-        }
+        // if (rankValue > 11) { 
+        //     continue;
+        // }
 
         const suitChar = hand[i][1];
         if (rankValue > cardRankValueMax) {
@@ -271,6 +271,7 @@ const getHandDetails = (hand) => {
     const cardsRankValueCountKey2 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 2).sort((a, b) => b - a);
     const cardsRankValueCountKey3 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 3).sort((a, b) => b - a);
     const cardsRankValueCountKey4 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 4).sort((a, b) => b - a);
+
 
     const isHigh = cardsRankValueCountKey1.length === 5;
     const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
