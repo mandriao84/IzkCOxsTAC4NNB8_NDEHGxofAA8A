@@ -296,23 +296,22 @@ const getHandDetails = (hand) => {
         else return { type: 9, ranks: [...cardsRankValue] }; // NOTVALID
     }();
 
-    console.log(cardsRankValue, cardsRankValueCountKeys)
-    if (isNotValid) cardsRankValue = [...cardsRankValue, ...Array(hand.length - cardsRankValue.length).fill(14)]
-
     const cardsSuitPattern = function () {
         const cardsSuitByRankValueMax = cardsSuitValue.filter(suit => suit === cardSuitByRankValueMax);
         if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 2 && cardsSuitByRankValueMax.length === 1) {
             return 2; // 4 SUITED + 1 OFFSUITED (HIGHEST CARD)
-        } else if (cardsSuitValueCountKeys.length === 1) {
+        } else if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 1) {
             return 1; // SUITED
         } else {
             return 0; // OFFSUITED
         }
     }()
 
+    console.log(cardsRankValue, cardsRankValueCountKeys)
+    if (isNotValid) cardsRankValue = [...cardsRankValue, ...Array(hand.length - cardsRankValue.length).fill(14)]
+
     const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
     const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
-    console.log({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern })
     return { detailsUint32, score };
 }
 
