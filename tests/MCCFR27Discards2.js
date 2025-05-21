@@ -252,25 +252,50 @@ const getHandDetails = (hand) => {
     cardsRankValue.sort((a, b) => b - a);
     cardsSuitValue.sort((a, b) => b - a);
 
-    const cardsRankValueCount = cardsRankValue.reduce((obj, rank) => {
-        obj[rank] = (obj[rank] || 0) + 1;
-        return obj
-    }, {})
-    const cardsSuitValueCount = cardsSuitValue.reduce((obj, suit) => {
-        obj[suit] = (obj[suit] || 0) + 1;
-        return obj;
-    }, {});
+    const { cardsRankValueCount, cardsRankValueCountKeys } = cardsRankValue.reduce((acc, rank) => {
+        if (!acc.cardsRankValueCount[rank]) {
+            acc.cardsRankValueCount[rank] = 1;
+            acc.cardsRankValueCountKeys.push(rank);
+        } else {
+            acc.cardsRankValueCount[rank]++;
+        }
+        return acc;
+    }, { cardsRankValueCount: {}, cardsRankValueCountKeys: [] });
 
-    const cardsSuitValueCountKeys = Object.keys(cardsSuitValueCount);
+    const cardsRankValueCountKey1 = [];
+    const cardsRankValueCountKey2 = [];
+    const cardsRankValueCountKey3 = [];
+    const cardsRankValueCountKey4 = [];
+    for (const rankValue in cardsRankValueCount) {
+        const count = cardsRankValueCount[rankValue];
+        const rankValueInt = parseInt(rankValue);
+        if (count === 1) cardsRankValueCountKey1.push(rankValueInt);
+        else if (count === 2) cardsRankValueCountKey2.push(rankValueInt);
+        else if (count === 3) cardsRankValueCountKey3.push(rankValueInt);
+        else if (count === 4) cardsRankValueCountKey4.push(rankValueInt);
+    }
+    cardsRankValueCountKey1.sort((a, b) => b - a);
+    cardsRankValueCountKey2.sort((a, b) => b - a);
+    cardsRankValueCountKey3.sort((a, b) => b - a);
+    cardsRankValueCountKey4.sort((a, b) => b - a);
+
+    const { cardsSuitValueCount, cardsSuitValueCountKeys } = cardsSuitValue.reduce((acc, suit) => {
+        if (!acc.cardsSuitValueCount[suit]) {
+            acc.cardsSuitValueCount[suit] = 1;
+            acc.cardsSuitValueCountKeys.push(suit);
+        } else {
+            acc.cardsSuitValueCount[suit]++;
+        }
+        return acc;
+    }, { cardsSuitValueCount: {}, cardsSuitValueCountKeys: [] });
+
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
     if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
 
-    const cardsRankValueCountKeys = Object.keys(cardsRankValueCount);
-    const cardsRankValueCountKey1 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 1).sort((a, b) => b - a);
-    const cardsRankValueCountKey2 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 2).sort((a, b) => b - a);
-    const cardsRankValueCountKey3 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 3).sort((a, b) => b - a);
-    const cardsRankValueCountKey4 = cardsRankValueCountKeys.filter(r => cardsRankValueCount[r] === 4).sort((a, b) => b - a);
+    console.log(cardsSuitValueCount, cardsSuitValueCountKeys);
+    // console.log(cardsRankValueCount, cardsRankValueCountKeys);
+    // console.log(cardsRankValueCountKey1, cardsRankValueCountKey2, cardsRankValueCountKey3, cardsRankValueCountKey4);
 
 
     const isNotValid = cardsRankValue.length !== 5;
@@ -279,7 +304,7 @@ const getHandDetails = (hand) => {
     const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
     const isThree = (cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2) || (cardsRankValueCountKey3.length === 1 && isNotValid);
     const isStraight = !isNotValid && cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = !isNotValid && cardsSuitValue.every(suit => suit === cardsSuitValue[0]);
+    const isFlush = !isNotValid && cardsSuitValueCountKeys.length === 1;
     const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
     const isFour = (cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1) || (cardsRankValueCountKey4.length === 1 && isNotValid);
     const isStraightFlush = isStraight && isFlush;
@@ -753,7 +778,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getCacheSaved();
     // getCacheCreated();
     // console.log(HANDS_CANONICAL_INDEX.length);
-    getMCCFRComputed(1, new Set([1]));
+    // getMCCFRComputed(1, new Set([1]));
 
 
     // [
@@ -804,12 +829,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 // console.log(keyDecoded)
 
-// const hand = ["2s", "3h", "6d", "As", "Kc"];
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
+const hand = ["2s", "3s", "6s", "As", "Ks"];
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+console.log(hdu32, hd);
+console.log(keyDecoded);
 
 // const hand = ["5s", "8h", "Jd", "Qs", "Kc"];
 // const hdu32 = getHandDetails(hand);
