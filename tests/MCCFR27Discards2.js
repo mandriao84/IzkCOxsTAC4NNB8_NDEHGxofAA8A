@@ -412,6 +412,9 @@ const getCacheCreated = (roundNumber) => {
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
+        // const hd = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
+        // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+        // console.log(keyDecoded);
         HANDS_SCORE[i] = cache[i][2];
         HANDS_EV[i] = cache[i][3];
         if (!handsCanonicalSeen.has(cache[i][1])) {
@@ -785,8 +788,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
-    // console.log(HANDS_CANONICAL_INDEX.length);
+    getCacheCreated(1);
+    console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 2;
@@ -861,7 +864,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
-
 // const keysCanonicalSet = new Set();
 // for (const [key, values] of stratReadSum) {
 //     const keyParts = key.split(':');
@@ -895,4 +897,4 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 //     }
 // }
 // console.log(keysCanonicalSet.size);
-// fs.writeFileSync(`${PATH_STRATEGIES}-readable2`, [...keysCanonicalSet].sort((a, b) => a - b).join('\n'), 'utf8');
+// fs.writeFileSync(`${PATH_STRATEGIES}-readable2`, [...keysCanonicalSet].sort().join('\n'), 'utf8');
