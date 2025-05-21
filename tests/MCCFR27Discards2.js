@@ -788,7 +788,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     /** (roundNumbersFrozen) >>
      * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
      * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
     getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
