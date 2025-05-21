@@ -298,27 +298,32 @@ const getHandDetails = (hand) => {
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
     if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
 
-    const isNotValid = cardsRankValue.length !== 5;
     const isHigh = cardsRankValueCountKey1.length === 5;
-    const isPair = (cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3) || (cardsRankValueCountKey2.length === 1 && isNotValid);
+    const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
     const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
-    const isThree = (cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2) || (cardsRankValueCountKey3.length === 1 && isNotValid);
-    const isStraight = !isNotValid && cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = !isNotValid && cardsSuitValueCountKeys.length === 1;
+    const isThree = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2;
+    const isStraight = cardsRankValueCountKey1.length === 5 && cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 1;
     const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
-    const isFour = (cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1) || (cardsRankValueCountKey4.length === 1 && isNotValid);
+    const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
+
     const details = function () {
-        if (isStraightFlush) return { type: 8, ranks: [...cardsRankValueCountKey1] }; // STRAIGHTFLUSH
-        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] }; // FOUR
-        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] }; // FULL
-        else if (isFlush) return { type: 5, ranks: [...cardsRankValueCountKey1] }; // FLUSH
+        const getRanksSuitedCanonical = () => {
+            const ranksSuitedCanonicalRaw = cardsRankValueCountKey1.filter(r => r < 11);
+            const ranksSuitedCanonical = ranksSuitedCanonicalRaw.concat(Array(hand.length - ranksSuitedCanonicalRaw.length).fill(14));
+            return ranksSuitedCanonical;
+        }
+
+        if (isStraightFlush) return { type: 8, ranks: getRanksSuitedCanonical() }; // STRAIGHTFLUSH
+        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1, ...Array(3).fill(14)] }; // FOUR
+        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2, ...Array(3).fill(14)] }; // FULL
+        else if (isFlush) return { type: 5, ranks: getRanksSuitedCanonical() }; // FLUSH
         else if (isStraight) return { type: 4, ranks: [...cardsRankValueCountKey1] }; // STRAIGHT
-        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] }; // THREE
-        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIRS
-        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIR
+        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // THREE
+        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // PAIRS
+        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(1).fill(14)] }; // PAIR
         else if (isHigh) return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
-        else return { type: 9, ranks: [...cardsRankValue] }; // NOTVALID
     }();
 
     const cardsSuitPattern = function () {
@@ -331,10 +336,8 @@ const getHandDetails = (hand) => {
         }
     }()
 
-    if (isNotValid) cardsRankValue = [...cardsRankValue, ...Array(hand.length - cardsRankValue.length).fill(14)];
-
-    const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
-    const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
+    const score = getHandScore({ type: details.type, ranksValue: details.ranks });
+    const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: details.ranks, suitPattern: cardsSuitPattern });
     return { detailsUint32, score };
 }
 
@@ -357,7 +360,7 @@ const getHandScore = ({ type, ranksValue }) => {
         score = 2000000 + ranksValue.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranksValue.length - 1 - index)), 0);
     } else if (type === 1) { // PAIR
         score = 1000000 + ranksValue.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranksValue.length - 1 - index)), 0);
-    } else if (type === 0 || type === 9) { // HIGH
+    } else if (type === 0) { // HIGH
         score = ranksValue.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranksValue.length - 1 - index)), 0);
     }
 
@@ -526,8 +529,8 @@ function getDataFlushedMerged(dir) {
                 if (!trimmed) continue;
                 const { key, values } = JSON.parse(trimmed);
                 if (!map.has(key)) {
-                    if (values instanceof Float32Array) map.set(key, Float32Array.from(values));
-                    else map.set(key, values);
+                    if (values instanceof Float32Array) map.set(key, structuredClone(values));
+                    else map.set(key, structuredClone(values));
                 } else {
                     const arr = map.get(key);
                     for (let j = 0; j < arr.length; j++) {
@@ -782,7 +785,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated();
+    // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
@@ -849,7 +852,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
 
-// const hand = ["5s", "8h", "Jd", "Qs", "Kc"];
+// const hand = ["2s", "3s", "4s", "5s", "Js"];
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
@@ -857,24 +860,39 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(keyDecoded);
 
 
-const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
-const keysNewSet = new Set();
-for (const [key, values] of stratReadSum) {
-    const keyParts = key.split(':');
-    const keyCanonicalArr = keyParts[0].split('');
-    
-    const indicesString = values[0][0];
-    const indicesSet = new Set([...indicesString].map(Number));
-    let keyCanonicalNew = [];
-    for (let i = 0; i < keyCanonicalArr.length; i++) {
-        if (indicesSet.has(i)) {
-            keyCanonicalNew.push('X')
-        } else {
-            keyCanonicalNew.push(keyCanonicalArr[i])
-        }
-    }
-    keyCanonicalNew = keyCanonicalNew.sort().join('') + ':' + keyParts[1];
-    // console.log(key, keyCanonicalNew);
-    if (!keysNewSet.has(keyCanonicalNew)) keysNewSet.add(keyCanonicalNew);
-}
-console.log(keysNewSet.size);
+// const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
+
+// const keysCanonicalSet = new Set();
+// for (const [key, values] of stratReadSum) {
+//     const keyParts = key.split(':');
+//     const keyCanonicalArr = keyParts[0].split('');
+//     const indicesString = values[0][0];
+//     const indicesSet = new Set([...indicesString].map(Number));
+//     let keyCanonicalNew = [];
+//     for (let i = 0; i < keyCanonicalArr.length; i++) {
+//         if (indicesSet.has(i)) {
+//             keyCanonicalNew.push('X');
+//         } else {
+//             keyCanonicalNew.push(keyCanonicalArr[i]);
+//         }
+//     }
+//     keyCanonicalNew = keyCanonicalNew.sort().join('') + ':' + keyParts[1];
+//     if (!keysCanonicalSet.has(keyCanonicalNew)) {
+//         // keysCanonicalSet.set(keyCanonicalNew, structuredClone(values));
+//         keysCanonicalSet.add(keyCanonicalNew);
+//     } else {
+//         // const valuesPrev = keysCanonicalSet.get(keyCanonicalNew);
+//         // for (let j = 0; j < valuesPrev.length; j++) {
+//         //     arr[j] += values[j];
+//         // }
+//         // for (let i = 0; i < valuesPrev.length; i++) {
+//         //     const prevRow = valuesPrev[i];
+//         //     const newRow = values[i];
+//         //     for (let j = 0; j < prevRow.length; j++) {
+//         //         prevRow[j] += newRow[j];
+//         //     }
+//         // }
+//     }
+// }
+// console.log(keysCanonicalSet.size);
+// fs.writeFileSync(`${PATH_STRATEGIES}-readable2`, [...keysCanonicalSet].sort((a, b) => a - b).join('\n'), 'utf8');
