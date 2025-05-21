@@ -279,24 +279,24 @@ const getHandDetails = (hand) => {
     cardsRankValueCountKey3.sort((a, b) => b - a);
     cardsRankValueCountKey4.sort((a, b) => b - a);
 
-    const { cardsSuitValueCount, cardsSuitValueCountKeys } = cardsSuitValue.reduce((acc, suit) => {
+    const { cardsSuitValueCount, cardsSuitValueCountKeys, cardsSuitByRankValueMax } = cardsSuitValue.reduce((acc, suit) => {
         if (!acc.cardsSuitValueCount[suit]) {
             acc.cardsSuitValueCount[suit] = 1;
             acc.cardsSuitValueCountKeys.push(suit);
         } else {
             acc.cardsSuitValueCount[suit]++;
         }
+
+        if (suit === cardSuitByRankValueMax) {
+            acc.cardsSuitByRankValueMax.push(suit);
+        }
+
         return acc;
-    }, { cardsSuitValueCount: {}, cardsSuitValueCountKeys: [] });
+    }, { cardsSuitValueCount: {}, cardsSuitValueCountKeys: [], cardsSuitByRankValueMax: [] });
 
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
     if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
-
-    console.log(cardsSuitValueCount, cardsSuitValueCountKeys);
-    // console.log(cardsRankValueCount, cardsRankValueCountKeys);
-    // console.log(cardsRankValueCountKey1, cardsRankValueCountKey2, cardsRankValueCountKey3, cardsRankValueCountKey4);
-
 
     const isNotValid = cardsRankValue.length !== 5;
     const isHigh = cardsRankValueCountKey1.length === 5;
@@ -322,7 +322,6 @@ const getHandDetails = (hand) => {
     }();
 
     const cardsSuitPattern = function () {
-        const cardsSuitByRankValueMax = cardsSuitValue.filter(suit => suit === cardSuitByRankValueMax);
         if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 2 && cardsSuitByRankValueMax.length === 1) {
             return 2; // 4 SUITED + 1 OFFSUITED (HIGHEST CARD)
         } else if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 1) {
@@ -829,7 +828,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 // console.log(keyDecoded)
 
-const hand = ["2s", "3s", "6s", "As", "Ks"];
+const hand = ["2s", "3s", "6s", "As", "Kh"];
 const hdu32 = getHandDetails(hand);
 const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
 const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
