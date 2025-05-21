@@ -784,9 +784,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getCacheSaved();
     // getCacheCreated();
     // console.log(HANDS_CANONICAL_INDEX.length);
-    const roundNumbersFrozen = new Uint8Array(4);
-    roundNumbersFrozen[1] = 1;
-    getMCCFRComputed(1, roundNumbersFrozen);
+    const roundNumber = 1;
+    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]);
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
