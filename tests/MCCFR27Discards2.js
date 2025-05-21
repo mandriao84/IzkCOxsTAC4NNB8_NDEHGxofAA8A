@@ -637,13 +637,13 @@ function getRandomActionIndex(strat) {
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
-    const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
-    const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
-
     if (roundNumbersFrozen[roundNumber]) {
         const ev = HANDS_EV[h0.index];
         return ev;
     }
+    
+    const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
+    const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
     if (!evSum.has(p0key)) evSum.set(p0key, [0, 0]);
     if (!evSum.has(p1key)) evSum.set(p1key, [0, 0]);
