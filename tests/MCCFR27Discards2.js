@@ -100,13 +100,13 @@ const getStrategiesReadableSaved = (strategiesMap) => {
         const strat = getStrategyAveraged(key);
         const result = strat.reduce((obj, value, index) => {
             obj.key = keyDecoded
-            obj.discards = obj.discards || [];
+            obj.values = obj.values || [];
             const d = ACTIONS[index].length ? ACTIONS[index].join('') : '-';
             const v = value.safe("ROUND", 4);
-            obj.discards.push([d, v]);
+            obj.values.push([d, v]);
             return obj;
         }, {});
-        result.discards.sort((a, b) => b[1] - a[1]);
+        result.values.sort((a, b) => b[1] - a[1]);
     
         return result;
     }
@@ -641,7 +641,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         const ev = HANDS_EV[h0.index];
         return ev;
     }
-    
+
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
@@ -786,12 +786,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 2;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 2;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -855,3 +855,26 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
+
+
+const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
+const keysNewSet = new Set();
+for (const [key, values] of stratReadSum) {
+    const keyParts = key.split(':');
+    const keyCanonicalArr = keyParts[0].split('');
+    
+    const indicesString = values[0][0];
+    const indicesSet = new Set([...indicesString].map(Number));
+    let keyCanonicalNew = [];
+    for (let i = 0; i < keyCanonicalArr.length; i++) {
+        if (indicesSet.has(i)) {
+            keyCanonicalNew.push('X')
+        } else {
+            keyCanonicalNew.push(keyCanonicalArr[i])
+        }
+    }
+    keyCanonicalNew = keyCanonicalNew.sort().join('') + ':' + keyParts[1];
+    // console.log(key, keyCanonicalNew);
+    if (!keysNewSet.has(keyCanonicalNew)) keysNewSet.add(keyCanonicalNew);
+}
+console.log(keysNewSet.size);
