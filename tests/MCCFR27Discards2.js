@@ -19,7 +19,7 @@ const CARDS_FROM_VALUE = { 14: 'X', 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const cardsLength = Object.keys(CARDS).length
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_CANONICAL_INDEX;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -380,14 +380,21 @@ const getCacheSaved = () => {
     fs.writeFileSync(PATH_KEYS, ndjson, 'utf8');
 }
 
-const getCacheCreated = () => {
+const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
+    const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
     const cache = [];
-    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
-        const handUint32 = getHandReadableAsUint32(hand);
-        const { detailsUint32, score } = getHandDetails(hand);
-        cache.push([handUint32, detailsUint32, score]);
+
+    for (let r = 0; r < roundNumber; r++) {
+        for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
+            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
+            const handUint32 = getHandReadableAsUint32(hand);
+            const { detailsUint32, score } = getHandDetails(hand);
+            const key = `${detailsUint32 + "," + (r+1)}`;
+            const evValues = evSum.get(key) || [1, 0];
+            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
+            cache.push([handUint32, detailsUint32, score, ev]);
+        }
     }
 
     cache.sort((a, b) => a[0] - b[0]);
@@ -395,6 +402,7 @@ const getCacheCreated = () => {
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
+    HANDS_EV = new Float32Array(N);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
@@ -402,6 +410,7 @@ const getCacheCreated = () => {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
         HANDS_SCORE[i] = cache[i][2];
+        HANDS_EV[i] = cache[i][3];
         if (!handsCanonicalSeen.has(cache[i][1])) {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
@@ -454,7 +463,7 @@ const ACTIONS = (() => {
 const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
-const evSum = new Map();
+let evSum = new Map();
 
 async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
@@ -631,10 +640,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    // if (roundNumbersFrozen?.has(roundNumber)) {
-    //     const [key, values] = evSum.get(p0key);
-    //     const ev = values[1] / values[0];
-    //     console.log(ev)
+    // if (roundNumbersFrozen[roundNumber]) {
+    //     const ev = HANDS_EV[h0.index];
     //     return ev;
     // }
 
@@ -728,7 +735,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     } else {
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
-        getCacheCreated();
+        getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
         const iterations = 100_000;
@@ -777,7 +784,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getCacheSaved();
     // getCacheCreated();
     // console.log(HANDS_CANONICAL_INDEX.length);
-    // getMCCFRComputed(1, new Set([1]));
+    const roundNumbersFrozen = new Uint8Array(4);
+    roundNumbersFrozen[1] = 1;
+    getMCCFRComputed(1, roundNumbersFrozen);
 
 
     // [
@@ -828,12 +837,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
 // console.log(keyDecoded)
 
-const hand = ["2s", "3s", "6s", "As", "Kh"];
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
-console.log(hdu32, hd);
-console.log(keyDecoded);
+// const hand = ["2s", "3s", "6s", "As", "Kh"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
 
 // const hand = ["5s", "8h", "Jd", "Qs", "Kc"];
 // const hdu32 = getHandDetails(hand);
