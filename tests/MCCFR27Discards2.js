@@ -236,11 +236,6 @@ const getHandDetails = (hand) => {
         const rankChar = hand[i][0];
         const rankValue = CARDS[rankChar]
 
-        /** [A, K] ARE EXCLUDED AND EQUALS "X" */ 
-        // if (rankValue > 11) { 
-        //     continue;
-        // }
-
         const suitChar = hand[i][1];
         if (rankValue > cardRankValueMax) {
             cardRankValueMax = rankValue;
@@ -307,18 +302,26 @@ const getHandDetails = (hand) => {
     const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
     const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
     const isStraightFlush = isStraight && isFlush;
+    // let canonicalHasX = false;
 
     const details = function () {
-        const getRanksSuitedCanonical = () => {
-            const ranksSuitedCanonicalRaw = cardsRankValueCountKey1.filter(r => r < 11);
-            const ranksSuitedCanonical = ranksSuitedCanonicalRaw.concat(Array(hand.length - ranksSuitedCanonicalRaw.length).fill(14));
-            return ranksSuitedCanonical;
-        }
-
-        if (isStraightFlush) return { type: 8, ranks: getRanksSuitedCanonical() }; // STRAIGHTFLUSH
+        // const getCanonical = function () {
+        //     const ranks = [];
+        //     for (let i = 0; i < cardsRankValue.length; i++) {
+        //         const rankValue = cardsRankValue[i];
+        //         if (rankValue < 11) {
+        //             ranks.push(rankValue);
+        //         } else {
+        //             ranks.push(14);
+        //             canonicalHasX = true;
+        //         }
+        //     }
+        //     return ranks;
+        // }()
+        if (isStraightFlush) return { type: 8, ranks: [...cardsRankValueCountKey1] }; // STRAIGHTFLUSH
         else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1, ...Array(3).fill(14)] }; // FOUR
         else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2, ...Array(3).fill(14)] }; // FULL
-        else if (isFlush) return { type: 5, ranks: getRanksSuitedCanonical() }; // FLUSH
+        else if (isFlush) return { type: 5, ranks: [...cardsRankValueCountKey1] }; // FLUSH
         else if (isStraight) return { type: 4, ranks: [...cardsRankValueCountKey1] }; // STRAIGHT
         else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // THREE
         else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // PAIRS
@@ -409,20 +412,23 @@ const getCacheCreated = (roundNumber) => {
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
+    // let ndjson_debug = "";
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
-        // const hd = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
-        // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
-        // console.log(keyDecoded);
+
         HANDS_SCORE[i] = cache[i][2];
         HANDS_EV[i] = cache[i][3];
         if (!handsCanonicalSeen.has(cache[i][1])) {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
+            // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
+            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd_debug.suitPattern + ',';
+            // ndjson_debug += keyDecoded_debug + "\n";
         }
     }
 
+    // fs.writeFileSync(`.results/mccfr/keys2.ndjson`, ndjson_debug, 'utf8');
     HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
 };
 
@@ -855,7 +861,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
 
-// const hand = ["2s", "3s", "4s", "5s", "Js"];
+// const hand = ["2s", "Qc", "Qd", "Qs", "Qh"];
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
 // const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
