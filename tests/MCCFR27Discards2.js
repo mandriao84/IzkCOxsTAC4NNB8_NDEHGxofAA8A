@@ -319,13 +319,18 @@ const getHandDetails = (hand) => {
         //     return ranks;
         // }()
         if (isStraightFlush) return { type: 8, ranks: [...cardsRankValueCountKey1] }; // STRAIGHTFLUSH
-        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1, ...Array(3).fill(14)] }; // FOUR
-        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2, ...Array(3).fill(14)] }; // FULL
+        // else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1, ...Array(3).fill(14)] }; // FOUR
+        // else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2, ...Array(3).fill(14)] }; // FULL
+        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] }; // FOUR
+        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] }; // FULL
         else if (isFlush) return { type: 5, ranks: [...cardsRankValueCountKey1] }; // FLUSH
         else if (isStraight) return { type: 4, ranks: [...cardsRankValueCountKey1] }; // STRAIGHT
-        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // THREE
-        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // PAIRS
-        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(1).fill(14)] }; // PAIR
+        // else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // THREE
+        // else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // PAIRS
+        // else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(1).fill(14)] }; // PAIR
+        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] }; // THREE
+        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIRS
+        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIR
         else if (isHigh) return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
     }();
 
@@ -339,8 +344,8 @@ const getHandDetails = (hand) => {
         }
     }()
 
-    const score = getHandScore({ type: details.type, ranksValue: details.ranks });
-    const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: details.ranks, suitPattern: cardsSuitPattern });
+    const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
+    const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
     return { detailsUint32, score };
 }
 
