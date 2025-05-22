@@ -228,13 +228,16 @@ const getHandDetailsUint32AsReadable = (uint32) => {
 
 const getHandDetails = (hand) => {
     let cardsRankValue = [];
+    const cardsRankValueCount = {}; 
     const cardsSuitValue = [];
+    const cardsRankValueWithSuit = [];
 
     let cardRankValueMax = -1;
     let cardSuitByRankValueMax = null;
     for (let i = 0; i < hand.length; i++) {
         const rankChar = hand[i][0];
         const rankValue = CARDS[rankChar]
+        cardsRankValueCount[rankValue] = (cardsRankValueCount[rankValue] ?? 0) + 1;
 
         const suitChar = hand[i][1];
         if (rankValue > cardRankValueMax) {
@@ -243,19 +246,11 @@ const getHandDetails = (hand) => {
         }
         cardsRankValue.push(rankValue);
         cardsSuitValue.push(suitChar);
+        cardsRankValueWithSuit.push([rankValue, suitChar]);
     }
     cardsRankValue.sort((a, b) => b - a);
     cardsSuitValue.sort((a, b) => b - a);
-
-    const { cardsRankValueCount, cardsRankValueCountKeys } = cardsRankValue.reduce((acc, rank) => {
-        if (!acc.cardsRankValueCount[rank]) {
-            acc.cardsRankValueCount[rank] = 1;
-            acc.cardsRankValueCountKeys.push(rank);
-        } else {
-            acc.cardsRankValueCount[rank]++;
-        }
-        return acc;
-    }, { cardsRankValueCount: {}, cardsRankValueCountKeys: [] });
+    cardsRankValueWithSuit.sort((a, b) => b[0] - a[0]);
 
     const cardsRankValueCountKey1 = [];
     const cardsRankValueCountKey2 = [];
