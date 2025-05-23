@@ -227,120 +227,83 @@ const getHandDetailsUint32AsReadable = (uint32) => {
 };
 
 const getHandDetails = (hand) => {
-    let cardsRankValue = [];
-    const cardsRankValueCount = {}; 
-    const cardsSuitValue = [];
-    const cardsRankValueWithSuit = [];
+    const SUITS_REF = { 'c': 0, 'd': 1, 'h': 2, 's': 3 };
+    const SUITS_PATTERN_REF = { 0: 'A', 1: 'B', 2: 'C', 3: 'D' };
 
-    let cardRankValueMax = -1;
-    let cardSuitByRankValueMax = null;
+    let cardsRankValue = [];
+    const cardsRankCount = [];
+    const cardsSuitCount = [];
+
     for (let i = 0; i < hand.length; i++) {
         const rankChar = hand[i][0];
-        const rankValue = CARDS[rankChar]
-        cardsRankValueCount[rankValue] = (cardsRankValueCount[rankValue] ?? 0) + 1;
-
+        const rankValue = CARDS[rankChar];
         const suitChar = hand[i][1];
-        if (rankValue > cardRankValueMax) {
-            cardRankValueMax = rankValue;
-            cardSuitByRankValueMax = suitChar;
-        }
+
+        cardsRankCount[rankValue] = cardsRankCount[rankValue] ?? [];
+        cardsRankCount[rankValue][0] = (cardsRankCount[rankValue][0] ?? 0) + 1;
+        cardsRankCount[rankValue][1] = rankValue;
         cardsRankValue.push(rankValue);
-        cardsSuitValue.push(suitChar);
-        cardsRankValueWithSuit.push([rankValue, suitChar]);
+
+        cardsSuitCount[SUITS_REF[suitChar]] = cardsSuitCount[SUITS_REF[suitChar]] ?? [];
+        cardsSuitCount[SUITS_REF[suitChar]][0] = (cardsSuitCount[SUITS_REF[suitChar]][0] ?? 0) + 1;
+        cardsSuitCount[SUITS_REF[suitChar]][1] = suitChar;
     }
     cardsRankValue.sort((a, b) => b - a);
-    cardsSuitValue.sort((a, b) => b - a);
-    cardsRankValueWithSuit.sort((a, b) => b[0] - a[0]);
+    cardsRankCount.sort((a, b) => b[0] - a[0]);
+    cardsSuitCount.sort((a, b) => b[0] - a[0]);
+    console.log(cardsRankCount);
+    console.log(cardsSuitCount);
 
-    const cardsRankValueCountKey1 = [];
-    const cardsRankValueCountKey2 = [];
-    const cardsRankValueCountKey3 = [];
-    const cardsRankValueCountKey4 = [];
-    for (const rankValue in cardsRankValueCount) {
-        const count = cardsRankValueCount[rankValue];
-        const rankValueInt = parseInt(rankValue);
-        if (count === 1) cardsRankValueCountKey1.push(rankValueInt);
-        else if (count === 2) cardsRankValueCountKey2.push(rankValueInt);
-        else if (count === 3) cardsRankValueCountKey3.push(rankValueInt);
-        else if (count === 4) cardsRankValueCountKey4.push(rankValueInt);
+    const getSuitCanonical = () => {
+        let pattern = "";
+        for (let i = 0; i < cardsSuitCount.length; i++) {
+            const v = cardsSuitCount[i];
+            if (!v) break;
+            for (let j = 0; j < v[0]; j++) {
+                pattern += SUITS_PATTERN_REF[i];
+            }
+        }
+        return pattern;
     }
-    cardsRankValueCountKey1.sort((a, b) => b - a);
-    cardsRankValueCountKey2.sort((a, b) => b - a);
-    cardsRankValueCountKey3.sort((a, b) => b - a);
-    cardsRankValueCountKey4.sort((a, b) => b - a);
-
-    const { cardsSuitValueCount, cardsSuitValueCountKeys, cardsSuitByRankValueMax } = cardsSuitValue.reduce((acc, suit) => {
-        if (!acc.cardsSuitValueCount[suit]) {
-            acc.cardsSuitValueCount[suit] = 1;
-            acc.cardsSuitValueCountKeys.push(suit);
-        } else {
-            acc.cardsSuitValueCount[suit]++;
-        }
-
-        if (suit === cardSuitByRankValueMax) {
-            acc.cardsSuitByRankValueMax.push(suit);
-        }
-
-        return acc;
-    }, { cardsSuitValueCount: {}, cardsSuitValueCountKeys: [], cardsSuitByRankValueMax: [] });
 
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
     if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
 
-    const isHigh = cardsRankValueCountKey1.length === 5;
-    const isPair = cardsRankValueCountKey2.length === 1 && cardsRankValueCountKey1.length === 3;
-    const isPairs = cardsRankValueCountKey2.length === 2 && cardsRankValueCountKey1.length === 1;
-    const isThree = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey1.length === 2;
-    const isStraight = cardsRankValueCountKey1.length === 5 && cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
-    const isFlush = cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 1;
-    const isFull = cardsRankValueCountKey3.length === 1 && cardsRankValueCountKey2.length === 1;
-    const isFour = cardsRankValueCountKey4.length === 1 && cardsRankValueCountKey1.length === 1;
+    const isHigh = cardsRankCount[0][0] === 1;
+    const isPair = cardsRankCount[0][0] === 2 && cardsRankCount[1][0] === 1;
+    const isPairs = cardsRankCount[0][0] === 2 && cardsRankCount[1][0] === 2;
+    const isThree = cardsRankCount[0][0] === 3 && cardsRankCount[1][0] === 1;
+    const isStraight = cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isFlush = cardsRankCount[0][0] === 1 && cardsSuitCount[0][0] === 5;
+    const isFull = cardsRankCount[0][0] === 3 && cardsRankCount[1][0] === 2;
+    const isFour = cardsRankCount[0][0] === 4 && cardsRankCount[1][0] === 1;
     const isStraightFlush = isStraight && isFlush;
-    // let canonicalHasX = false;
 
-    const details = function () {
-        // const getCanonical = function () {
-        //     const ranks = [];
-        //     for (let i = 0; i < cardsRankValue.length; i++) {
-        //         const rankValue = cardsRankValue[i];
-        //         if (rankValue < 11) {
-        //             ranks.push(rankValue);
-        //         } else {
-        //             ranks.push(14);
-        //             canonicalHasX = true;
-        //         }
-        //     }
-        //     return ranks;
-        // }()
-        if (isStraightFlush) return { type: 8, ranks: [...cardsRankValueCountKey1] }; // STRAIGHTFLUSH
-        // else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1, ...Array(3).fill(14)] }; // FOUR
-        // else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2, ...Array(3).fill(14)] }; // FULL
-        else if (isFour) return { type: 7, ranks: [...cardsRankValueCountKey4, ...cardsRankValueCountKey1] }; // FOUR
-        else if (isFull) return { type: 6, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey2] }; // FULL
-        else if (isFlush) return { type: 5, ranks: [...cardsRankValueCountKey1] }; // FLUSH
-        else if (isStraight) return { type: 4, ranks: [...cardsRankValueCountKey1] }; // STRAIGHT
-        // else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // THREE
-        // else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(2).fill(14)] }; // PAIRS
-        // else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1, ...Array(1).fill(14)] }; // PAIR
-        else if (isThree) return { type: 3, ranks: [...cardsRankValueCountKey3, ...cardsRankValueCountKey1] }; // THREE
-        else if (isPairs) return { type: 2, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIRS
-        else if (isPair) return { type: 1, ranks: [...cardsRankValueCountKey2, ...cardsRankValueCountKey1] }; // PAIR
-        else if (isHigh) return { type: 0, ranks: [...cardsRankValueCountKey1] }; // HIGH
+    console.log(cardsRankCount[0][0])
+
+    const type = function () {
+        if (isStraightFlush) return 8; // STRAIGHTFLUSH
+        else if (isFour) return 7; // FOUR
+        else if (isFull) return 6; // FULL
+        else if (isFlush) return 5; // FLUSH
+        else if (isStraight) return 4; // STRAIGHT
+        else if (isThree) return 3; // THREE
+        else if (isPairs) return 2; // PAIRS
+        else if (isPair) return 1; // PAIR
+        else if (isHigh) return 0; // HIGH
     }();
 
     const cardsSuitPattern = function () {
-        if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 2 && cardsSuitByRankValueMax.length === 1) {
-            return 2; // 4 SUITED + 1 OFFSUITED (HIGHEST CARD)
-        } else if (cardsRankValueCountKey1.length === 5 && cardsSuitValueCountKeys.length === 1) {
+        if (isFlush) {
             return 1; // SUITED
         } else {
             return 0; // OFFSUITED
         }
     }()
 
-    const score = getHandScore({ type: details.type, ranksValue: cardsRankValue });
-    const detailsUint32 = getHandDetailsReadableAsUint32({ type: details.type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
+    const score = getHandScore({ type: type, ranksValue: cardsRankValue });
+    const detailsUint32 = getHandDetailsReadableAsUint32({ type: type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
     return { detailsUint32, score };
 }
 
@@ -794,8 +757,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
-    console.log(HANDS_CANONICAL_INDEX.length);
+    // getCacheCreated(1);
+    // console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 2;
@@ -861,12 +824,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
 
-// const hand = ["2s", "Qc", "Qd", "Qs", "Qh"];
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
+const hand = ["2h", "3h", "4h", "5h", "Ah"];
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+console.log(hdu32, hd);
+console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
