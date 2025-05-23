@@ -166,7 +166,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',' + keyParts[1];
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyParts[1];
 
         const getStrategyAveraged = (key) => {
             const values = strategiesMap.get(key);
@@ -461,7 +461,7 @@ const getCacheCreated = (roundNumber) => {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
             // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
-            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd_debug.suitPatternIndex] + ',';
+            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN_KEYS[hd_debug.suitPatternIndex] + ',';
             // ndjson_debug += keyDecoded_debug + "\n";
         }
     }
@@ -800,6 +800,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0h = getHandUint32AsReadable(p0hu32);
                 const p0 = { index: p0hi, hand: p0h };
 
+                console.log(p0)
+
+                break;
+
                 deckRef.shuffleByFisherYates();
                 const deck = deckRef.filter(card => !p0h.includes(card))
 
@@ -832,7 +836,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
+    getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
@@ -856,7 +860,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
-// const a = hand.spliceFromStart(2);
 // const { detailsUint32, score } = getHandDetails(hand)
 // console.log(hand, detailsUint32);
 // console.log(getHandDetailsUint32AsReadable(detailsUint32));
@@ -877,27 +880,14 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // }
 // console.timeEnd('Array.filter performance');
 
-// console.time('filterBySet performance'); 
-// for (let i = 0; i < iterations; ++i) {
-//     const r = ref.filterBySet(aSet);
-// }
-// console.timeEnd('filterBySet performance');
-
 // const key = "826941698,1"
 // const keyParts = key.split(',');
 // const hdu32 = parseInt(keyParts[0]);
 // const hd = getHandDetailsUint32AsReadable(hdu32);
 // // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
 // // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',' + keyParts[1];
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyParts[1];
 // console.log(keyDecoded)
-
-// const hand = ["2s", "3s", "6s", "As", "Kh"];
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
 
 // const hand = ["2d", "3h", "4c", "5d", "As"];
 // const hdu32 = getHandDetails(hand);
