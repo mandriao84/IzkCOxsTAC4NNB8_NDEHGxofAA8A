@@ -772,7 +772,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1 / 7).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 4 / 7).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
