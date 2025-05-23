@@ -461,7 +461,7 @@ const getCacheCreated = (roundNumber) => {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
             // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
-            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN_KEYS[hd_debug.suitPatternIndex] + ',';
+            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd_debug.suitPatternIndex] + ',';
             // ndjson_debug += keyDecoded_debug + "\n";
         }
     }
@@ -836,7 +836,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
+    // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
@@ -880,14 +880,23 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // }
 // console.timeEnd('Array.filter performance');
 
-// const key = "826941698,1"
-// const keyParts = key.split(',');
-// const hdu32 = parseInt(keyParts[0]);
-// const hd = getHandDetailsUint32AsReadable(hdu32);
-// // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
-// // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyParts[1];
-// console.log(keyDecoded)
+/** TU START */
+// getCacheCreated(1);
+// const hand = ["2d", "3h", "4c", "5s", "As"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const hi = HANDS_DETAILS_UINT32.indexOf(hdu32.detailsUint32);
+// const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
+// const hs = HANDS_SCORE[hi];
+// const hkey = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
+// console.log("hdu32_from_hand >>", hdu32);
+// console.log("hd_from_hdu32 >>", hd);
+// console.log("hi_from_cache >>", hi);
+// console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
+// console.log("h_from_hi >>", h);
+// console.log("hs_from_hi >>", hs);
+// console.log("hkey_from_hd >>", hkey);
+/** TU END */
 
 // const hand = ["2d", "3h", "4c", "5d", "As"];
 // const hdu32 = getHandDetails(hand);
