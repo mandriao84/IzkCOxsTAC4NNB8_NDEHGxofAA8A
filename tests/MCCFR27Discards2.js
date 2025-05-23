@@ -433,9 +433,11 @@ const getCacheCreated = (roundNumber) => {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
-            const key = `${detailsUint32 + "," + (r + 1)}`;
-            const evValues = evSum.get(key) || [1, 0];
-            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
+
+            // const key = `${detailsUint32 + "," + (r + 1)}`;
+            // const evValues = evSum.get(key) || [1, 0];
+            // const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
+            
             cache.push([handUint32, detailsUint32, score, ev]);
         }
     }
