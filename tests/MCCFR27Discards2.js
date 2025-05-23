@@ -338,9 +338,6 @@ const getHandDetails = (hand) => {
     cardsRankValueWithSuitString.sort((a, b) => b[0] - a[0]);
     cardsRankCount.sort((a, b) => b[0] - a[0]);
     cardsSuitCount.sort((a, b) => b[0] - a[0]);
-    console.log("CARDDSRANKCOUNT", cardsRankCount);
-    console.log("CARDDSSUITCOUNT", cardsSuitCount);
-    console.log("cardsRankValueWithSuitString", cardsRankValueWithSuitString);
 
     const isHigh = cardsRankCount[0][0] === 1;
     const isPair = cardsRankCount[0][0] === 2 && cardsRankCount[1][0] === 1;
@@ -902,13 +899,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
 
-console.log(Object.keys(SUITS_PATTERN));
-const hand = ["2h", "3h", "4h", "5h", "As"];
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-console.log(hdu32, hd);
-console.log(keyDecoded);
+// const hand = ["2d", "3h", "4c", "5d", "As"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
