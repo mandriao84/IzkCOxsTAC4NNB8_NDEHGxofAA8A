@@ -165,7 +165,7 @@ const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+        const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',' + keyParts[1];
 
         const getStrategyAveraged = (key) => {
             const values = strategiesMap.get(key);
@@ -281,45 +281,45 @@ const getHandUint8AsReadable = (uint8) => {
     return hand;
 };
 
-const getHandDetailsReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
-    let uint32 = 0;
-    for (let i = 0; i < ranksValue.length; i++) {
-        uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
-    }
-    uint32 = (uint32 << 2) | (suitPattern & 0b11);
-    uint32 = (uint32 << 4) | (type & 0b1111);
-    return uint32 >>> 0;
-};
-// const getHandDetailsReadableAsUint32 = ({ ranksValue, suitPattern }) => {
+// const getHandDetailsReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
 //     let uint32 = 0;
 //     for (let i = 0; i < ranksValue.length; i++) {
-//         uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i)); // 25BITS
+//         uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i));
 //     }
-//     uint32 = (uint32 << 6) | (suitPattern & 0b111111); // 6BITS > (2⁶ = UPTO 64)
-//     return uint32 >>> 0; // FORCE UNSIGNED 32BITS
+//     uint32 = (uint32 << 2) | (suitPattern & 0b11);
+//     uint32 = (uint32 << 4) | (type & 0b1111);
+//     return uint32 >>> 0;
 // };
-
-const getHandDetailsUint32AsReadable = (uint32) => {
-    const type = uint32 & 0b1111;
-    const suitPattern = (uint32 >>> 4) & 0b11;
-    const rankBits = uint32 >>> 6;
-    const ranksValue = new Array(5);
-    for (let i = 0; i < 5; i++) {
-        const shift = 5 * (4 - i);
-        ranksValue[i] = (rankBits >>> shift) & 0b11111;
+const getHandDetailsReadableAsUint32 = ({ ranksValue, suitPattern }) => {
+    let uint32 = 0;
+    for (let i = 0; i < ranksValue.length; i++) {
+        uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i)); // 25BITS
     }
-    return { type, ranksValue, suitPattern };
+    uint32 = (uint32 << 6) | (suitPattern & 0b111111); // 6BITS > (2⁶ = UPTO 64)
+    return uint32 >>> 0; // FORCE UNSIGNED 32BITS
 };
+
 // const getHandDetailsUint32AsReadable = (uint32) => {
-//     const suitPattern = uint32 & 0b111111;
+//     const type = uint32 & 0b1111;
+//     const suitPattern = (uint32 >>> 4) & 0b11;
 //     const rankBits = uint32 >>> 6;
 //     const ranksValue = new Array(5);
 //     for (let i = 0; i < 5; i++) {
 //         const shift = 5 * (4 - i);
 //         ranksValue[i] = (rankBits >>> shift) & 0b11111;
 //     }
-//     return { ranksValue, suitPattern };
+//     return { type, ranksValue, suitPattern };
 // };
+const getHandDetailsUint32AsReadable = (uint32) => {
+    const suitPatternIndex = uint32 & 0b111111;
+    const rankBits = uint32 >>> 6;
+    const ranksValue = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const shift = 5 * (4 - i);
+        ranksValue[i] = (rankBits >>> shift) & 0b11111;
+    }
+    return { ranksValue, suitPatternIndex };
+};
 
 const getHandDetails = (hand) => {
     const suitsRef = { 'c': 0, 'd': 1, 'h': 2, 's': 3 };
@@ -390,7 +390,7 @@ const getHandDetails = (hand) => {
     console.log(getSuitCanonical())
 
     const score = getHandScore({ type: type, ranksValue: cardsRankValue });
-    const detailsUint32 = getHandDetailsReadableAsUint32({ type: type, ranksValue: cardsRankValue, suitPattern: getSuitCanonical() });
+    const detailsUint32 = getHandDetailsReadableAsUint32({ ranksValue: cardsRankValue, suitPattern: getSuitCanonical() });
     return { detailsUint32, score };
 }
 
@@ -473,7 +473,7 @@ const getCacheCreated = (roundNumber) => {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
             // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
-            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd_debug.suitPattern + ',';
+            // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd_debug.suitPatternIndex] + ',';
             // ndjson_debug += keyDecoded_debug + "\n";
         }
     }
@@ -901,20 +901,20 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const hd = getHandDetailsUint32AsReadable(hdu32);
 // // const hi = HANDS_DETAILS_UINT32.findIndex(r => r === hdu32);
 // // const h = getHandUint32AsReadable(HANDS_UINT32[hi]).map(c => c[0])
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + hd.suitPattern + ',' + keyParts[1];
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',' + keyParts[1];
 // console.log(keyDecoded)
 
 // const hand = ["2s", "3s", "6s", "As", "Kh"];
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',';
 // console.log(hdu32, hd);
 // console.log(keyDecoded);
 
 const hand = ["2h", "3h", "4h", "5h", "Ah"];
 const hdu32 = getHandDetails(hand);
 const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + hd.suitPattern + ',';
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).sort().join('') + ":" + SUITS_PATTERN[hd.suitPatternIndex] + ',';
 console.log(hdu32, hd);
 console.log(keyDecoded);
 
