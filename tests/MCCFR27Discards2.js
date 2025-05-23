@@ -430,7 +430,7 @@ const getCacheCreated = (roundNumber) => {
 
     for (let r = 0; r < roundNumber; r++) {
         for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
+            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]);
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
             const key = `${detailsUint32 + "," + (r + 1)}`;
@@ -799,35 +799,33 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0h = getHandUint32AsReadable(p0hu32);
                 const p0 = { index: p0hi, hand: p0h };
 
-                console.log(p0)
+                console.log(p0hu32, p0)
 
-                if (i > 10) break;
+                // deckRef.shuffleByFisherYates();
+                // const deck = deckRef.filter(card => !p0h.includes(card))
 
-                deckRef.shuffleByFisherYates();
-                const deck = deckRef.filter(card => !p0h.includes(card))
+                // const deckOffset = 5;
+                // const p1h = deck.slice(0, deckOffset);
+                // p1h.sort();
+                // const p1hu32 = getHandReadableAsUint32(p1h);
+                // const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
+                // const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
 
-                const deckOffset = 5;
-                const p1h = deck.slice(0, deckOffset);
-                p1h.sort();
-                const p1hu32 = getHandReadableAsUint32(p1h);
-                const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
-                const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
+                // getDiscardsSimulated(
+                //     p0,
+                //     p1,
+                //     deck,
+                //     p1.deckOffset,
+                //     roundNumber,
+                //     roundNumbersFrozen
+                // );
 
-                getDiscardsSimulated(
-                    p0,
-                    p1,
-                    deck,
-                    p1.deckOffset,
-                    roundNumber,
-                    roundNumbersFrozen
-                );
-
-                if ((i + 1) % flushInterval === 0) {
-                    // await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
-                }
+                // if ((i + 1) % flushInterval === 0) {
+                //     // await getDataFlushed(workerId);
+                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                //     timeNow = performance.now();
+                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
+                // }
             }
         }
     }
@@ -839,11 +837,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    // const roundNumber = 2;
+    // const roundNumber = 1;
     // /** (roundNumbersFrozen) >>
     //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
     //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
     // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
