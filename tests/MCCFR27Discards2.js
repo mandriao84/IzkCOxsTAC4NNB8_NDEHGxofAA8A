@@ -254,18 +254,6 @@ const getHandDetails = (hand) => {
     console.log(cardsRankCount);
     console.log(cardsSuitCount);
 
-    const getSuitCanonical = () => {
-        let pattern = "";
-        for (let i = 0; i < cardsSuitCount.length; i++) {
-            const v = cardsSuitCount[i];
-            if (!v) break;
-            for (let j = 0; j < v[0]; j++) {
-                pattern += SUITS_PATTERN_REF[i];
-            }
-        }
-        return pattern;
-    }
-
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
     if (isStraightWithAs) { cardsRankValue = [4, 3, 2, 1, 0]; }
@@ -301,6 +289,17 @@ const getHandDetails = (hand) => {
             return 0; // OFFSUITED
         }
     }()
+    // const getSuitCanonical = () => {
+    //     let pattern = "";
+    //     for (let i = 0; i < cardsSuitCount.length; i++) {
+    //         const v = cardsSuitCount[i];
+    //         if (!v) break;
+    //         for (let j = 0; j < v[0]; j++) {
+    //             pattern += SUITS_PATTERN_REF[i];
+    //         }
+    //     }
+    //     return pattern;
+    // }
 
     const score = getHandScore({ type: type, ranksValue: cardsRankValue });
     const detailsUint32 = getHandDetailsReadableAsUint32({ type: type, ranksValue: cardsRankValue, suitPattern: cardsSuitPattern });
