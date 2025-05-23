@@ -290,6 +290,14 @@ const getHandDetailsReadableAsUint32 = ({ type, ranksValue, suitPattern }) => {
     uint32 = (uint32 << 4) | (type & 0b1111);
     return uint32 >>> 0;
 };
+// const getHandDetailsReadableAsUint32 = ({ ranksValue, suitPattern }) => {
+//     let uint32 = 0;
+//     for (let i = 0; i < ranksValue.length; i++) {
+//         uint32 |= (ranksValue[i] & 0b11111) << (5 * (4 - i)); // 25BITS
+//     }
+//     uint32 = (uint32 << 6) | (suitPattern & 0b111111); // 6BITS > (2⁶ = UPTO 64)
+//     return uint32 >>> 0; // FORCE UNSIGNED 32BITS
+// };
 
 const getHandDetailsUint32AsReadable = (uint32) => {
     const type = uint32 & 0b1111;
@@ -302,10 +310,19 @@ const getHandDetailsUint32AsReadable = (uint32) => {
     }
     return { type, ranksValue, suitPattern };
 };
+// const getHandDetailsUint32AsReadable = (uint32) => {
+//     const suitPattern = uint32 & 0b111111;
+//     const rankBits = uint32 >>> 6;
+//     const ranksValue = new Array(5);
+//     for (let i = 0; i < 5; i++) {
+//         const shift = 5 * (4 - i);
+//         ranksValue[i] = (rankBits >>> shift) & 0b11111;
+//     }
+//     return { ranksValue, suitPattern };
+// };
 
 const getHandDetails = (hand) => {
     const suitsRef = { 'c': 0, 'd': 1, 'h': 2, 's': 3 };
-
     let cardsRankValue = [];
     const cardsRankCount = [];
     const cardsSuitCount = [];
