@@ -415,11 +415,10 @@ const getCacheSaved = () => {
 
     let ndjson = "";
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
-        const handId = hand.join('');
+        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]);
         const { detailsUint32, score } = getHandDetails(hand);
         const handUint32 = getHandReadableAsUint32(hand);
-        ndjson += JSON.stringify({ handId, hand, handUint32, detailsUint32, score }) + "\n";
+        ndjson += JSON.stringify({ hand, handUint32, detailsUint32, score }) + "\n";
     }
     fs.writeFileSync(PATH_KEYS, ndjson, 'utf8');
 }
@@ -802,7 +801,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 console.log(p0)
 
-                break;
+                if (i > 10) break;
 
                 deckRef.shuffleByFisherYates();
                 const deck = deckRef.filter(card => !p0h.includes(card))
@@ -835,7 +834,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 };
 
 (async () => {
-    // getCacheSaved();
+    getCacheSaved();
     // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
