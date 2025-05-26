@@ -69,7 +69,8 @@ const SUITS_PATTERN = {
     '01230': 47,
     '01231': 48,
     '01232': 49,
-    '01233': 50
+    '01233': 50,
+    'XXXXX': 51,
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(CARDS).length
@@ -374,6 +375,9 @@ const getHandDetails = (hand) => {
         }
 
         let pattern = result.join('');
+        const patternNumber = Number(pattern);
+        const patternIsIrrelevant = patternNumber > 1;
+        if (patternIsIrrelevant) pattern = 'XXXXX';
         return SUITS_PATTERN[pattern];
     }
 
@@ -833,8 +837,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
-    // console.log(HANDS_CANONICAL_INDEX.length);
+    getCacheCreated(1);
+    console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 1;
