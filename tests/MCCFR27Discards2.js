@@ -365,18 +365,19 @@ const getHandDetails = (hand) => {
     const getSuitCanonicalIndex = () => {
         const map = new Map();
         let counter = 0;
+        let patternIsIrrelevant = false;
         const result = [];
         for (let i = 0; i < cardsRankValueWithSuitString.length; i++) {
             const suit = cardsRankValueWithSuitString[i][1];
             if (!map.has(suit)) {
                 map.set(suit, counter++);
             }
-            result.push(map.get(suit));
+            const value = map.get(suit);
+            if (value > 1) patternIsIrrelevant = true;
+            result.push(value);
         }
 
         let pattern = result.join('');
-        const patternNumber = Number(pattern);
-        const patternIsIrrelevant = patternNumber > 11;
         if (patternIsIrrelevant) pattern = 'XXXXX';
         return SUITS_PATTERN[pattern];
     }
@@ -837,8 +838,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
-    console.log(HANDS_CANONICAL_INDEX.length);
+    // getCacheCreated(1);
+    // console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 1;
@@ -899,12 +900,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
-// const hand = ["2d", "3h", "4c", "5d", "As"];
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
+const hand = ["2d", "3s", "4s", "5s", "As"];
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
+console.log(hdu32, hd);
+console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
