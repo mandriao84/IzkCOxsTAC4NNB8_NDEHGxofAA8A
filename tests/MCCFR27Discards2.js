@@ -329,11 +329,11 @@ const getHandDetails = (hand) => {
 
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
-    if (isStraightWithAs) { 
-        const asIndex = cardsRankValue.indexOf(13);
-        cardsRankValue[asIndex] = 0;
-        cardsRankValueWithSuitString[asIndex][0] = 0;
-    }
+    // if (isStraightWithAs) { 
+    //     const asIndex = cardsRankValue.indexOf(13);
+    //     cardsRankValue[asIndex] = 0;
+    //     cardsRankValueWithSuitString[asIndex][0] = 0;
+    // }
 
     cardsRankValue.sort((a, b) => b - a);
     cardsRankValueWithSuitString.sort((a, b) => b[0] - a[0]);
@@ -344,7 +344,7 @@ const getHandDetails = (hand) => {
     const isPair = cardsRankCount[0][0] === 2 && cardsRankCount[1][0] === 1;
     const isPairs = cardsRankCount[0][0] === 2 && cardsRankCount[1][0] === 2;
     const isThree = cardsRankCount[0][0] === 3 && cardsRankCount[1][0] === 1;
-    const isStraight = cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
+    const isStraight = cardsRankValue.every((val, index, arr) => index === 0 || val === arr[index - 1] - 1) || isStraightWithAs  // (-1) BECAUSE (cardsValue.sort((a, b) => b - a))
     const isFlush = cardsRankCount[0][0] === 1 && cardsSuitCount[0][0] === 5;
     const isFull = cardsRankCount[0][0] === 3 && cardsRankCount[1][0] === 2;
     const isFour = cardsRankCount[0][0] === 4 && cardsRankCount[1][0] === 1;
@@ -368,7 +368,6 @@ const getHandDetails = (hand) => {
         let value0count = 0;
         let value1count = 0;
         let value2count = 0;
-        let patternIsIrrelevant = false;
         const result = [];
         for (let i = 0; i < cardsRankValueWithSuitString.length; i++) {
             const suit = cardsRankValueWithSuitString[i][1];
@@ -909,7 +908,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
-const hand = ["2d", "3d", "4d", "5d", "Ks"];
+const hand = ["2d", "3d", "4s", "5d", "Ks"];
 const hdu32 = getHandDetails(hand);
 const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
 const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
