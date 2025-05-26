@@ -365,6 +365,9 @@ const getHandDetails = (hand) => {
     const getSuitCanonicalIndex = () => {
         const map = new Map();
         let counter = 0;
+        let value0count = 0;
+        let value1count = 0;
+        let value2count = 0;
         let patternIsIrrelevant = false;
         const result = [];
         for (let i = 0; i < cardsRankValueWithSuitString.length; i++) {
@@ -373,12 +376,18 @@ const getHandDetails = (hand) => {
                 map.set(suit, counter++);
             }
             const value = map.get(suit);
-            if (value > 1) patternIsIrrelevant = true;
             result.push(value);
+
+            if (value === 0) value0count++;
+            if (i > 1) {
+                if (value === 1) value1count++;
+                if (value === 2) value2count++;
+            }
         }
 
+        const patternIsRelevant = value0count === 5 || value1count === 3 || value2count === 3;
         let pattern = result.join('');
-        if (patternIsIrrelevant) pattern = 'XXXXX';
+        if (!patternIsRelevant) pattern = 'XXXXX';
         return SUITS_PATTERN[pattern];
     }
 
@@ -838,8 +847,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
-    console.log(HANDS_CANONICAL_INDEX.length);
+    // getCacheCreated(1);
+    // console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 1;
@@ -900,12 +909,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
-// const hand = ["2d", "3s", "4s", "5s", "As"];
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
+const hand = ["2d", "3s", "4s", "5s", "Ks"];
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
+console.log(hdu32, hd);
+console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
