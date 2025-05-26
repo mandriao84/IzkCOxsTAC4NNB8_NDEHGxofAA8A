@@ -434,10 +434,10 @@ const getCacheCreated = (roundNumber) => {
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
 
-            // const key = `${detailsUint32 + "," + (r + 1)}`;
-            // const evValues = evSum.get(key) || [1, 0];
-            // const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
-            
+            const key = `${detailsUint32 + "," + (r + 1)}`;
+            const evValues = evSum?.get(key) || [1, 0];
+            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
+
             cache.push([handUint32, detailsUint32, score, ev]);
         }
     }
@@ -774,7 +774,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 4 / 7).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -837,12 +837,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -904,24 +904,29 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
-// const keysCanonicalSet = new Set();
+// const keysCanonicalSet = new Map();
 // for (const [key, values] of stratReadSum) {
 //     const keyParts = key.split(':');
-//     const keyCanonicalArr = keyParts[0].split('');
+//     const rankCanonicalArr = keyParts[0].split('');
+//     const suitCanonical = keyParts[1].split(',')[0];
+//     const suitCanonicalIsSuited = Number(suitCanonical) === 0;
 //     const indicesString = values[0][0];
+//     const indicesStringIsEmpty = indicesString === "-";
 //     const indicesSet = new Set([...indicesString].map(Number));
 //     let keyCanonicalNew = [];
-//     for (let i = 0; i < keyCanonicalArr.length; i++) {
+//     let keyCanonicalNewHasX = false;
+//     for (let i = 0; i < rankCanonicalArr.length; i++) {
 //         if (indicesSet.has(i)) {
 //             keyCanonicalNew.push('X');
+//             keyCanonicalNewHasX = true;
 //         } else {
-//             keyCanonicalNew.push(keyCanonicalArr[i]);
+//             keyCanonicalNew.push(rankCanonicalArr[i]);
 //         }
 //     }
-//     keyCanonicalNew = keyCanonicalNew.sort().join('') + ':' + keyParts[1];
+//     keyCanonicalNew = keyCanonicalNew.join('') + ':' + ((keyCanonicalNewHasX || indicesStringIsEmpty) ? `X${suitCanonicalIsSuited ? 's' : ''}` : suitCanonical);
 //     if (!keysCanonicalSet.has(keyCanonicalNew)) {
 //         // keysCanonicalSet.set(keyCanonicalNew, structuredClone(values));
-//         keysCanonicalSet.add(keyCanonicalNew);
+//         keysCanonicalSet.set(keyCanonicalNew, indicesString);
 //     } else {
 //         // const valuesPrev = keysCanonicalSet.get(keyCanonicalNew);
 //         // for (let j = 0; j < valuesPrev.length; j++) {
