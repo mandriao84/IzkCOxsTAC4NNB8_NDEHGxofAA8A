@@ -376,7 +376,7 @@ const getHandDetails = (hand) => {
 
         let pattern = result.join('');
         const patternNumber = Number(pattern);
-        const patternIsIrrelevant = patternNumber > 1;
+        const patternIsIrrelevant = patternNumber > 11;
         if (patternIsIrrelevant) pattern = 'XXXXX';
         return SUITS_PATTERN[pattern];
     }
