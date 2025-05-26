@@ -838,8 +838,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
-    // console.log(HANDS_CANONICAL_INDEX.length);
+    getCacheCreated(1);
+    console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 1;
@@ -900,12 +900,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
-const hand = ["2d", "3s", "4s", "5s", "As"];
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-console.log(hdu32, hd);
-console.log(keyDecoded);
+// const hand = ["2d", "3s", "4s", "5s", "As"];
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
