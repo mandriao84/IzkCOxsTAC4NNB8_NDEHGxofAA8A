@@ -538,7 +538,7 @@ async function getDataFlushed(threadId = null) {
         for (const [key, values] of map) {
             const entry = {
                 key,
-                values: [...values] // MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT
+                values: [...values] // MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice()
             };
             lines += JSON.stringify(entry) + '\n';
         }
