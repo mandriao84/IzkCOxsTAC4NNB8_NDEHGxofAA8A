@@ -449,7 +449,7 @@ const getCacheCreated = (roundNumber) => {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
-            const a = getHandDetailsUint32AsReadable(detailsUint32);
+            // const a = getHandDetailsUint32AsReadable(detailsUint32);
             // if (a.ranksValue[0] === 13 
             //     && a.ranksValue[1] === 13
             //     && a.ranksValue[2] === 3
@@ -541,7 +541,7 @@ async function getDataFlushed(threadId = null) {
         for (const [key, values] of map) {
             const entry = {
                 key,
-                values: [...values] // MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice()
+                values: [...values] /** MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice() */ 
             };
             lines += JSON.stringify(entry) + '\n';
         }
