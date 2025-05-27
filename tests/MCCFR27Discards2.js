@@ -109,7 +109,7 @@ Array.prototype.shuffleByFisherYates = function () {
 };
 
 Array.prototype.sortByCardRankValue = function(descending = true) {
-    this.sort((a, b) => {
+    return this.sort((a, b) => {
         const valueA = CARDS[a[0]];
         const valueB = CARDS[b[0]];
         return descending ? valueB - valueA : valueA - valueB;
@@ -807,7 +807,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = 0 //HANDS_CANONICAL_INDEX.length;
-        const iterations = 100;
+        const iterations = 100_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
