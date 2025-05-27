@@ -446,7 +446,7 @@ const getCacheCreated = (roundNumber) => {
 
     for (let r = 0; r < roundNumber; r++) {
         for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue(); //.sort();
+            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
             const a = getHandDetailsUint32AsReadable(detailsUint32);
@@ -496,7 +496,7 @@ const getCacheCreated = (roundNumber) => {
     // console.log(HANDS_CANONICAL_INDEX);
 };
 
-const getIndexByBinarySearch = (arr, target) => {
+const getHu32IndexByBinarySearch = (arr, target) => {
     let low = 0;
     let high = arr.length - 1;
     while (low <= high) {
@@ -668,12 +668,11 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
     if (deckOffsetNew > deck.length) throw new Error("DECK.EXHAUSTED");
     const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
     const handNew = [...cardsKept, ...cardsReceived];
-    handNew.sortByCardRankValue(); //.sort();
+    handNew.sortByCardRankValue();
     // console.log(hand, discardIndices, cardsKept, handNew);
 
     const handUint32 = getHandReadableAsUint32(handNew);
-    // const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
-    const handIndex = HANDS_UINT32.indexOf(handUint32);
+    const handIndex = getHu32IndexByBinarySearch(HANDS_UINT32, handUint32);
     const handObj = { index: handIndex, hand: handNew, deckOffset: deckOffsetNew };
     return handObj;
 }
@@ -831,10 +830,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 const deckOffset = 5;
                 const p1h = deck.slice(0, deckOffset);
-                p1h.sortByCardRankValue(); //.sort();
+                p1h.sortByCardRankValue();
                 const p1hu32 = getHandReadableAsUint32(p1h);
-                // const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
-                const p1hi = HANDS_UINT32.indexOf(p1hu32);
+                const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
                 // const _p1h_ = getHandUint32AsReadable(HANDS_UINT32[p1hi])
                 // const _p1hs_ = HANDS_SCORE[p1hi]
@@ -917,7 +915,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // const hand = ["2c", "3c", "4c", "Ac", "As"];
 // hand.sortByCardRankValue();
 // const hu32 = getHandReadableAsUint32(hand);
-// const hi = getIndexByBinarySearch(HANDS_UINT32, hu32);
+// const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
 // // const hi = HANDS_UINT32.indexOf(hu32);
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
