@@ -14,8 +14,8 @@ const DECK = {
     27: '2d', 28: '3d', 29: '4d', 30: '5d', 31: '6d', 32: '7d', 33: '8d', 34: '9d', 35: 'Td', 36: 'Jd', 37: 'Qd', 38: 'Kd', 39: 'Ad',
     40: '2c', 41: '3c', 42: '4c', 43: '5c', 44: '6c', 45: '7c', 46: '8c', 47: '9c', 48: 'Tc', 49: 'Jc', 50: 'Qc', 51: 'Kc', 52: 'Ac'
 };
-const CARDS = { 'X': 14, 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
-const CARDS_FROM_VALUE = { 14: 'X', 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 8: '9', 7: '8', 6: '7', 5: '6', 4: '5', 3: '4', 2: '3', 1: '2', 0: 'A' };
+const CARDS = { 'A': 13, 'K': 12, 'Q': 11, 'J': 10, 'T': 9, '9': 8, '8': 7, '7': 6, '6': 5, '5': 4, '4': 3, '3': 2, '2': 1 };
+const CARDS_FROM_VALUE = { 13: 'A', 12: 'K', 11: 'Q', 10: 'J', 9: 'T', 8: '9', 7: '8', 6: '7', 5: '6', 4: '5', 3: '4', 2: '3', 1: '2' };
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
 const SUITS = ['c', 'd', 'h', 's'];
 const SUITS_PATTERN = {
@@ -337,11 +337,6 @@ const getHandDetails = (hand) => {
 
     const straightWithAs = [13, 4, 3, 2, 1];
     const isStraightWithAs = straightWithAs.every(v => cardsRankValue.includes(v));
-    // if (isStraightWithAs) { 
-    //     const asIndex = cardsRankValue.indexOf(13);
-    //     cardsRankValue[asIndex] = 0;
-    //     cardsRankValueWithSuitString[asIndex][0] = 0;
-    // }
 
     cardsRankValue.sort((a, b) => b - a);
     cardsRankValueWithSuitString.sort((a, b) => b[0] - a[0]);
@@ -454,6 +449,12 @@ const getCacheCreated = (roundNumber) => {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue(); //.sort();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
+            const a = getHandDetailsUint32AsReadable(detailsUint32);
+            // if (a.ranksValue[0] === 13 
+            //     && a.ranksValue[1] === 13
+            //     && a.ranksValue[2] === 3
+            //     && a.ranksValue[3] === 2
+            //     && a.ranksValue[4] === 1) console.log(hand, handUint32, detailsUint32, score);
 
             const key = `${detailsUint32 + "," + (r + 1)}`;
             const evValues = evSum?.get(key) || [1, 0];
@@ -464,6 +465,7 @@ const getCacheCreated = (roundNumber) => {
     }
 
     cache.sort((a, b) => a[0] - b[0]);
+    // console.log(cache)
     const N = cache.length;
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
@@ -491,6 +493,7 @@ const getCacheCreated = (roundNumber) => {
 
     // fs.writeFileSync(`.results/mccfr/keys2.ndjson`, ndjson_debug, 'utf8');
     HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
+    // console.log(HANDS_CANONICAL_INDEX);
 };
 
 const getIndexByBinarySearch = (arr, target) => {
@@ -666,9 +669,11 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
     const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
     const handNew = [...cardsKept, ...cardsReceived];
     handNew.sortByCardRankValue(); //.sort();
+    // console.log(hand, discardIndices, cardsKept, handNew);
 
     const handUint32 = getHandReadableAsUint32(handNew);
-    const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
+    // const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
+    const handIndex = HANDS_UINT32.indexOf(handUint32);
     const handObj = { index: handIndex, hand: handNew, deckOffset: deckOffsetNew };
     return handObj;
 }
@@ -754,6 +759,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
             const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
             // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
             p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index);
+            // console.log(p0hAlt, p1hFix);
+            // console.log(p0utilAlt[ai]);
         }
 
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -807,7 +814,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = 0 //HANDS_CANONICAL_INDEX.length;
-        const iterations = 100_000;
+        const iterations = 100;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -826,7 +833,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p1h = deck.slice(0, deckOffset);
                 p1h.sortByCardRankValue(); //.sort();
                 const p1hu32 = getHandReadableAsUint32(p1h);
-                const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
+                // const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
+                const p1hi = HANDS_UINT32.indexOf(p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
                 // const _p1h_ = getHandUint32AsReadable(HANDS_UINT32[p1hi])
                 // const _p1hs_ = HANDS_SCORE[p1hi]
@@ -864,12 +872,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -906,13 +914,16 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 /** TU START */
 // getCacheCreated(1);
-// const hand = ["2d", "3h", "4c", "5s", "As"];
+// const hand = ["2c", "3c", "4c", "Ac", "As"];
+// hand.sortByCardRankValue();
+// const hu32 = getHandReadableAsUint32(hand);
+// const hi = getIndexByBinarySearch(HANDS_UINT32, hu32);
+// // const hi = HANDS_UINT32.indexOf(hu32);
 // const hdu32 = getHandDetails(hand);
 // const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const hi = HANDS_DETAILS_UINT32.indexOf(hdu32.detailsUint32);
 // const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
 // const hs = HANDS_SCORE[hi];
-// const hkey = hd.ranksValue.map(r => CARDS_FROM_VALUE[String(r)]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
+// const hkey = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
 // console.log("hdu32_from_hand >>", hdu32);
 // console.log("hd_from_hdu32 >>", hd);
 // console.log("hi_from_cache >>", hi);
