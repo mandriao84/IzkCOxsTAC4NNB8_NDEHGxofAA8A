@@ -840,7 +840,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
-                // if (p0hi === -1 || p1hi === -1) console.log("DEBUG", p1h, p1hi, p0h, p0hi);
 
                 getDiscardsSimulated(
                     p0,
