@@ -451,7 +451,7 @@ const getCacheCreated = (roundNumber) => {
 
     for (let r = 0; r < roundNumber; r++) {
         for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sort();
+            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue(); //.sort();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
 
@@ -665,7 +665,7 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
     if (deckOffsetNew > deck.length) throw new Error("DECK.EXHAUSTED");
     const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
     const handNew = [...cardsKept, ...cardsReceived];
-    handNew.sort();
+    handNew.sortByCardRankValue(); //.sort();
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getIndexByBinarySearch(HANDS_UINT32, handUint32);
@@ -753,15 +753,13 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
             const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
             const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
             // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
-            p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index)
-            console.log("P0", p0hAlt.hand, p1hFix.hand, p0utilAlt[ai])
+            p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index);
         }
 
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
             const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
             // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
-            p1utilAlt[ai] = -getScores(p0hRnd.index, p1hAlt.index)
-            console.log("P1", p0hRnd.hand, p1hAlt.hand, p1utilAlt[ai])
+            p1utilAlt[ai] = -getScores(p0hRnd.index, p1hAlt.index);
         }
     } else {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -826,7 +824,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
                 const deckOffset = 5;
                 const p1h = deck.slice(0, deckOffset);
-                p1h.sort();
+                p1h.sortByCardRankValue(); //.sort();
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
