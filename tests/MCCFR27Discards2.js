@@ -464,8 +464,8 @@ const getCacheCreated = (roundNumber) => {
         }
     }
 
+    /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH */ 
     cache.sort((a, b) => a[0] - b[0]);
-    // console.log(cache)
     const N = cache.length;
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
@@ -911,24 +911,24 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.timeEnd('Array.filter performance');
 
 /** TU START */
-// getCacheCreated(1);
-// const hand = ["2c", "3c", "4c", "Ac", "As"];
-// hand.sortByCardRankValue();
-// const hu32 = getHandReadableAsUint32(hand);
-// const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
-// // const hi = HANDS_UINT32.indexOf(hu32);
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
-// const hs = HANDS_SCORE[hi];
-// const hkey = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
-// console.log("hdu32_from_hand >>", hdu32);
-// console.log("hd_from_hdu32 >>", hd);
-// console.log("hi_from_cache >>", hi);
-// console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
-// console.log("h_from_hi >>", h);
-// console.log("hs_from_hi >>", hs);
-// console.log("hkey_from_hd >>", hkey);
+getCacheCreated(1);
+const hand = ["2c", "Ac", "4c", "Ah", "As"];
+hand.sortByCardRankValue();
+const hu32 = getHandReadableAsUint32(hand);
+const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
+// const hi = HANDS_UINT32.indexOf(hu32);
+const hdu32 = getHandDetails(hand);
+const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
+const hs = HANDS_SCORE[hi];
+const hkey = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
+console.log("hdu32_from_hand >>", hdu32);
+console.log("hd_from_hdu32 >>", hd);
+console.log("hi_from_cache >>", hi);
+console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
+console.log("h_from_hi >>", h);
+console.log("hs_from_hi >>", hs);
+console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
 // const hand = ["2s", "3s", "4s", "Ac", "As"];
