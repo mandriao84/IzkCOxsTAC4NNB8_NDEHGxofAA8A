@@ -74,7 +74,7 @@ const SUITS_PATTERN = {
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(CARDS).length
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_CANONICAL_INDEX;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -474,6 +474,7 @@ const getCacheCreated = (roundNumber) => {
         if (!handsCanonicalSeen.has(cache[i][1])) {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
+            if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
             // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
             // const keyDecoded_debug = hd_debug.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd_debug.suitPatternIndex] + ',';
             // ndjson_debug += keyDecoded_debug + "\n";
@@ -499,12 +500,6 @@ const getIndexByBinarySearch = (arr, target) => {
     }
     return -1;
 };
-
-// pgrep -fl "caffeinate|MCCFR27Discards2.js"
-// sudo pkill -9 -f "MCCFR27Discards2.js"
-// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
-// sudo caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js
-// ps ax -o pid,pcpu,pmem,command | grep 'MCCFR27Discards2.js'
 
 
 
@@ -535,7 +530,7 @@ async function getDataFlushed(threadId = null) {
         for (const [key, values] of map) {
             const entry = {
                 key,
-                values: values instanceof Float32Array ? [...values] : values
+                values: [...values] // MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT
             };
             lines += JSON.stringify(entry) + '\n';
         }
@@ -590,8 +585,7 @@ function getDataFlushedMerged(dir) {
                 if (!trimmed) continue;
                 const { key, values } = JSON.parse(trimmed);
                 if (!map.has(key)) {
-                    if (values instanceof Float32Array) map.set(key, structuredClone(values));
-                    else map.set(key, structuredClone(values));
+                    map.set(key, values);
                 } else {
                     const arr = map.get(key);
                     for (let j = 0; j < arr.length; j++) {
@@ -608,7 +602,7 @@ function getDataFlushedMerged(dir) {
     let outData = "";
     for (const [key, values] of result) {
         if (key.length === 4) { console.log(key); }
-        outData += JSON.stringify({ key, values: [...values] }) + '\n';
+        outData += JSON.stringify({ key, values: values }) + '\n';
     }
     fs.writeFileSync(outPath, outData, 'utf8');
 
@@ -787,7 +781,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -801,7 +795,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
         getCacheCreated(roundNumber);
 
-        const flushInterval = HANDS_CANONICAL_INDEX.length;
+        /** DEBUG */
+        HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
+
+        const flushInterval = 0 //HANDS_CANONICAL_INDEX.length;
         const iterations = 100_000;
         let timeNow = performance.now();
 
@@ -823,6 +820,9 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getIndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
+                // const _p1h_ = getHandUint32AsReadable(HANDS_UINT32[p1hi])
+                // const _p1hs_ = HANDS_SCORE[p1hi]
+                // console.log("z", p1h, _p1h_, _p1hs_)
 
                 getDiscardsSimulated(
                     p0,
@@ -833,7 +833,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                     roundNumbersFrozen
                 );
 
-                if ((i + 1) % flushInterval === 0) {
+                if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
                     await getDataFlushed(workerId);
                     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
                     timeNow = performance.now();
@@ -843,6 +843,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         }
     }
 };
+
+// pgrep -fl "caffeinate|MCCFR27Discards2.js"
+// sudo pkill -9 -f "MCCFR27Discards2.js"
+// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
+// sudo caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js
+// ps ax -o pid,pcpu,pmem,command | grep 'MCCFR27Discards2.js'
 
 (async () => {
     // getCacheSaved();
@@ -858,13 +864,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
+    [
+        ".results/mccfr/evs",
+        ".results/mccfr/regrets",
+        ".results/mccfr/strategies"
+    ].forEach(dir => {
+        getDataFlushedMerged(dir)
+    })
 
     // getDataNashed();
 })();
@@ -908,12 +914,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
-const hand = ["2d", "3d", "4s", "5d", "As"];
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-console.log(hdu32, hd);
-console.log(keyDecoded);
+// const hand = ["2s", "3s", "4s", "Ac", "As"];
+// hand.sort();
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const keyDecoded = hd.ranksValue.map(r => CARDS_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
+// console.log(hdu32, hd);
+// console.log(keyDecoded);
 
 
 // const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
