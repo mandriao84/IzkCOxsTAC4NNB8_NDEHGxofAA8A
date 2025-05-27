@@ -680,6 +680,7 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getHu32IndexByBinarySearch(HANDS_UINT32, handUint32);
+    if (handIndex < 0) throw new Error("HAND.INDEX.NOT.FOUND");
     const handObj = { index: handIndex, hand: handNew, deckOffset: deckOffsetNew };
     return handObj;
 }
@@ -765,8 +766,6 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
             const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
             // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
             p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index);
-            console.log(p0hAlt, p1hFix);
-            console.log(p0utilAlt[ai]);
         }
 
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
@@ -820,7 +819,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = 0 //HANDS_CANONICAL_INDEX.length;
-        const iterations = 1;
+        const iterations = 1_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -841,7 +840,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
-                console.log("DEBUG", p1h, p1hi, p0h, p0hi)
+                // if (p0hi === -1 || p1hi === -1) console.log("DEBUG", p1h, p1hi, p0h, p0hi);
 
                 getDiscardsSimulated(
                     p0,
@@ -875,12 +874,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 1;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -916,24 +915,24 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // console.timeEnd('Array.filter performance');
 
 /** TU START */
-getCacheCreated(1);
-const hand = [ 'Ac', 'Ad', '9s', '9h', '5s' ];
-hand.sortByCardRankValue();
-const hu32 = getHandReadableAsUint32(hand);
-const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
-// const hi = HANDS_UINT32.indexOf(hu32);
-const hdu32 = getHandDetails(hand);
-const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
-const hs = HANDS_SCORE[hi];
-const hkey = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
-console.log("hdu32_from_hand >>", hdu32);
-console.log("hd_from_hdu32 >>", hd);
-console.log("hi_from_cache >>", hi);
-console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
-console.log("h_from_hi >>", h);
-console.log("hs_from_hi >>", hs);
-console.log("hkey_from_hd >>", hkey);
+// getCacheCreated(1);
+// const hand = [ 'Ac', 'Ad', '9s', '9h', '5s' ];
+// hand.sortByCardRankValue();
+// const hu32 = getHandReadableAsUint32(hand);
+// const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
+// // const hi = HANDS_UINT32.indexOf(hu32);
+// const hdu32 = getHandDetails(hand);
+// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
+// const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
+// const hs = HANDS_SCORE[hi];
+// const hkey = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
+// console.log("hdu32_from_hand >>", hdu32);
+// console.log("hd_from_hdu32 >>", hd);
+// console.log("hi_from_cache >>", hi);
+// console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
+// console.log("h_from_hi >>", h);
+// console.log("hs_from_hi >>", hs);
+// console.log("hkey_from_hd >>", hkey);
 /** TU END */
 
 // const hand = ["2s", "3s", "4s", "Ac", "As"];
