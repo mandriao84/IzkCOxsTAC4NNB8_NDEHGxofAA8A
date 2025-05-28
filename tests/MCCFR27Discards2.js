@@ -449,7 +449,7 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
-    const evSumBottomThird = (evSum.size / 3).safe("FLOOR", 0);
+    const evSumBottomThird = (evSum.size / 3).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
     const evVisitBottomThirdAvg = evSumEntries[evSumBottomThird - 1][1][0];
