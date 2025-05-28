@@ -449,6 +449,11 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
+    const evSumBottomThird = (evSum.size / 3).safe("FLOOR", 0);
+    const evSumEntries = Array.from(evSum.entries());
+    evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
+    const evVisitBottomThirdAvg = evSumEntries[evSumBottomThird - 1][1][0];
+
     const cache = [];
 
     for (let r = 0; r < roundNumber; r++) {
@@ -467,7 +472,7 @@ const getCacheCreated = (roundNumber) => {
             const evValues = evSum?.get(key) || [1, 0];
             const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
 
-            cache.push([handUint32, detailsUint32, score, ev]);
+            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomThirdAvg]);
         }
     }
 
@@ -481,20 +486,16 @@ const getCacheCreated = (roundNumber) => {
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
-    // let ndjson_debug = "";
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
 
         HANDS_SCORE[i] = cache[i][2];
         HANDS_EV[i] = cache[i][3];
-        if (!handsCanonicalSeen.has(cache[i][1])) {
+        if (!handsCanonicalSeen.has(cache[i][1]) && cache[i][4]) {
             handsCanonicalSeen.add(cache[i][1]);
             handsCanonical.push(i);
-            if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
-            // const hd_debug = getHandDetailsUint32AsReadable(HANDS_DETAILS_UINT32[i]);
-            // const keyDecoded_debug = hd_debug.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd_debug.suitPatternIndex] + ',';
-            // ndjson_debug += keyDecoded_debug + "\n";
+            // /** DEBUG */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
     }
 
@@ -868,16 +869,16 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
-    // console.log(HANDS_CANONICAL_INDEX.length);
+    getCacheCreated(1);
+    console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -948,7 +949,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 //     const keyParts = key.split(':');
 //     const rankCanonicalArr = keyParts[0].split('');
 //     const suitCanonical = keyParts[1].split(',')[0];
-//     const suitCanonicalIsSuited = Number(suitCanonical) === 0;
 //     const indicesString = values[0][0];
 //     const indicesStringIsEmpty = indicesString === "-";
 //     const indicesSet = new Set([...indicesString].map(Number));
@@ -962,7 +962,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 //             keyCanonicalNew.push(rankCanonicalArr[i]);
 //         }
 //     }
-//     keyCanonicalNew = keyCanonicalNew.join('') + ':' + ((keyCanonicalNewHasX || indicesStringIsEmpty) ? `X${suitCanonicalIsSuited ? 's' : ''}` : suitCanonical);
+//     keyCanonicalNew = keyCanonicalNew.join('') + ':' + suitCanonical;
 //     if (!keysCanonicalSet.has(keyCanonicalNew)) {
 //         // keysCanonicalSet.set(keyCanonicalNew, structuredClone(values));
 //         keysCanonicalSet.set(keyCanonicalNew, indicesString);
