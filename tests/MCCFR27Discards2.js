@@ -455,7 +455,6 @@ const getCacheCreated = (roundNumber) => {
     const evVisitBottomThirdAvg = evSumEntries[evSumBottomThird - 1][1][0];
 
     const cache = [];
-
     for (let r = 0; r < roundNumber; r++) {
         for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
