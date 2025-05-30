@@ -449,7 +449,7 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
-    const evSumBottomThird = (evSum.size / 6).safe("ROUND", 0);
+    const evSumBottomLow = (evSum.size / 6).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
     const ndjson = evSumEntries.reduce((acc, r, i) => {
@@ -457,7 +457,7 @@ const getCacheCreated = (roundNumber) => {
         return acc
     }, "")
     fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
-    const evVisitBottomThirdAvg = evSumEntries[evSumBottomThird - 1][1][0];
+    const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
     const cache = [];
     for (let r = 0; r < roundNumber; r++) {
@@ -476,7 +476,7 @@ const getCacheCreated = (roundNumber) => {
             const evValues = evSum?.get(key) || [1, 0];
             const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
 
-            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomThirdAvg]);
+            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg]);
         }
     }
 
@@ -878,7 +878,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
+    // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
