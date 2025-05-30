@@ -449,14 +449,38 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
-    const evSumBottomLow = (evSum.size / 6).safe("ROUND", 0);
+    const evSumBottomLow = (evSum.size * 0.1).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
-    const ndjson = evSumEntries.reduce((acc, r, i) => {
-        acc += JSON.stringify(r[1][0]) + "\n";
-        return acc
-    }, "")
-    fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
+    // const ndjson = evSumEntries.reduce((acc, r, i) => {
+    //     acc += JSON.stringify(r[1][0]) + "\n";
+    //     return acc
+    // }, "")
+    // fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
+
+    /** FIND ELBOW POINT */
+    // const evSumEntriesPoints = evSumEntries.map(([key, values], i) => ({ x: i, y: Math.log(values[0] + 1), key }));
+    // const pointFirst = evSumEntriesPoints[0];
+    // const pointLast = evSumEntriesPoints[evSumEntriesPoints.length - 1];
+    // function distanceToLine(pt, a, b) {
+    //   const numerator = Math.abs((b.y - a.y) * pt.x - (b.x - a.x) * pt.y + b.x * a.y - b.y * a.x);
+    //   const denominator = Math.sqrt((b.y - a.y) ** 2 + (b.x - a.x) ** 2);
+    //   return numerator / denominator;
+    // }
+    
+    // let maxDist = -Infinity;
+    // let elbowIndex = -1;
+    // for (let i = 1; i < evSumEntriesPoints.length - 1; i++) {
+    //   const dist = distanceToLine(evSumEntriesPoints[i], pointFirst, pointLast);
+    //   if (dist > maxDist) {
+    //     maxDist = dist;
+    //     elbowIndex = i;
+    //   }
+    // }
+    
+    // const elbowPoint = evSumEntriesPoints[elbowIndex];
+    // return console.log(elbowPoint, elbowIndex);
+
     const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
     const cache = [];
@@ -878,7 +902,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
+    getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
