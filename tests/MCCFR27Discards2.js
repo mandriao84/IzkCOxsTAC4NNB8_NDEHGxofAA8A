@@ -637,6 +637,8 @@ function getDataNashed() {
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
     let count = 0;
+    let countBelow02 = 0;
+    let countBelow06 = 0;
     for (const [key, values] of regretSum) {
         const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
         if (visitAcc === 0) continue;
@@ -645,14 +647,17 @@ function getDataNashed() {
         regretSumAvg += regretAvg;
         regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
         count++;
+        if (regretAvg <= 0.02) countBelow02++;
+        if (regretAvg <= 0.06) countBelow06++;
         console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
-        // if (regretAvg <= 0.02 && visitAcc > 10_000) console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
 
     const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
 
-    console.log(`[MCCFR] max avg regret per node: ${regretMaxAvg}`);
-    console.log(`[MCCFR] sum avg regret (≤ exploit): ${regretAvgMean}`);
+    console.log(`[MCCFR] NASH_BELOW_0.02=${countBelow02} / ${count}`);
+    console.log(`[MCCFR] NASH_BELOW_0.06=${countBelow06} / ${count}`);
+    console.log(`[MCCFR] NASH_AVERAGE=${regretAvgMean}`);
+    console.log(`[MCCFR] NASH_MAX=${regretMaxAvg}`);
 }
 
 function getNashEquilibrium(key, regret, strategy) {
@@ -868,8 +873,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
-    console.log(HANDS_CANONICAL_INDEX.length);
+    // getCacheCreated(1);
+    // console.log(HANDS_CANONICAL_INDEX.length);
 
 
     // const roundNumber = 1;
