@@ -449,9 +449,14 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
-    const evSumBottomThird = (evSum.size / 3).safe("ROUND", 0);
+    const evSumBottomThird = (evSum.size / 6).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
+    const ndjson = evSumEntries.reduce((acc, r, i) => {
+        acc += JSON.stringify(r[1][0]) + "\n";
+        return acc
+    }, "")
+    fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
     const evVisitBottomThirdAvg = evSumEntries[evSumBottomThird - 1][1][0];
 
     const cache = [];
@@ -873,7 +878,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
+    getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
@@ -893,11 +898,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    getDataNashed();
+    // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=0 / 14469
-    // [MCCFR] NASH_BELOW_0.06=1975 / 14469
-    // [MCCFR] NASH_AVERAGE=0.10467588186947349
-    // [MCCFR] NASH_MAX=0.19757681440417774
+    // [MCCFR] NASH_BELOW_0.06=2049 / 14469
+    // [MCCFR] NASH_AVERAGE=0.10345588337284763
+    // [MCCFR] NASH_MAX=0.1926476890497093
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
