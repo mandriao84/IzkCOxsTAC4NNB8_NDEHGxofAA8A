@@ -457,6 +457,7 @@ const getCacheCreated = (roundNumber) => {
     //     return acc
     // }, "")
     // fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
+    // return
 
     /** FIND ELBOW POINT */
     // const evSumEntriesPoints = evSumEntries.map(([key, values], i) => ({ x: i, y: Math.log(values[0] + 1), key }));
@@ -658,6 +659,7 @@ function getDataFlushedMerged(dir) {
     }
 }
 
+
 function getDataNashed() {
     const regretSum = getNDJSONAsMap(".results/mccfr/regrets/regrets.ndjson");
     const strategySum = getNDJSONAsMap(".results/mccfr/strategies/strategies.ndjson");
@@ -669,13 +671,18 @@ function getDataNashed() {
     let countBelow02 = 0;
     let countBelow06 = 0;
     for (const [key, values] of regretSum) {
-        const visitAcc = strategySum.get(key).reduce((acc, strat) => acc + strat, 0);
+        const strat = strategySum.get(key);
+        if (!strat) continue;
+
+        const visitAcc = strat.reduce((acc, strat) => acc + strat, 0);
         if (visitAcc === 0) continue;
+
         const regretAcc = values.reduce((acc, value) => acc + Math.max(0, value), 0);
         const regretAvg = regretAcc / (values.length * visitAcc);
         regretSumAvg += regretAvg;
         regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
         count++;
+
         if (regretAvg <= 0.02) countBelow02++;
         if (regretAvg <= 0.06) countBelow06++;
         console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
@@ -745,7 +752,27 @@ function getBestActionIndex(strat) {
 }
 
 function getRandomActionIndex(strat) {
-    return (Math.random() * strat.length).safe("FLOOR", 0);
+    const n = strat.length;
+
+    let total = 0.0;
+    for (let i = 0; i < n; i++) {
+        total += strat[i];
+    }
+
+    if (!(total > 0)) {
+        return (Math.random() * n).safe("FLOOR", 0);
+    }
+
+    let r = Math.random() * total;
+
+    for (let i = 0, lim = n - 1; i < lim; i++) {
+        r -= strat[i];
+        if (r < 0) {
+            return i;
+        }
+    }
+
+    return n - 1;
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
@@ -902,7 +929,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
+    // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
@@ -925,8 +952,8 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=0 / 14469
     // [MCCFR] NASH_BELOW_0.06=2049 / 14469
-    // [MCCFR] NASH_AVERAGE=0.10345588337284763
-    // [MCCFR] NASH_MAX=0.1926476890497093
+    // [MCCFR] NASH_AVERAGE=0.10360479151944343
+    // [MCCFR] NASH_MAX=0.19021665299014595
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
