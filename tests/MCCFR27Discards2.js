@@ -449,6 +449,8 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     getNDJSONAsMap(".results/mccfr/evs/evs.ndjson", evSum, Int32Array);
+    getNDJSONAsMap(".results/mccfr/regrets/regrets.ndjson", regretSum, Float32Array);
+    getNDJSONAsMap(".results/mccfr/strategies/strategies.ndjson", strategySum, Float32Array);
     const evSumBottomLow = (evSum.size * 0.1).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
