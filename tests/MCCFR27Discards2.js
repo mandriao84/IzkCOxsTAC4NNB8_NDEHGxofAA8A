@@ -751,28 +751,24 @@ function getBestActionIndex(strat) {
     return result.index;
 }
 
+
 function getRandomActionIndex(strat) {
-    const n = strat.length;
-
-    let total = 0.0;
-    for (let i = 0; i < n; i++) {
+    const arru32 = new Float32Array(32);
+    let total = 0;
+    for (let i = 0; i < 32; i++) {
         total += strat[i];
+        arru32[i] = total;
     }
-
     if (!(total > 0)) {
-        return (Math.random() * n).safe("FLOOR", 0);
+        return (Math.random() * 32).safe("FLOOR", 0);
     }
-
     let r = Math.random() * total;
-
-    for (let i = 0, lim = n - 1; i < lim; i++) {
-        r -= strat[i];
-        if (r < 0) {
-            return i;
-        }
+    let low = 0, high = 31;
+    while (low < high) {
+        const mid = (low + high) >>> 1;
+        arru32[mid] < r ? (low = mid + 1) : (high = mid);
     }
-
-    return n - 1;
+    return low;
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
