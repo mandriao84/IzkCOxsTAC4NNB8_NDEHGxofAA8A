@@ -162,18 +162,18 @@ const getAllCanonicalSuitPatterns = () => {
     return patterns;
 };
 
-const getNDJSONAsMap = (filePath) => {
+const getNDJSONAsMap = (filePath, map = new Map(), mapValuesType = Float32Array) => {
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf8');
         const entries = data.split('\n');
-        const map = new Map();
         for (let i = 0; i < entries.length; i++) {
             const trimmed = entries[i].trim();
             if (!trimmed) continue;
             const { key, values } = JSON.parse(trimmed);
-            map.set(key, values);
+            const valuesTyped = new mapValuesType(values);
+            map.set(key, valuesTyped);
         }
-        return map;
+        // return map;
     } else {
         console.error(`getNDJSONRead.Path.Error: ${filePath}`);
     }
@@ -448,7 +448,7 @@ const getCacheSaved = () => {
 
 const getCacheCreated = (roundNumber) => {
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
+    getNDJSONAsMap(".results/mccfr/evs/evs.ndjson", evSum, Int32Array);
     const evSumBottomLow = (evSum.size * 0.1).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
@@ -498,7 +498,7 @@ const getCacheCreated = (roundNumber) => {
             //     && a.ranksValue[4] === 4) console.log(hand, handUint32, detailsUint32, score);
 
             const key = `${detailsUint32 + "," + (r + 1)}`;
-            const evValues = evSum?.get(key) || [1, 0];
+            const evValues = evSum?.get(key) || new Int32Array([1, 0]);
             const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
 
             cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg]);
@@ -570,7 +570,7 @@ const ACTIONS = (() => {
 const ACTION_COUNT = ACTIONS.length;
 const regretSum = new Map();
 const strategySum = new Map();
-let evSum = new Map();
+const evSum = new Map();
 
 async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
@@ -661,9 +661,9 @@ function getDataFlushedMerged(dir) {
 
 
 function getDataNashed() {
-    const regretSum = getNDJSONAsMap(".results/mccfr/regrets/regrets.ndjson");
-    const strategySum = getNDJSONAsMap(".results/mccfr/strategies/strategies.ndjson");
-    // const evSum = getNDJSONAsMap(".results/mccfr/evs/evs.ndjson");
+    getNDJSONAsMap(".results/mccfr/regrets/regrets.ndjson", regretSum, Float32Array);
+    getNDJSONAsMap(".results/mccfr/strategies/strategies.ndjson", strategySum, Float32Array);
+    // getNDJSONAsMap(".results/mccfr/evs/evs.ndjson", evSum, Int32Array);
 
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
@@ -751,22 +751,25 @@ function getBestActionIndex(strat) {
     return result.index;
 }
 
-
 function getRandomActionIndex(strat) {
-    const arru32 = new Float32Array(32);
+    const n = strat.length;
     let total = 0;
-    for (let i = 0; i < 32; i++) {
+    
+    const arr = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
         total += strat[i];
-        arru32[i] = total;
+        arr[i] = total;
     }
-    if (!(total > 0)) {
+
+    if (total <= 0) {
         return (Math.random() * 32).safe("FLOOR", 0);
     }
-    let r = Math.random() * total;
-    let low = 0, high = 31;
+
+    const r = Math.random() * total;
+    let low = 0, high = n - 1;
     while (low < high) {
         const mid = (low + high) >>> 1;
-        arru32[mid] < r ? (low = mid + 1) : (high = mid);
+        arr[mid] < r ? (low = mid + 1) : (high = mid);
     }
     return low;
 }
@@ -780,8 +783,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    if (!evSum.has(p0key)) evSum.set(p0key, [0, 0]);
-    if (!evSum.has(p1key)) evSum.set(p1key, [0, 0]);
+    if (!evSum.has(p0key)) evSum.set(p0key, new Int32Array([0, 0]));
+    if (!evSum.has(p1key)) evSum.set(p1key, new Int32Array([0, 0]));
 
     ++evSum.get(p0key)[0];
     ++evSum.get(p1key)[0];
@@ -945,7 +948,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    // getDataNashed();
+    getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=0 / 14469
     // [MCCFR] NASH_BELOW_0.06=2049 / 14469
     // [MCCFR] NASH_AVERAGE=0.10360479151944343
