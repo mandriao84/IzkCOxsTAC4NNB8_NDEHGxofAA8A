@@ -934,12 +934,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 1;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -950,7 +950,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    getDataNashed();
+    // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=0 / 14469
     // [MCCFR] NASH_BELOW_0.06=2049 / 14469
     // [MCCFR] NASH_AVERAGE=0.10360479151944343
