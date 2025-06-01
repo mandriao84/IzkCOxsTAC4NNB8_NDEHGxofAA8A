@@ -623,13 +623,26 @@ function getDataFlushedMerged(dir) {
         return;
     }
 
-    const outName = "__merged__";
-
     const files = fs.readdirSync(dir);
+
+    const refMap = new Map();
+    const refFilePath = files.find(file => path.parse(file).name === "__REF" && path.parse(file).ext === '.ndjson');
+    if (refFilePath) {
+        const data = fs.readFileSync(path.join(dir, refFilePath), 'utf8');
+        const entries = data.split('\n');
+        for (let i = 0; i < entries.length; i++) {
+            const trimmed = entries[i].trim();
+            if (!trimmed) continue;
+            const { key, values } = JSON.parse(trimmed);
+            refMap.set(key, values);
+        }
+    }
+
+    const outName = "__MERGED";
     const result = files.reduce((map, filePath) => {
         const filePathParsed = path.parse(filePath);
         const fileName = filePathParsed.name;
-        if (filePathParsed.ext === '.ndjson' && (fileName !== outName || fileName !== "REF")) {
+        if (filePathParsed.ext === '.ndjson' && (fileName !== outName || fileName !== "__REF")) {
             const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
             const entries = data.split('\n');
 
