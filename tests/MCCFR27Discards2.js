@@ -623,10 +623,13 @@ function getDataFlushedMerged(dir) {
         return;
     }
 
+    const outName = "__merged__";
+
     const files = fs.readdirSync(dir);
     const result = files.reduce((map, filePath) => {
         const filePathParsed = path.parse(filePath);
-        if (filePathParsed.ext === '.ndjson') {
+        const fileName = filePathParsed.name;
+        if (filePathParsed.ext === '.ndjson' && (fileName !== outName || fileName !== "REF")) {
             const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
             const entries = data.split('\n');
 
@@ -648,17 +651,17 @@ function getDataFlushedMerged(dir) {
         return map;
     }, new Map())
 
-    const outPath = path.join(dir, '__merged__.ndjson');
+    const outPath = path.join(dir, `${outName}.ndjson`);
     let outData = "";
     for (const [key, values] of result) {
         if (key.length === 4) { console.log(key); }
         outData += JSON.stringify({ key, values: values }) + '\n';
     }
-    fs.writeFileSync(outPath, outData, 'utf8');
+    // fs.writeFileSync(outPath, outData, 'utf8');
 
-    if (dir.includes('strategies')) {
-        getStrategiesReadableSaved(result);
-    }
+    // if (dir.includes('strategies')) {
+    //     getStrategiesReadableSaved(result);
+    // }
 }
 
 
@@ -942,15 +945,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
+    [
+        ".results/mccfr/evs",
+        ".results/mccfr/regrets",
+        ".results/mccfr/strategies"
+    ].forEach(dir => {
+        getDataFlushedMerged(dir)
+    })
 
-    getDataNashed();
+    // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=0 / 14469
     // [MCCFR] NASH_BELOW_0.06=2124 / 14469
     // [MCCFR] NASH_AVERAGE=0.10199052758609486
