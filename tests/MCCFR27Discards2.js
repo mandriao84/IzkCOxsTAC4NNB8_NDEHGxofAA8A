@@ -678,11 +678,11 @@ function getDataFlushedMerged(dir) {
         if (key.length === 4) { console.log(key); }
         outData += JSON.stringify({ key, values: values }) + '\n';
     }
-    // fs.writeFileSync(outPath, outData, 'utf8');
+    fs.writeFileSync(outPath, outData, 'utf8');
 
-    // if (dir.includes('strategies')) {
-    //     getStrategiesReadableSaved(result);
-    // }
+    if (dir.includes('strategies')) {
+        getStrategiesReadableSaved(result);
+    }
 }
 
 
