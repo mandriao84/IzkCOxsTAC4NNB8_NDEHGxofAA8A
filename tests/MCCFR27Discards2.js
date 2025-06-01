@@ -639,34 +639,42 @@ function getDataFlushedMerged(dir) {
     }
 
     const outName = "__MERGED";
-    const result = files.reduce((map, filePath) => {
+    const mergedMap = new Map();
+    for (let f = 0; f < files.length; f++) {
+        const filePath = files[f];
         const filePathParsed = path.parse(filePath);
         const fileName = filePathParsed.name;
-        if (filePathParsed.ext === '.ndjson' && (fileName !== outName || fileName !== "__REF")) {
-            const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
-            const entries = data.split('\n');
+        if (filePathParsed.ext !== '.ndjson') continue;
+        if (fileName === outName || fileName === "__REF.ndjson") continue;
 
-            for (let i = 0; i < entries.length; i++) {
-                const trimmed = entries[i].trim();
-                if (!trimmed) continue;
-                const { key, values } = JSON.parse(trimmed);
-                if (!map.has(key)) {
-                    map.set(key, values);
-                } else {
-                    const arr = map.get(key);
-                    for (let j = 0; j < arr.length; j++) {
-                        arr[j] += values[j];
-                    }
+        const data = fs.readFileSync(path.join(dir, filePath), 'utf8');
+        const entries = data.split('\n');
+
+        for (let i = 0; i < entries.length; i++) {
+            const trimmed = entries[i].trim();
+            if (!trimmed) continue;
+            const { key, values } = JSON.parse(trimmed);
+            const refValues = refMap.get(key);
+            if (refValues) {
+                for (let j = 0; j < values.length; j++) {
+                    values[j] -= refValues[j];
                 }
             }
 
+            if (!map.has(key)) {
+                map.set(key, values);
+            } else {
+                const arr = map.get(key);
+                for (let j = 0; j < arr.length; j++) {
+                    arr[j] += values[j];
+                }
+            }
         }
-        return map;
-    }, new Map())
+    }
 
     const outPath = path.join(dir, `${outName}.ndjson`);
     let outData = "";
-    for (const [key, values] of result) {
+    for (const [key, values] of mergedMap) {
         if (key.length === 4) { console.log(key); }
         outData += JSON.stringify({ key, values: values }) + '\n';
     }
