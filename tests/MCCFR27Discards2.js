@@ -893,7 +893,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 5/10).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 10/10).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -910,7 +910,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         // /** DEBUG */ HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 100_000;
+        const iterations = 200_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -981,10 +981,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // })
 
     // getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=132 / 14469
-    // [MCCFR] NASH_BELOW_0.06=3069 / 14469
-    // [MCCFR] NASH_AVERAGE=0.09272582409619212
-    // [MCCFR] NASH_MAX=0.18677647659322585
+    // [MCCFR] NASH_BELOW_0.02=136 / 14469
+    // [MCCFR] NASH_BELOW_0.06=3707 / 14469
+    // [MCCFR] NASH_AVERAGE=0.08752432880509758
+    // [MCCFR] NASH_MAX=0.1859145493765393
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
