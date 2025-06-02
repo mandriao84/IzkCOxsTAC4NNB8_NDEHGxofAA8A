@@ -687,7 +687,7 @@ function getDataFlushedMerged(dir) {
     fs.writeFileSync(outPath, outData, 'utf8');
 
     if (dir.includes('strategies')) {
-        getStrategiesReadableSaved(result);
+        getStrategiesReadableSaved(mergedMap);
     }
 }
 
