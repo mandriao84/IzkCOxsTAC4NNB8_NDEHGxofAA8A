@@ -676,6 +676,12 @@ function getDataFlushedMerged(dir) {
     let outData = "";
     for (const [key, values] of mergedMap) {
         if (key.length === 4) { console.log(key); }
+        const refValues = refMap.get(key);
+        if (refValues) {
+            for (let j = 0; j < values.length; j++) {
+                values[j] += refValues[j];
+            }
+        }
         outData += JSON.stringify({ key, values: values }) + '\n';
     }
     fs.writeFileSync(outPath, outData, 'utf8');
