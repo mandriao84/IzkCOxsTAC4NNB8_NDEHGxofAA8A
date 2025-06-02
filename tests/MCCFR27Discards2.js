@@ -893,7 +893,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 10/10).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 5/10).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -964,27 +964,27 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 1;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
-    [
-        ".results/mccfr/evs",
-        ".results/mccfr/regrets",
-        ".results/mccfr/strategies"
-    ].forEach(dir => {
-        getDataFlushedMerged(dir)
-    })
+    // [
+    //     ".results/mccfr/evs",
+    //     ".results/mccfr/regrets",
+    //     ".results/mccfr/strategies"
+    // ].forEach(dir => {
+    //     getDataFlushedMerged(dir)
+    // })
 
     // getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=0 / 14469
-    // [MCCFR] NASH_BELOW_0.06=2124 / 14469
-    // [MCCFR] NASH_AVERAGE=0.10199052758609486
-    // [MCCFR] NASH_MAX=0.18958253327104838
+    // [MCCFR] NASH_BELOW_0.02=132 / 14469
+    // [MCCFR] NASH_BELOW_0.06=3069 / 14469
+    // [MCCFR] NASH_AVERAGE=0.09272582409619212
+    // [MCCFR] NASH_MAX=0.18677647659322585
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
