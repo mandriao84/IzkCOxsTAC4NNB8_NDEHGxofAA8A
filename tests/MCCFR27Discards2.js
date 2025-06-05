@@ -910,7 +910,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         // /** DEBUG */ HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 200_000;
+        const iterations = 100_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -964,12 +964,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -980,11 +980,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    // getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=136 / 14469
-    // [MCCFR] NASH_BELOW_0.06=3707 / 14469
-    // [MCCFR] NASH_AVERAGE=0.08752432880509758
-    // [MCCFR] NASH_MAX=0.1859145493765393
+    getDataNashed();
+    // [MCCFR] NASH_BELOW_0.02=1097 / 14469
+    // [MCCFR] NASH_BELOW_0.06=8572 / 14469
+    // [MCCFR] NASH_AVERAGE=0.05658264604395926
+    // [MCCFR] NASH_MAX=0.1342245670387842
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
