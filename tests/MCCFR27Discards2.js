@@ -701,7 +701,7 @@ function getDataNashed() {
     let regretMaxAvg = 0;
     let count = 0;
     let countBelow02 = 0;
-    let countBelow06 = 0;
+    let countBelow05 = 0;
     for (const [key, values] of regretSum) {
         const strat = strategySum.get(key);
         if (!strat) continue;
@@ -716,14 +716,14 @@ function getDataNashed() {
         count++;
 
         if (regretAvg <= 0.02) countBelow02++;
-        if (regretAvg <= 0.06) countBelow06++;
+        if (regretAvg <= 0.05) countBelow05++;
         console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
 
     const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
 
     console.log(`[MCCFR] NASH_BELOW_0.02=${countBelow02} / ${count}`);
-    console.log(`[MCCFR] NASH_BELOW_0.06=${countBelow06} / ${count}`);
+    console.log(`[MCCFR] NASH_BELOW_0.05=${countBelow05} / ${count}`);
     console.log(`[MCCFR] NASH_AVERAGE=${regretAvgMean}`);
     console.log(`[MCCFR] NASH_MAX=${regretMaxAvg}`);
 }
@@ -981,10 +981,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // })
 
     getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=1097 / 14469
-    // [MCCFR] NASH_BELOW_0.06=8572 / 14469
-    // [MCCFR] NASH_AVERAGE=0.05658264604395926
-    // [MCCFR] NASH_MAX=0.1342245670387842
+    // [MCCFR] NASH_BELOW_0.02=7054 / 14469
+    // [MCCFR] NASH_BELOW_0.06=14352 / 14469
+    // [MCCFR] NASH_AVERAGE=0.02338523557504288
+    // [MCCFR] NASH_MAX=0.07773430095496006
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
