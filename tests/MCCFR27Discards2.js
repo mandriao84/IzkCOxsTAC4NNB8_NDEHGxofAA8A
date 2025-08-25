@@ -981,10 +981,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // })
 
     // getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=14455 / 14469
+    // [MCCFR] NASH_BELOW_0.02=14456 / 14469
     // [MCCFR] NASH_BELOW_0.05=14469 / 14469
-    // [MCCFR] NASH_AVERAGE=0.0067026308835516435
-    // [MCCFR] NASH_MAX=0.023746475038000286
+    // [MCCFR] NASH_AVERAGE=0.0065922870629453794
+    // [MCCFR] NASH_MAX=0.023741929471582886
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
