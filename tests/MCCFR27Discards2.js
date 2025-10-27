@@ -949,10 +949,10 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0hi = HANDS_CANONICAL_INDEX[i];
                 const p0hu32 = HANDS_UINT32[p0hi];
                 const p0h = getHandUint32AsReadable(p0hu32);
-                const p0hisafe = HANDS_UINT32.indexOf(p0hu32);
-                const p0hu32safe = HANDS_UINT32[p0hisafe];
-                const p0hsafe = getHandUint32AsReadable(p0hu32safe);
-                if (p0hi !== p0hsafe) console.log(`p0hi=${p0hi},${p0h} || p0hisafe=${p0hisafe},p0hsafe=${p0hsafe}`);
+                // const p0hisafe = HANDS_UINT32.indexOf(p0hu32);
+                // const p0hu32safe = HANDS_UINT32[p0hisafe];
+                // const p0hsafe = getHandUint32AsReadable(p0hu32safe);
+                // if (p0hi !== p0hsafe) console.log(`p0hi=${p0hi},${p0h} || p0hisafe=${p0hisafe},p0hsafe=${p0hsafe}`);
                 const p0 = { index: p0hi, hand: p0h };
 
                 deckRef.shuffleByFisherYates();
