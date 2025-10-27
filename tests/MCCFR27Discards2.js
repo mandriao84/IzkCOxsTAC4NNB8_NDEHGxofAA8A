@@ -824,11 +824,11 @@ function getRandomActionIndex(strat) {
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
-    // if (roundNumbersFrozen[roundNumber]) {
-    //     const ev = HANDS_EV[h0.index];
-    //     console.log(`[FROZEN] ROUND=${roundNumber} | HAND=${getHandUint32AsReadable(HANDS_UINT32[h0.index]).join(' ')} | EV=${ev}`);
-    //     return ev;
-    // }
+    if (roundNumbersFrozen[roundNumber]) {
+        const ev = HANDS_EV[h0.index];
+        console.log(`[FROZEN] ROUND=${roundNumber} | HAND=${getHandUint32AsReadable(HANDS_UINT32[h0.index]).join(' ')} | EV=${ev}`);
+        return ev;
+    }
 
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
@@ -978,16 +978,16 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    getCacheCreated(1);
+    // getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 2;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
