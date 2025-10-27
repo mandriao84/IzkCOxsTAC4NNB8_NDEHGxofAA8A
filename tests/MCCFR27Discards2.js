@@ -538,10 +538,9 @@ const getCacheCreated = (roundNumber) => {
     for (let i = 0; i < N; i++) {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
-
         HANDS_SCORE[i] = cache[i][2];
         HANDS_EV[i] = cache[i][3];
-        
+
         /** WE FORCE ITERATE OVER LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
         if (!handsCanonicalSeen.has(cache[i][1]) && cache[i][4]) {
             handsCanonicalSeen.add(cache[i][1]);
