@@ -492,18 +492,9 @@ const getCacheCreated = (roundNumber) => {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
-            // const a = getHandDetailsUint32AsReadable(detailsUint32);
-            // if (a.ranksValue[0] === 13 
-            //     && a.ranksValue[1] === 13
-            //     && a.ranksValue[2] === 8
-            //     && a.ranksValue[3] === 8
-            //     && a.ranksValue[4] === 4) console.log(hand, handUint32, detailsUint32, score);
-
             const key = `${detailsUint32 + "," + (r + 1)}`;
             const evValues = evSum?.get(key) || new Int32Array([1, 0]);
             const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
-
-
             cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg, key]);
         }
     }
@@ -768,7 +759,6 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
     const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
     const handNew = [...cardsKept, ...cardsReceived];
     handNew.sortByCardRankValue();
-    // console.log(hand, discardIndices, cardsKept, handNew);
 
     const handUint32 = getHandReadableAsUint32(handNew);
     const handIndex = getHu32IndexByBinarySearch(HANDS_UINT32, handUint32);
