@@ -503,9 +503,26 @@ const getCacheCreated = (roundNumber) => {
             const evValues = evSum?.get(key) || new Int32Array([1, 0]);
             const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
 
-            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg]);
+            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg, key]);
         }
     }
+
+    /** DEBUG START - EVS */
+    const evscache = cache.slice().sort((a, b) => b[3] - a[3]);
+    const evsoutputdir = path.join(PATH_RESULTS, 'evs');
+    let evsoutput = '';
+    const evsseen = new Set();
+    for (const [handUint32, detailsUint32, score, ev, , key] of evscache) {
+        if (evsseen.has(key)) continue;
+        const keyparts = key.split(',');
+        const hd = getHandDetailsUint32AsReadable(parseInt(keyparts[0]));
+        const keystring = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyparts[1];
+        evsoutput += JSON.stringify({ key: key, values: [keystring, ev] }) + '\n';
+        evsseen.add(key);
+    }
+    fs.mkdirSync(evsoutputdir, { recursive: true });
+    fs.writeFileSync(path.join(evsoutputdir, 'readable.ndjson'), evsoutput);
+    /** DEBUG END - EVS */
 
     /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH */ 
     cache.sort((a, b) => a[0] - b[0]);
@@ -809,6 +826,7 @@ function getRandomActionIndex(strat) {
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen) {
     // if (roundNumbersFrozen[roundNumber]) {
     //     const ev = HANDS_EV[h0.index];
+    //     console.log(`[FROZEN] ROUND=${roundNumber} | HAND=${getHandUint32AsReadable(HANDS_UINT32[h0.index]).join(' ')} | EV=${ev}`);
     //     return ev;
     // }
 
@@ -910,7 +928,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         // /** DEBUG */ HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 100_000;
+        const iterations = 1_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -960,16 +978,16 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // getCacheCreated(1);
+    getCacheCreated(1);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
