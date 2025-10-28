@@ -75,7 +75,7 @@ const SUITS_PATTERN = {
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(RANKS_REF).length
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, KEYS_EV, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -492,10 +492,11 @@ const getCacheCreated = (roundNumber) => {
             const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
             const handUint32 = getHandReadableAsUint32(hand);
             const { detailsUint32, score } = getHandDetails(hand);
-            const key = `${detailsUint32 + "," + (r + 1)}`;
-            const evValues = evSum?.get(key) || new Int32Array([1, 0]);
-            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
-            cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg, key]);
+            const round = r + 1;
+            const key = `${detailsUint32 + "," + round}`;
+            const keyEvValues = evSum?.get(key) || new Int32Array([1, 0]);
+            const keyEv = (keyEvValues[1] / keyEvValues[0]).safe("ROUND", 6);
+            cache.push([handUint32, detailsUint32, score, keyEv, keyEvValues[0] <= evVisitBottomLowAvg, round, key]);
         }
     }
 
@@ -504,25 +505,28 @@ const getCacheCreated = (roundNumber) => {
     // const evsoutputdir = path.join(PATH_RESULTS, 'evs');
     // let evsoutput = '';
     // const evsseen = new Set();
-    // for (const [handUint32, detailsUint32, score, ev, , key] of evscache) {
+    // for (const [handUint32, detailsUint32, score, keyev, , round, key] of evscache) {
     //     if (evsseen.has(key)) continue;
     //     const keyparts = key.split(',');
     //     const hd = getHandDetailsUint32AsReadable(parseInt(keyparts[0]));
     //     const keystring = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyparts[1];
-    //     evsoutput += JSON.stringify({ key: key, values: [keystring, ev] }) + '\n';
+    //     evsoutput += JSON.stringify({ key: key, values: [keystring, keyev] }) + '\n';
     //     evsseen.add(key);
     // }
     // fs.mkdirSync(evsoutputdir, { recursive: true });
     // fs.writeFileSync(path.join(evsoutputdir, 'readable.ndjson'), evsoutput);
     /** DEBUG END - EVS */
 
-    /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH */ 
-    cache.sort((a, b) => a[0] - b[0]);
+    /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH (BY HANDS_UINT32 THEN ROUND) */ 
+    cache.sort((a, b) => {
+        if (a[0] !== b[0]) return a[0] - b[0]; // handUint32
+        return a[5] - b[5]; // round
+    });
     const N = cache.length;
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
-    HANDS_EV = new Float32Array(N);
+    KEYS_EV = new Float32Array(N);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
@@ -530,11 +534,12 @@ const getCacheCreated = (roundNumber) => {
         HANDS_UINT32[i] = cache[i][0];
         HANDS_DETAILS_UINT32[i] = cache[i][1];
         HANDS_SCORE[i] = cache[i][2];
-        HANDS_EV[i] = cache[i][3];
+        KEYS_EV[i] = cache[i][3];
+        const key = cache[i][6];
 
         /** WE FORCE ITERATE OVER LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
-        if (!handsCanonicalSeen.has(cache[i][1]) && cache[i][4]) {
-            handsCanonicalSeen.add(cache[i][1]);
+        if (!handsCanonicalSeen.has(key) && cache[i][4]) {
+            handsCanonicalSeen.add(key);
             handsCanonical.push(i);
             // /** DEBUG */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
@@ -820,7 +825,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
     if (roundNumbersFrozen[roundNumber]) {
-        const ev = HANDS_EV[h0.index];
+        const ev = KEYS_EV[h0.index];
         const evvalues = evSum.get(p0key);
         const evsafe = evvalues[1] / evvalues[0];
         // if (ev === 0) {
