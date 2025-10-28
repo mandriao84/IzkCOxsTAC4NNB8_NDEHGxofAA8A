@@ -509,20 +509,20 @@ const getCacheCreated = (roundNumber) => {
     }
 
     /** DEBUG START - EVS */
-    // const evscache = cache.slice().sort((a, b) => b[3] - a[3]);
-    // const evsoutputdir = path.join(PATH_RESULTS, 'evs');
-    // let evsoutput = '';
-    // const evsseen = new Set();
-    // for (const [handUint32, detailsUint32, score, keyev, , round, key] of evscache) {
-    //     if (evsseen.has(key)) continue;
-    //     const keyparts = key.split(',');
-    //     const hd = getHandDetailsUint32AsReadable(parseInt(keyparts[0]));
-    //     const keystring = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyparts[1];
-    //     evsoutput += JSON.stringify({ key: key, values: [keystring, keyev] }) + '\n';
-    //     evsseen.add(key);
-    // }
-    // fs.mkdirSync(evsoutputdir, { recursive: true });
-    // fs.writeFileSync(path.join(evsoutputdir, 'readable.ndjson'), evsoutput);
+    const evscache = cache.slice().sort((a, b) => b[3] - a[3]);
+    const evsoutputdir = path.join(PATH_RESULTS, 'evs');
+    let evsoutput = '';
+    const evsseen = new Set();
+    for (const [handUint32, detailsUint32, score, keyev, , round, key] of evscache) {
+        if (evsseen.has(key)) continue;
+        const keyparts = key.split(',');
+        const hd = getHandDetailsUint32AsReadable(parseInt(keyparts[0]));
+        const keystring = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyparts[1];
+        evsoutput += JSON.stringify({ key: key, values: [keystring, keyev] }) + '\n';
+        evsseen.add(key);
+    }
+    fs.mkdirSync(evsoutputdir, { recursive: true });
+    fs.writeFileSync(path.join(evsoutputdir, 'readable.ndjson'), evsoutput);
     /** DEBUG END - EVS */
 
     /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH (BY HANDS_UINT32 THEN ROUND) */ 
