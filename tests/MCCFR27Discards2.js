@@ -75,7 +75,7 @@ const SUITS_PATTERN = {
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(RANKS_REF).length
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, KEYS_EV, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     method = method.toUpperCase();
@@ -447,6 +447,7 @@ const getCacheSaved = () => {
 }
 
 const getCacheCreated = (roundNumber) => {
+    const roundNumberIndexMax = roundNumber + 1;
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
     getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Int32Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
@@ -487,17 +488,24 @@ const getCacheCreated = (roundNumber) => {
     const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
     const cache = [];
-    for (let r = 0; r < roundNumber; r++) {
-        for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
-            const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
-            const handUint32 = getHandReadableAsUint32(hand);
-            const { detailsUint32, score } = getHandDetails(hand);
+    for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
+        const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
+        const handUint32 = getHandReadableAsUint32(hand);
+        const { detailsUint32, score } = getHandDetails(hand);
+        const visits = new Uint8Array(roundNumberIndexMax); /** PUT 1 ON INDEX THAT MATCH THE ROUND */
+        const evs = new Float32Array(roundNumberIndexMax); /** PUT VALUE ON INDEX THAT MATCH THE ROUND */
+
+        for (let r = 0; r < roundNumber; r++) {
             const round = r + 1;
             const key = `${detailsUint32 + "," + round}`;
-            const keyEvValues = evSum?.get(key) || new Int32Array([1, 0]);
-            const keyEv = (keyEvValues[1] / keyEvValues[0]).safe("ROUND", 6);
-            cache.push([handUint32, detailsUint32, score, keyEv, keyEvValues[0] <= evVisitBottomLowAvg, round, key]);
+            const evValues = evSum?.get(key) || new Int32Array([1, 0]);
+            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
+            evs[round] = ev;
+            if (evValues[0] <= evVisitBottomLowAvg) visits[round] = 1;
+            // cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg, round, key]);
         }
+
+        cache.push([handUint32, detailsUint32, score, evs, visits]);
     }
 
     /** DEBUG START - EVS */
@@ -518,28 +526,31 @@ const getCacheCreated = (roundNumber) => {
     /** DEBUG END - EVS */
 
     /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH (BY HANDS_UINT32 THEN ROUND) */ 
-    cache.sort((a, b) => {
-        if (a[0] !== b[0]) return a[0] - b[0]; // handUint32
-        return a[5] - b[5]; // round
-    });
+    cache.sort((a, b) => a[0] - b[0]);
     const N = cache.length;
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
-    KEYS_EV = new Float32Array(N);
+    HANDS_EV = new Array(N);
+    HANDS_EV_FLAT = new Float32Array(N * (roundNumberIndexMax));
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
     for (let i = 0; i < N; i++) {
-        HANDS_UINT32[i] = cache[i][0];
+        const handUint32 = cache[i][0];
+        HANDS_UINT32[i] = handUint32;
         HANDS_DETAILS_UINT32[i] = cache[i][1];
         HANDS_SCORE[i] = cache[i][2];
-        KEYS_EV[i] = cache[i][3];
-        const key = cache[i][6];
+        HANDS_EV[i] = cache[i][3];
+        for (let r = 0; r < roundNumber; r++) {
+            const round = r + 1;
+            HANDS_EV_FLAT[i * (roundNumberIndexMax) + round] = cache[i][3][round];
+        }
 
-        /** WE FORCE ITERATE OVER LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
-        if (!handsCanonicalSeen.has(key) && cache[i][4]) {
-            handsCanonicalSeen.add(key);
+        /** WE FORCE ITERATE OVER TOP ROUND LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
+        const visit = cache[i][4][roundNumberIndexMax] === 1;
+        if (!handsCanonicalSeen.has(handUint32) && visit) {
+            handsCanonicalSeen.add(handUint32);
             handsCanonical.push(i);
             // /** DEBUG */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
@@ -825,7 +836,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
     if (roundNumbersFrozen[roundNumber]) {
-        const ev = KEYS_EV[h0.index];
+        const ev = HANDS_EV[h0.index];
         const evvalues = evSum.get(p0key);
         const evsafe = evvalues[1] / evvalues[0];
         // if (ev === 0) {
