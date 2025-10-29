@@ -89,7 +89,6 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     f = 10 ** decimals;
   }
 
-  // Inline branchless dispatch: avoids multiple if checks
   switch (method) {
     case "ROUND":
       return Math.round((v + Number.EPSILON) * f) / f;
