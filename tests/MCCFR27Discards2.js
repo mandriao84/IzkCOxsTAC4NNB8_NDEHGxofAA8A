@@ -822,8 +822,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Int32Array([0, 0])), evSum.get(p1key));
 
     if (roundNumbersFrozen[roundNumber]) {
-        const ev = HANDS_EV[h0.index];
-        const evsafe = p0evsum[1] / p0evsum[0];
+        const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
         const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
         // if (ev === 0) {
         //     const hu32 = getHandReadableAsUint32(h0.hand);
