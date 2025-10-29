@@ -484,7 +484,7 @@ const getCacheCreated = (roundNumber) => {
         cache.push([handUint32, detailsUint32, score, evs, visits]);
     }
 
-    /** DEBUG START - EVS */
+    /** DEBUG_START - EVS */
     // const evscache = cache.slice().sort((a, b) => b[3] - a[3]); // need to sort by evs to get top evs
     // const evsoutputdir = path.join(PATH_RESULTS, 'evs');
     // let evsoutput = '';
@@ -499,7 +499,7 @@ const getCacheCreated = (roundNumber) => {
     // }
     // fs.mkdirSync(evsoutputdir, { recursive: true });
     // fs.writeFileSync(path.join(evsoutputdir, 'readable.ndjson'), evsoutput);
-    /** DEBUG END - EVS */
+    /** DEBUG_END - EVS */
 
     /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH (BY HANDS_UINT32 THEN ROUND) */ 
     cache.sort((a, b) => a[0] - b[0]);
@@ -525,16 +525,11 @@ const getCacheCreated = (roundNumber) => {
         if (!handsCanonicalSeen.has(detailsUint32) && visit) {
             handsCanonicalSeen.add(detailsUint32);
             handsCanonical.push(i);
-            // /** DEBUG */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
+            // /** DEBUG_START */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
     }
 
     HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
-    // const itmp = 1;
-    // const itmp_flat = itmp * roundNumber + (roundNumber - 1);
-    // console.log(HANDS_EV_FLAT[itmp_flat]);
-    // console.log(HANDS_EV[itmp]);
-    // console.log(HANDS_CANONICAL_INDEX.length);
 };
 
 const getHu32IndexByBinarySearch = (arr, target) => {
@@ -920,8 +915,6 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
         getCacheCreated(roundNumber);
 
-        // /** DEBUG */ HANDS_CANONICAL_INDEX = [HAND_CANONICAL_INDEX]
-
         const flushInterval = HANDS_CANONICAL_INDEX.length;
         const iterations = 1_000;
         let timeNow = performance.now();
@@ -938,6 +931,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0hu32safe = HANDS_UINT32[p0hisafe];
                 const p0hsafe = getHandUint32AsReadable(p0hu32safe);
                 if (p0hi !== p0hsafe) console.log(`p0hi=${p0hi},${p0h} || p0hisafe=${p0hisafe},p0hsafe=${p0hsafe}`);
+                continue;
                 /** DEBUG_END - CANONICAL_INDEX */
                 const p0 = { index: p0hi, hand: p0h };
 
