@@ -817,14 +817,9 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     if (roundNumbersFrozen[roundNumber]) {
         const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
         // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
-        // if (ev === 0) {
-        //     const hu32 = getHandReadableAsUint32(h0.hand);
-        //     const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
-        //     const hisafe = HANDS_UINT32.indexOf(hu32);
-        //     console.log(hi, hisafe, h0.index);
-        //     console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev} | EV_SAFE=${evsafe}`);
-        // }
-        // console.log(`[FROZEN] ROUND=${roundNumber} | HAND=${h0.hand} | EV=${ev} | EV_SAFE=${evsafe}`);
+        /** DEBUG_START - EV */
+        if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
+        /** DEBUG_END - EV */
         return ev;
     }
 
