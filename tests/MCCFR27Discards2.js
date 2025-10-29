@@ -75,7 +75,7 @@ const SUITS_PATTERN = {
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(RANKS_REF).length
-let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
+let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
   const v = +this;
@@ -507,8 +507,7 @@ const getCacheCreated = (roundNumber) => {
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
-    HANDS_EV = new Array(N);
-    HANDS_EV_FLAT = new Float32Array(N * roundNumber);
+    // HANDS_EV_FLAT = new Float32Array(N * roundNumber);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
@@ -517,10 +516,9 @@ const getCacheCreated = (roundNumber) => {
         HANDS_UINT32[i] = handUint32;
         HANDS_DETAILS_UINT32[i] = detailsUint32;
         HANDS_SCORE[i] = score;
-        HANDS_EV[i] = evs;
-        for (let r = roundNumber; r > 0; r--) {
-            HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
-        }
+        // for (let r = roundNumber; r > 0; r--) {
+        //     HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
+        // }
 
         /** WE FORCE ITERATE OVER TOP ROUND LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
         const visit = visits[roundNumber] === 1;
@@ -823,7 +821,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
     if (roundNumbersFrozen[roundNumber]) {
         const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-        const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
+        // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
         // if (ev === 0) {
         //     const hu32 = getHandReadableAsUint32(h0.hand);
         //     const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
@@ -943,31 +941,31 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 /** DEBUG_END - CANONICAL_INDEX */
                 const p0 = { index: p0hi, hand: p0h };
 
-                // deckRef.shuffleByFisherYates();
-                // const deck = deckRef.filter(card => !p0h.includes(card))
+                deckRef.shuffleByFisherYates();
+                const deck = deckRef.filter(card => !p0h.includes(card))
 
-                // const deckOffset = 5;
-                // const p1h = deck.slice(0, deckOffset);
-                // p1h.sortByCardRankValue();
-                // const p1hu32 = getHandReadableAsUint32(p1h);
-                // const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
-                // const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
+                const deckOffset = 5;
+                const p1h = deck.slice(0, deckOffset);
+                p1h.sortByCardRankValue();
+                const p1hu32 = getHandReadableAsUint32(p1h);
+                const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
+                const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
 
-                // getDiscardsSimulated(
-                //     p0,
-                //     p1,
-                //     deck,
-                //     p1.deckOffset,
-                //     roundNumber,
-                //     roundNumbersFrozen
-                // );
+                getDiscardsSimulated(
+                    p0,
+                    p1,
+                    deck,
+                    p1.deckOffset,
+                    roundNumber,
+                    roundNumbersFrozen
+                );
 
-                // if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
-                //     await getDataFlushed(workerId);
-                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                //     timeNow = performance.now();
-                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
-                // }
+                if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
+                    await getDataFlushed(workerId);
+                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                    timeNow = performance.now();
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
+                }
             }
         }
     }
