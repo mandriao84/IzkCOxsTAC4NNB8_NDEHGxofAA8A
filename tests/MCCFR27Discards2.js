@@ -815,14 +815,14 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Int32Array([0, 0])), evSum.get(p0key));
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Int32Array([0, 0])), evSum.get(p1key));
 
-    if (roundNumbersFrozen[roundNumber]) {
-        const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-        // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
-        /** DEBUG_START - EV */
-        // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
-        /** DEBUG_END - EV */
-        return ev;
-    }
+    // if (roundNumbersFrozen[roundNumber]) {
+    //     const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
+    //     // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
+    //     /** DEBUG_START - EV */
+    //     // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
+    //     /** DEBUG_END - EV */
+    //     return ev;
+    // }
 
     p0evsum[0]++;
     p1evsum[0]++;
