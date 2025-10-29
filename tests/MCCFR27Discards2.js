@@ -78,25 +78,33 @@ const cardsLength = Object.keys(RANKS_REF).length
 let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX, HAND_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
-    method = method.toUpperCase();
-    if (!["ROUND", "FLOOR", "CEIL"].includes(method)) {
-        throw new Error("Number.prototype.safe.method.Error: ['round', 'floor', 'ceil']");
-    }
-    if (typeof decimals !== "number" || decimals < 0 || !Number.isInteger(decimals)) {
-        throw new Error("Number.prototype.safe.decimals.Error: ['number', 'isInteger', '>=0']");
-    }
+  const v = +this;
+  let f;
 
-    const factor = Math.pow(10, decimals);
-    const value = this.valueOf();
+  if (decimals >>> 0 <= 6) {
+    f = [1, 10, 100, 1000, 10000, 100000, 1000000][decimals >>> 0];
+  } else {
+    decimals |= 0;
+    if (decimals < 0) decimals = -decimals;
+    f = 10 ** decimals;
+  }
 
-    switch (method) {
-        case "ROUND":
-            return Math.round((value + Number.EPSILON) * factor) / factor;
-        case "FLOOR":
-            return Math.floor((value + Number.EPSILON) * factor) / factor;
-        case "CEIL":
-            return Math.ceil((value - Number.EPSILON) * factor) / factor;
-    }
+  // Inline branchless dispatch: avoids multiple if checks
+  switch (method) {
+    case "ROUND":
+      return Math.round((v + Number.EPSILON) * f) / f;
+    case "CEIL":
+      return Math.ceil(v * f) / f;
+    case "FLOOR":
+      return Math.floor(v * f) / f;
+    default:
+      throw new Error("Number.prototype.safe.method.Error: ['round', 'floor', 'ceil']");
+  }
+};
+
+Float32Array.prototype.getflat = function(index, round, roundNumber) {
+    const flatindex = index * roundNumber + (round - 1);
+    return this[flatindex];
 };
 
 Array.prototype.shuffleByFisherYates = function () {
@@ -427,7 +435,6 @@ const getHandScore = ({ type, ranksValue }) => {
     } else if (type === 0) { // HIGH
         score = ranksValue.reduce((acc, val, index) => acc + (val * Math.pow(multiplier, ranksValue.length - 1 - index)), 0);
     }
-
     return score;
 }
 
@@ -455,35 +462,6 @@ const getCacheCreated = (roundNumber) => {
     const evSumBottomLow = (evSum.size * 0.1).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
-    // const ndjson = evSumEntries.reduce((acc, r, i) => {
-    //     acc += JSON.stringify(r[1][0]) + "\n";
-    //     return acc
-    // }, "")
-    // fs.writeFileSync(`.results/mccfr/evs/tmp_evs-visit-sorted.ndjson`, ndjson, 'utf8');
-    // return
-
-    /** FIND ELBOW POINT */
-    // const evSumEntriesPoints = evSumEntries.map(([key, values], i) => ({ x: i, y: Math.log(values[0] + 1), key }));
-    // const pointFirst = evSumEntriesPoints[0];
-    // const pointLast = evSumEntriesPoints[evSumEntriesPoints.length - 1];
-    // function distanceToLine(pt, a, b) {
-    //   const numerator = Math.abs((b.y - a.y) * pt.x - (b.x - a.x) * pt.y + b.x * a.y - b.y * a.x);
-    //   const denominator = Math.sqrt((b.y - a.y) ** 2 + (b.x - a.x) ** 2);
-    //   return numerator / denominator;
-    // }
-    
-    // let maxDist = -Infinity;
-    // let elbowIndex = -1;
-    // for (let i = 1; i < evSumEntriesPoints.length - 1; i++) {
-    //   const dist = distanceToLine(evSumEntriesPoints[i], pointFirst, pointLast);
-    //   if (dist > maxDist) {
-    //     maxDist = dist;
-    //     elbowIndex = i;
-    //   }
-    // }
-    
-    // const elbowPoint = evSumEntriesPoints[elbowIndex];
-    // return console.log(elbowPoint, elbowIndex);
 
     const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
@@ -495,14 +473,13 @@ const getCacheCreated = (roundNumber) => {
         const visits = new Uint8Array(roundNumberIndexMax); /** PUT 1 ON INDEX THAT MATCH THE ROUND */
         const evs = new Float32Array(roundNumberIndexMax); /** PUT VALUE ON INDEX THAT MATCH THE ROUND */
 
-        for (let r = 0; r < roundNumber; r++) {
-            const round = r + 1;
-            const key = `${detailsUint32 + "," + round}`;
+        for (let r = roundNumber; r > 0; r--) { 
+            const key = `${detailsUint32 + "," + r}`;
             const evValues = evSum?.get(key) || new Int32Array([1, 0]);
-            const ev = (evValues[1] / evValues[0]).safe("ROUND", 6);
-            evs[round] = ev;
-            if (evValues[0] <= evVisitBottomLowAvg) visits[round] = 1;
-            // cache.push([handUint32, detailsUint32, score, ev, evValues[0] <= evVisitBottomLowAvg, round, key]);
+            const evVisit = evValues[0];
+            const ev = (evValues[1] / evVisit).safe("ROUND", 6);
+            evs[r] = ev;
+            if (evVisit === 1 || evVisit <= evVisitBottomLowAvg) visits[r] = 1;
         }
 
         cache.push([handUint32, detailsUint32, score, evs, visits]);
@@ -532,33 +509,35 @@ const getCacheCreated = (roundNumber) => {
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
     HANDS_EV = new Array(N);
-    HANDS_EV_FLAT = new Float32Array(N * (roundNumberIndexMax));
+    HANDS_EV_FLAT = new Float32Array(N * roundNumber);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
     for (let i = 0; i < N; i++) {
-        const handUint32 = cache[i][0];
+        const [handUint32, detailsUint32, score, evs, visits] = cache[i];
         HANDS_UINT32[i] = handUint32;
-        HANDS_DETAILS_UINT32[i] = cache[i][1];
-        HANDS_SCORE[i] = cache[i][2];
-        HANDS_EV[i] = cache[i][3];
-        for (let r = 0; r < roundNumber; r++) {
-            const round = r + 1;
-            HANDS_EV_FLAT[i * (roundNumberIndexMax) + round] = cache[i][3][round];
+        HANDS_DETAILS_UINT32[i] = detailsUint32;
+        HANDS_SCORE[i] = score;
+        HANDS_EV[i] = evs;
+        for (let r = roundNumber; r > 0; r--) {
+            HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
         }
 
         /** WE FORCE ITERATE OVER TOP ROUND LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
-        const visit = cache[i][4][roundNumberIndexMax] === 1;
-        if (!handsCanonicalSeen.has(handUint32) && visit) {
-            handsCanonicalSeen.add(handUint32);
+        const visit = visits[roundNumber] === 1;
+        if (!handsCanonicalSeen.has(detailsUint32) && visit) {
+            handsCanonicalSeen.add(detailsUint32);
             handsCanonical.push(i);
             // /** DEBUG */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
     }
 
-    // fs.writeFileSync(`.results/mccfr/keys2.ndjson`, ndjson_debug, 'utf8');
     HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
-    // console.log(handsCanonical.length, HANDS_CANONICAL_INDEX.length);
+    // const itmp = 1;
+    // const itmp_flat = itmp * roundNumber + (roundNumber - 1);
+    // console.log(HANDS_EV_FLAT[itmp_flat]);
+    // console.log(HANDS_EV[itmp]);
+    // console.log(HANDS_CANONICAL_INDEX.length);
 };
 
 const getHu32IndexByBinarySearch = (arr, target) => {
@@ -575,6 +554,11 @@ const getHu32IndexByBinarySearch = (arr, target) => {
         }
     }
     return -1;
+};
+
+const getHandEvFlatByIndex = (index, round, roundNumber) => {
+    const flatindex = index * roundNumber + (round - 1);
+    return HANDS_EV_FLAT[flatindex];
 };
 
 
@@ -835,10 +819,13 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
+    let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Int32Array([0, 0])), evSum.get(p0key));
+    let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Int32Array([0, 0])), evSum.get(p1key));
+
     if (roundNumbersFrozen[roundNumber]) {
         const ev = HANDS_EV[h0.index];
-        const evvalues = evSum.get(p0key);
-        const evsafe = evvalues[1] / evvalues[0];
+        const evsafe = p0evsum[1] / p0evsum[0];
+        const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
         // if (ev === 0) {
         //     const hu32 = getHandReadableAsUint32(h0.hand);
         //     const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
@@ -850,11 +837,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         return ev;
     }
 
-    if (!evSum.has(p0key)) evSum.set(p0key, new Int32Array([0, 0]));
-    if (!evSum.has(p1key)) evSum.set(p1key, new Int32Array([0, 0]));
-
-    ++evSum.get(p0key)[0];
-    ++evSum.get(p1key)[0];
+    p0evsum[0]++;
+    p1evsum[0]++;
 
     const p0reg = regretSum.get(p0key) || (regretSum.set(p0key, new Float32Array(ACTION_COUNT)), regretSum.get(p0key));
     const p1reg = regretSum.get(p1key) || (regretSum.set(p1key, new Float32Array(ACTION_COUNT)), regretSum.get(p1key));
@@ -881,8 +865,6 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         ? getScores(p0hRnd.index, p1hRnd.index)
         : getDiscardsSimulated(p0hRnd, p1hRnd, deck, p1hRnd.deckOffset, roundNumber - 1, roundNumbersFrozen);
     const p1util = -p0util;
-
-    // if (isRoundNumberFrozen) { return p0util; }
 
     const p0utilAlt = new Float32Array(ACTION_COUNT);
     const p1utilAlt = new Float32Array(ACTION_COUNT);
@@ -963,31 +945,31 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 /** DEBUG_END - CANONICAL_INDEX */
                 const p0 = { index: p0hi, hand: p0h };
 
-                deckRef.shuffleByFisherYates();
-                const deck = deckRef.filter(card => !p0h.includes(card))
+                // deckRef.shuffleByFisherYates();
+                // const deck = deckRef.filter(card => !p0h.includes(card))
 
-                const deckOffset = 5;
-                const p1h = deck.slice(0, deckOffset);
-                p1h.sortByCardRankValue();
-                const p1hu32 = getHandReadableAsUint32(p1h);
-                const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
-                const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
+                // const deckOffset = 5;
+                // const p1h = deck.slice(0, deckOffset);
+                // p1h.sortByCardRankValue();
+                // const p1hu32 = getHandReadableAsUint32(p1h);
+                // const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
+                // const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
 
-                getDiscardsSimulated(
-                    p0,
-                    p1,
-                    deck,
-                    p1.deckOffset,
-                    roundNumber,
-                    roundNumbersFrozen
-                );
+                // getDiscardsSimulated(
+                //     p0,
+                //     p1,
+                //     deck,
+                //     p1.deckOffset,
+                //     roundNumber,
+                //     roundNumbersFrozen
+                // );
 
-                if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
-                    await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
-                }
+                // if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
+                //     await getDataFlushed(workerId);
+                //     const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
+                //     timeNow = performance.now();
+                //     console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
+                // }
             }
         }
     }
@@ -1001,7 +983,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // return getCacheCreated(1);
+    return getCacheCreated(2);
     // console.log(HANDS_CANONICAL_INDEX.length);
 
 
