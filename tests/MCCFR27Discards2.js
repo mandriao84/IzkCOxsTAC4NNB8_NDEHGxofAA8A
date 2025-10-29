@@ -818,7 +818,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
         // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
         /** DEBUG_START - EV */
-        if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
+        // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
         /** DEBUG_END - EV */
         return ev;
     }
@@ -851,6 +851,9 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         ? getScores(p0hRnd.index, p1hRnd.index)
         : getDiscardsSimulated(p0hRnd, p1hRnd, deck, p1hRnd.deckOffset, roundNumber - 1, roundNumbersFrozen);
     const p1util = -p0util;
+
+    p0evsum[1] += p0util;
+    p1evsum[1] += p1util;
 
     const p0utilAlt = new Float32Array(ACTION_COUNT);
     const p1utilAlt = new Float32Array(ACTION_COUNT);
@@ -888,8 +891,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p1reg[ai] += p1utilAlt[ai] - p1util;
     }
 
-    evSum.get(p0key)[1] += p0util;
-    evSum.get(p1key)[1] += p1util;
+    // evSum.get(p0key)[1] += p0util;
+    // evSum.get(p1key)[1] += p1util;
 
     return p0util;
 }
