@@ -915,7 +915,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 1_00;
+        const iterations = 10_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
