@@ -914,7 +914,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 1_000;
+        const iterations = 1_00;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
@@ -975,11 +975,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(2);
 
 
-    const roundNumber = 2;
+    const roundNumber = 1;
     /** (roundNumbersFrozen) >>
      * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
      * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
     getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
