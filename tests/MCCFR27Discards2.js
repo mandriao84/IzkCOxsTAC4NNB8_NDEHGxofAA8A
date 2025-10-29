@@ -927,11 +927,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0hu32 = HANDS_UINT32[p0hi];
                 const p0h = getHandUint32AsReadable(p0hu32);
                 /** DEBUG_START - CANONICAL_INDEX */
-                const p0hisafe = HANDS_UINT32.indexOf(p0hu32);
-                const p0hu32safe = HANDS_UINT32[p0hisafe];
-                const p0hsafe = getHandUint32AsReadable(p0hu32safe);
-                if (p0hi !== p0hisafe) console.log(`p0hi=${p0hi},${p0h} || p0hisafe=${p0hisafe},p0hsafe=${p0hsafe}`);
-                continue;
+                // const p0hisafe = HANDS_UINT32.indexOf(p0hu32);
+                // const p0hu32safe = HANDS_UINT32[p0hisafe];
+                // const p0hsafe = getHandUint32AsReadable(p0hu32safe);
+                // if (p0hi !== p0hisafe) console.log(`p0hi=${p0hi},${p0h} || p0hisafe=${p0hisafe},p0hsafe=${p0hsafe}`);
+                // continue;
                 /** DEBUG_END - CANONICAL_INDEX */
                 const p0 = { index: p0hi, hand: p0h };
 
