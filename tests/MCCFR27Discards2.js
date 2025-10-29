@@ -458,7 +458,7 @@ const getCacheCreated = (roundNumber) => {
     getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Int32Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
-    const evSumBottomLow = (evSum.size * 0.02).safe("ROUND", 0);
+    const evSumBottomLow = (evSum.size * 0.01).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
 
@@ -530,6 +530,7 @@ const getCacheCreated = (roundNumber) => {
     }
 
     HANDS_CANONICAL_INDEX = Uint32Array.from(handsCanonical);
+    console.log(`HANDS_CANONICAL_INDEX_LENGTH=${HANDS_CANONICAL_INDEX.length}`);
 };
 
 const getHu32IndexByBinarySearch = (arr, target) => {
