@@ -962,6 +962,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 }
             }
         }
+        console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | END`);
     }
 };
 
