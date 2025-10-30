@@ -458,7 +458,7 @@ const getCacheCreated = (roundNumber) => {
     getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Int32Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
-    const evSumBottomLow = (evSum.size * 0.01).safe("ROUND", 0);
+    const evSumBottomLow = (evSum.size * 0.005).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
 
@@ -976,22 +976,22 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(2);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
+    [
+        ".results/mccfr/evs",
+        ".results/mccfr/regrets",
+        ".results/mccfr/strategies"
+    ].forEach(dir => {
+        getDataFlushedMerged(dir)
+    })
 
     // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=14456 / 14469
