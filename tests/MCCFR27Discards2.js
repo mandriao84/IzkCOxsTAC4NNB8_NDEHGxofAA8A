@@ -520,7 +520,8 @@ const getCacheCreated = (roundNumber) => {
             HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
         }
 
-        /** WE FORCE ITERATE OVER TOP ROUND LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
+        /** WE FORCE ITERATE OVER LOW VISIT COUNTS TO EXPLORE RARE HANDS FROM THE LAST ROUND
+         * (LAST_ROUND || roundNumber) === 1 */
         // const visit = visits[roundNumber] === 1;
         const visit = visits[1] === 1;
         if (!handsCanonicalSeen.has(detailsUint32) && visit) {
