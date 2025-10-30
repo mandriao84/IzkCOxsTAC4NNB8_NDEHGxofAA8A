@@ -101,9 +101,9 @@ Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
   }
 };
 
-Float32Array.prototype.getflat = function(index, round, roundNumber) {
+Float64Array.prototype.getflat = function(index, round, roundNumber) {
     const flatindex = index * roundNumber + (round - 1);
-    return this[flatindex];
+    return this[flatindex].safe("ROUND", 6);
 };
 
 Array.prototype.shuffleByFisherYates = function () {
@@ -169,7 +169,7 @@ const getAllCanonicalSuitPatterns = () => {
     return patterns;
 };
 
-const getNDJSONAsMap = (filePath, map = new Map(), mapValuesType = Float32Array) => {
+const getNDJSONAsMap = (filePath, map = new Map(), mapValuesType = Float64Array) => {
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf8');
         const entries = data.split('\n');
@@ -455,9 +455,9 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const roundNumberIndexMax = roundNumber + 1;
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float32Array);
-    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
-    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
+    getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
+    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
+    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
     const evSumBottomLow = (evSum.size * 0.005).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
@@ -470,13 +470,13 @@ const getCacheCreated = (roundNumber) => {
         const handUint32 = getHandReadableAsUint32(hand);
         const { detailsUint32, score } = getHandDetails(hand);
         const visits = new Uint8Array(roundNumberIndexMax); /** PUT 1 ON INDEX THAT MATCH THE ROUND */
-        const evs = new Float32Array(roundNumberIndexMax); /** PUT VALUE ON INDEX THAT MATCH THE ROUND */
+        const evs = new Float64Array(roundNumberIndexMax); /** PUT VALUE ON INDEX THAT MATCH THE ROUND */
 
         for (let r = roundNumber; r > 0; r--) { 
             const key = `${detailsUint32 + "," + r}`;
-            const evValues = evSum?.get(key) || new Float32Array([1, 0]);
+            const evValues = evSum?.get(key) || new Float64Array([1, 0]);
             const evVisit = evValues[0];
-            const ev = (evValues[1] / evVisit).safe("ROUND", 6);
+            const ev = (evValues[1] / evVisit);
             evs[r] = ev;
             if (evVisit === 1 || evVisit <= evVisitBottomLowAvg) visits[r] = 1;
         }
@@ -507,7 +507,7 @@ const getCacheCreated = (roundNumber) => {
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
-    HANDS_EV_FLAT = new Float32Array(N * roundNumber);
+    HANDS_EV_FLAT = new Float64Array(N * roundNumber);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
@@ -691,9 +691,9 @@ function getDataFlushedMerged(dir) {
 
 
 function getDataNashed() {
-    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
-    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
-    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float32Array);
+    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
+    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
+    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
 
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
@@ -756,7 +756,7 @@ function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
 }
 
 function getStrategyFromRegret(regret) {
-    const strat = new Float32Array(ACTION_COUNT);
+    const strat = new Float64Array(ACTION_COUNT);
     let normaliser = 0;
     for (let i = 0; i < ACTION_COUNT; ++i) {
         strat[i] = Math.max(0, regret[i]);
@@ -784,7 +784,7 @@ function getRandomActionIndex(strat) {
     const n = strat.length;
     let total = 0;
     
-    const arr = new Float32Array(n);
+    const arr = new Float64Array(n);
     for (let i = 0; i < n; i++) {
         total += strat[i];
         arr[i] = total;
@@ -807,28 +807,29 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float32Array([0, 0])), evSum.get(p0key));
-    let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float32Array([0, 0])), evSum.get(p1key));
+    let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float64Array([0, 0])), evSum.get(p0key));
+    let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float64Array([0, 0])), evSum.get(p1key));
 
     if (roundNumbersFrozen[roundNumber]) {
         const ev = HANDS_EV_FLAT.getflat(h0.index, roundNumber, 2);
-        const evsafe = (p0evsum[1] / p0evsum[0]);
-        console.log(`EV: ${ev}, EV Safe: ${evsafe}`);
-
-        return (p0evsum[1] / p0evsum[0]);
+        /** DEBUG_START */
+        // const evsafe = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
+        // if (ev !== evsafe) console.log(`EV: ${ev} || EV_SAFE: ${evsafe}`);
+        /** DEBUG_END */
+        return ev;
     }
 
     p0evsum[0]++;
     p1evsum[0]++;
 
-    const p0reg = regretSum.get(p0key) || (regretSum.set(p0key, new Float32Array(ACTION_COUNT)), regretSum.get(p0key));
-    const p1reg = regretSum.get(p1key) || (regretSum.set(p1key, new Float32Array(ACTION_COUNT)), regretSum.get(p1key));
+    const p0reg = regretSum.get(p0key) || (regretSum.set(p0key, new Float64Array(ACTION_COUNT)), regretSum.get(p0key));
+    const p1reg = regretSum.get(p1key) || (regretSum.set(p1key, new Float64Array(ACTION_COUNT)), regretSum.get(p1key));
 
     const p0strat = getStrategyFromRegret(p0reg);
     const p1strat = getStrategyFromRegret(p1reg);
 
-    const p0stratsum = strategySum.get(p0key) || (strategySum.set(p0key, new Float32Array(ACTION_COUNT)), strategySum.get(p0key));
-    const p1stratsum = strategySum.get(p1key) || (strategySum.set(p1key, new Float32Array(ACTION_COUNT)), strategySum.get(p1key));
+    const p0stratsum = strategySum.get(p0key) || (strategySum.set(p0key, new Float64Array(ACTION_COUNT)), strategySum.get(p0key));
+    const p1stratsum = strategySum.get(p1key) || (strategySum.set(p1key, new Float64Array(ACTION_COUNT)), strategySum.get(p1key));
 
     for (let i = 0; i < ACTION_COUNT; ++i) {
         p0stratsum[i] += p0strat[i];
@@ -850,8 +851,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     p0evsum[1] += p0util;
     p1evsum[1] += p1util;
 
-    const p0utilAlt = new Float32Array(ACTION_COUNT);
-    const p1utilAlt = new Float32Array(ACTION_COUNT);
+    const p0utilAlt = new Float64Array(ACTION_COUNT);
+    const p1utilAlt = new Float64Array(ACTION_COUNT);
 
     if (roundNumber <= 1) {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
