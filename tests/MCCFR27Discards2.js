@@ -507,7 +507,7 @@ const getCacheCreated = (roundNumber) => {
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
-    // HANDS_EV_FLAT = new Float32Array(N * roundNumber);
+    HANDS_EV_FLAT = new Float32Array(N * roundNumber);
 
     const handsCanonicalSeen = new Set();
     const handsCanonical = [];
@@ -516,16 +516,16 @@ const getCacheCreated = (roundNumber) => {
         HANDS_UINT32[i] = handUint32;
         HANDS_DETAILS_UINT32[i] = detailsUint32;
         HANDS_SCORE[i] = score;
-        // for (let r = roundNumber; r > 0; r--) {
-        //     HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
-        // }
+        for (let r = roundNumber; r > 0; r--) {
+            HANDS_EV_FLAT[(i * roundNumber) + (r - 1)] = evs[r];
+        }
 
         /** WE FORCE ITERATE OVER TOP ROUND LOW VISIT COUNTS (<=10%) WITH {cache[i][4]} TO EXPLORE RARE HANDS */
-        const visit = visits[roundNumber] === 1;
+        // const visit = visits[roundNumber] === 1;
+        const visit = visits[1] === 1;
         if (!handsCanonicalSeen.has(detailsUint32) && visit) {
             handsCanonicalSeen.add(detailsUint32);
             handsCanonical.push(i);
-            // /** DEBUG_START */ if (HANDS_DETAILS_UINT32[i] === 899879005) HAND_CANONICAL_INDEX = i;
         }
     }
 
@@ -547,11 +547,6 @@ const getHu32IndexByBinarySearch = (arr, target) => {
         }
     }
     return -1;
-};
-
-const getHandEvFlatByIndex = (index, round, roundNumber) => {
-    const flatindex = index * roundNumber + (round - 1);
-    return HANDS_EV_FLAT[flatindex];
 };
 
 
@@ -816,12 +811,11 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float32Array([0, 0])), evSum.get(p1key));
 
     if (roundNumbersFrozen[roundNumber]) {
-        const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-        // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
-        /** DEBUG_START - EV */
-        // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
-        /** DEBUG_END - EV */
-        return ev;
+        const ev = HANDS_EV_FLAT.getflat(h0.index, roundNumber, 2);
+        const evsafe = (p0evsum[1] / p0evsum[0]);
+        console.log(`EV: ${ev}, EV Safe: ${evsafe}`);
+
+        return (p0evsum[1] / p0evsum[0]);
     }
 
     p0evsum[0]++;
@@ -894,6 +888,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
     // evSum.get(p0key)[1] += p0util;
     // evSum.get(p1key)[1] += p1util;
+    // p0evsum[1] += p0util;
+    // p1evsum[1] += p1util;
 
     return p0util;
 }
@@ -915,7 +911,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 10_000;
+        const iterations = 1_000;
         let timeNow = performance.now();
 
         const deckRef = Object.values(DECK);
