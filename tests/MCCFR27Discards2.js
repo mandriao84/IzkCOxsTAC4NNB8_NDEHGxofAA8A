@@ -455,7 +455,7 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const roundNumberIndexMax = roundNumber + 1;
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Int32Array);
+    getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float32Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
     const evSumBottomLow = (evSum.size * 0.005).safe("ROUND", 0);
@@ -474,7 +474,7 @@ const getCacheCreated = (roundNumber) => {
 
         for (let r = roundNumber; r > 0; r--) { 
             const key = `${detailsUint32 + "," + r}`;
-            const evValues = evSum?.get(key) || new Int32Array([1, 0]);
+            const evValues = evSum?.get(key) || new Float32Array([1, 0]);
             const evVisit = evValues[0];
             const ev = (evValues[1] / evVisit).safe("ROUND", 6);
             evs[r] = ev;
@@ -583,7 +583,7 @@ async function getDataFlushed(threadId = null) {
         for (const [key, values] of map) {
             const entry = {
                 key,
-                values: [...values] /** MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice() */ 
+                values: Array.from(values) /** MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice() */ 
             };
             lines += JSON.stringify(entry) + '\n';
         }
@@ -698,7 +698,7 @@ function getDataFlushedMerged(dir) {
 function getDataNashed() {
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float32Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float32Array);
-    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Int32Array);
+    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float32Array);
 
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
@@ -812,17 +812,17 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
     const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
 
-    let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Int32Array([0, 0])), evSum.get(p0key));
-    let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Int32Array([0, 0])), evSum.get(p1key));
+    let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float32Array([0, 0])), evSum.get(p0key));
+    let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float32Array([0, 0])), evSum.get(p1key));
 
-    // if (roundNumbersFrozen[roundNumber]) {
-    //     const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-    //     // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
-    //     /** DEBUG_START - EV */
-    //     // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
-    //     /** DEBUG_END - EV */
-    //     return ev;
-    // }
+    if (roundNumbersFrozen[roundNumber]) {
+        const ev = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
+        // const evflat = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumber);
+        /** DEBUG_START - EV */
+        // if (ev === 0) console.log(`HAND=${h0.hand} | INDEX=${h0.index} | EV=${ev}`);
+        /** DEBUG_END - EV */
+        return ev;
+    }
 
     p0evsum[0]++;
     p1evsum[0]++;
@@ -900,7 +900,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 10/10).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1/10).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -976,22 +976,22 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(2);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
+    const roundNumber = 2;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
     // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
-    [
-        ".results/mccfr/evs",
-        ".results/mccfr/regrets",
-        ".results/mccfr/strategies"
-    ].forEach(dir => {
-        getDataFlushedMerged(dir)
-    })
+    // [
+    //     ".results/mccfr/evs",
+    //     ".results/mccfr/regrets",
+    //     ".results/mccfr/strategies"
+    // ].forEach(dir => {
+    //     getDataFlushedMerged(dir)
+    // })
 
     // getDataNashed();
     // [MCCFR] NASH_BELOW_0.02=14456 / 14469
