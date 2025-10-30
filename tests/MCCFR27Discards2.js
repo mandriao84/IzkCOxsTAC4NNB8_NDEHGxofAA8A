@@ -814,8 +814,8 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     if (roundNumbersFrozen[roundNumber]) {
         const ev = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumberMax);
         /** DEBUG_START */
-        const evsafe = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-        if (ev !== evsafe) console.log(`EV: ${ev} || EV_SAFE: ${evsafe}`);
+        // const evsafe = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
+        // if (ev !== evsafe) console.log(`EV: ${ev} || EV_SAFE: ${evsafe}`);
         /** DEBUG_END */
         return ev;
     }
