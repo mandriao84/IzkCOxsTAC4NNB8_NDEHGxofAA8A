@@ -75,6 +75,15 @@ const SUITS_PATTERN = {
 }
 const SUITS_PATTERN_KEYS = Object.keys(SUITS_PATTERN);
 const cardsLength = Object.keys(RANKS_REF).length
+const CARDS_KEYS = function () {
+    const result = {};
+    for (const card of Object.values(DECK)) {
+        const r = RANKS_REF[card[0]];
+        const s = SUITS_REF[card[1]];
+        result[card] = (r << 2) | s;
+    }
+    return result;
+}();
 let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
@@ -116,20 +125,71 @@ Array.prototype.shuffleByFisherYates = function () {
     // return this;
 };
 
-Array.prototype.sortByCardRankValue = function(descending = true) {
-    return this.sort((a, b) => {
-        const valueA = RANKS_REF[a[0]];
-        const valueB = RANKS_REF[b[0]];
+// Array.prototype.sortByCardRankValue = function(descending = true) {
+//     return this.sort((a, b) => {
+//         const valueA = RANKS_REF[a[0]];
+//         const valueB = RANKS_REF[b[0]];
         
-        if (valueA !== valueB) {
-            return descending ? valueB - valueA : valueA - valueB;
+//         if (valueA !== valueB) {
+//             return descending ? valueB - valueA : valueA - valueB;
+//         }
+
+//         const suitA = SUITS_REF[a[1]];
+//         const suitB = SUITS_REF[b[1]];
+//         return descending ? suitB - suitA : suitA - suitB;
+//     });
+// };
+
+Array.prototype.sortByCardRankValue = (function () {
+    const k = CARDS_KEYS;
+
+    function desc(a, b) {
+        return k[b] - k[a];
+    }
+
+    function asc(a, b) {
+        return k[a] - k[b];
+    }
+
+    function desc5(arr) {
+        const keys = [
+            k[arr[0]],
+            k[arr[1]],
+            k[arr[2]],
+            k[arr[3]],
+            k[arr[4]],
+        ];
+        let t, tk;
+
+        function swap(i, j) {
+            t = arr[i];
+            arr[i] = arr[j];
+            arr[j] = t;
+            tk = keys[i];
+            keys[i] = keys[j];
+            keys[j] = tk;
         }
 
-        const suitA = SUITS_REF[a[1]];
-        const suitB = SUITS_REF[b[1]];
-        return descending ? suitB - suitA : suitA - suitB;
-    });
-};
+        if (keys[0] < keys[1]) swap(0, 1);
+        if (keys[3] < keys[4]) swap(3, 4);
+        if (keys[2] < keys[4]) swap(2, 4);
+        if (keys[2] < keys[3]) swap(2, 3);
+        if (keys[1] < keys[4]) swap(1, 4);
+        if (keys[0] < keys[3]) swap(0, 3);
+        if (keys[0] < keys[2]) swap(0, 2);
+        if (keys[1] < keys[3]) swap(1, 3);
+        if (keys[1] < keys[2]) swap(1, 2);
+
+        return arr;
+    }
+
+    return function sortByCardRankValue(descending = true) {
+        if (this.length === 5 && descending) {
+            return desc5(this);
+        }
+        return this.sort(descending ? desc : asc);
+    };
+})();
 
 Set.prototype.reallocate = function (array) {
     this.clear();
@@ -458,7 +518,7 @@ const getCacheCreated = (roundNumber) => {
     getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
-    const evSumBottomLow = (evSum.size * 0.005).safe("ROUND", 0);
+    const evSumBottomLow = (evSum.size * 1).safe("ROUND", 0);
     const evSumEntries = Array.from(evSum.entries());
     evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
 
@@ -569,21 +629,35 @@ const ACTIONS = (() => {
     return out;
 })();
 const ACTION_COUNT = ACTIONS.length;
+const STRAT_VALUE_DEFAULT = 1 / ACTION_COUNT;
+const ACTIONS_DISCARDS = (() => {
+    const out = new Int8Array(32);
+    for (let mask = 0; mask < 32; ++mask) {
+        let x = mask;
+        let c = 0;
+        while (x) {
+            x &= x - 1;
+            ++c;
+        }
+        out[mask] = c;
+    }
+    return out;
+})();
 const regretSum = new Map();
 const strategySum = new Map();
 const evSum = new Map();
 
 async function getDataFlushed(threadId = null) {
     const toLines = (map) => {
-        let lines = '';
+        const lines = [];
         for (const [key, values] of map) {
-            const entry = {
-                key,
-                values: Array.from(values) /** MANDATORY TO GET AN ARRAY OTHERWISE WE GET AN OBJECT EVEN WITH .slice() */ 
-            };
-            lines += JSON.stringify(entry) + '\n';
+            const valuesarr = new Array(values.length);
+            for (let i = 0; i < values.length; i++) {
+                valuesarr[i] = values[i];
+            }
+            lines.push(JSON.stringify({ key, values: valuesarr }));
         }
-        return lines;
+        return lines.join('\n');
     };
 
     if (threadId >= 0) {
@@ -741,12 +815,28 @@ function getScores(p0i, p1i) {
 }
 
 function getActionApplied(hand, deck, deckOffset = 0, actionIndex) {
-    const discardIndices = ACTIONS[actionIndex];
-    const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
-    const deckOffsetNew = deckOffset + discardIndices.length;
+    // const discardIndices = ACTIONS[actionIndex];
+    // const cardsKept = hand.filter((_, idx) => !discardIndices.includes(idx));
+
+    // const deckOffsetNew = deckOffset + discardIndices.length;
+    // if (deckOffsetNew > deck.length) throw new Error("DECK.EXHAUSTED");
+    // const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
+    // const handNew = [...cardsKept, ...cardsReceived];
+    // handNew.sortByCardRankValue();
+
+    const mask = actionIndex | 0;
+    let deckOffsetNew = deckOffset;
+    const handNew = new Array(5); /** 5 === hand.length */
+    for (let i = 0; i < 5; ++i) { /** 5 === hand.length */
+        if (mask & (1 << i)) {
+            handNew[i] = deck[deckOffsetNew++];
+        } else {
+            handNew[i] = hand[i];
+        }
+    }
+
     if (deckOffsetNew > deck.length) throw new Error("DECK.EXHAUSTED");
-    const cardsReceived = deck.slice(deckOffset, deckOffsetNew);
-    const handNew = [...cardsKept, ...cardsReceived];
+
     handNew.sortByCardRankValue();
 
     const handUint32 = getHandReadableAsUint32(handNew);
@@ -764,7 +854,7 @@ function getStrategyFromRegret(regret) {
         normaliser += strat[i];
     }
     if (normaliser === 0) {
-        for (let i = 0; i < ACTION_COUNT; ++i) strat[i] = 1 / ACTION_COUNT;
+        for (let i = 0; i < ACTION_COUNT; ++i) strat[i] = STRAT_VALUE_DEFAULT;
     } else {
         for (let i = 0; i < ACTION_COUNT; ++i) strat[i] /= normaliser;
     }
@@ -782,21 +872,19 @@ function getBestActionIndex(strat) {
 }
 
 function getRandomActionIndex(strat) {
-    const n = strat.length;
+    const arr = new Float64Array(ACTION_COUNT);
     let total = 0;
-    
-    const arr = new Float64Array(n);
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < ACTION_COUNT; i++) {
         total += strat[i];
         arr[i] = total;
     }
 
     if (total <= 0) {
-        return (Math.random() * 32).safe("FLOOR", 0);
+        return (Math.random() * ACTION_COUNT).safe("FLOOR", 0);
     }
 
     const r = Math.random() * total;
-    let low = 0, high = n - 1;
+    let low = 0, high = ACTION_COUNT - 1;
     while (low < high) {
         const mid = (low + high) >>> 1;
         arr[mid] < r ? (low = mid + 1) : (high = mid);
@@ -899,23 +987,62 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 10/10).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 32/32).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
         }
 
+        let workerscount = cpuCount;
+
+        const shutdown = () => {
+            console.log('[MCCFR] MASTER | SHUTDOWN');
+            for (const id in cluster.workers) {
+                cluster.workers[id].send({ cmd: 'shutdown' });
+            }
+        };
+
+        ['SIGINT', 'SIGTERM'].forEach(signal => {
+            process.on(signal, () => {
+                shutdown();
+            });
+        });
+
+        if (process.platform === 'win32') {
+            const readline = require('readline');
+            readline.createInterface({ input: process.stdin, output: process.stdout }).on('SIGINT', shutdown);
+        }
+
         cluster.on('exit', (worker, code) => {
             console.log(`[MCCFR] WORKER | PID=${worker.process.pid} | EXIT_CODE=${code}`);
+            workerscount--;
+            if (workerscount === 0) {
+                console.log('[MCCFR] MASTER | EXIT');
+                process.exit(0);
+            }
         });
     } else {
+        let stop = false;
+
+        ['message', 'SIGINT', 'SIGTERM'].forEach(signal => {
+            process.on(signal, (msg) => {
+                if (signal === 'message' && msg.cmd !== 'shutdown') {
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ${signal.toUpperCase()} | CMD=${msg.cmd}`);
+                    return;
+                }
+                console.log(`[MCCFR] WORKER_ID=${workerId} | ${signal.toUpperCase()} | FINISHING_CURRENT_ITERATION`);
+                stop = true;
+            });
+        });
+
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
         getCacheCreated(roundNumber);
 
-        const flushInterval = HANDS_CANONICAL_INDEX.length;
-        const iterations = 100_000;
-        let timeNow = performance.now();
+        const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
+        const iterations = 5_000;
+        const timenow = performance.now();
+        let timenow1 = performance.now();
 
         const deckRef = Object.values(DECK);
 
@@ -924,6 +1051,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0hi = HANDS_CANONICAL_INDEX[i];
                 const p0hu32 = HANDS_UINT32[p0hi];
                 const p0h = getHandUint32AsReadable(p0hu32);
+                const p0hset = new Set(p0h);
                 /** DEBUG_START - CANONICAL_INDEX */
                 // const p0hisafe = HANDS_UINT32.indexOf(p0hu32);
                 // const p0hu32safe = HANDS_UINT32[p0hisafe];
@@ -934,11 +1062,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 const p0 = { index: p0hi, hand: p0h };
 
                 deckRef.shuffleByFisherYates();
-                const deck = deckRef.filter(card => !p0h.includes(card))
+                const deck = deckRef.filter(card => !p0hset.has(card));
 
-                const deckOffset = 5;
+                const deckOffset = 5; /** 5 === hand.length */
                 const p1h = deck.slice(0, deckOffset);
                 p1h.sortByCardRankValue();
+
                 const p1hu32 = getHandReadableAsUint32(p1h);
                 const p1hi = getHu32IndexByBinarySearch(HANDS_UINT32, p1hu32);
                 const p1 = { index: p1hi, hand: p1h, deckOffset: deckOffset };
@@ -953,15 +1082,24 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                     roundNumber
                 );
 
-                if ((i + 1) % flushInterval === 0 || s === iterations - 1) {
+                if ((s * HANDS_CANONICAL_INDEX.length + i + 1) % flushInterval === 0 || (s === iterations - 1 && i === HANDS_CANONICAL_INDEX.length - 1)) {
                     await getDataFlushed(workerId);
-                    const timeElapsed = (performance.now() - timeNow).safe("ROUND", 0);
-                    timeNow = performance.now();
-                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${timeElapsed}ms`);
+                    const elapsed = (performance.now() - timenow1).safe("ROUND", 0);
+                    timenow1 = performance.now();
+                    console.log(`[MCCFR] WORKER_ID=${workerId} | ITERATION=${s + 1} | HAND_ITERATION=${i + 1} | TIME_ELAPSED=${elapsed}ms`);
                 }
             }
+
+            if (stop) break;
         }
-        console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | END`);
+
+        if (stop) {
+            await getDataFlushed(workerId);
+            const elapsed = (performance.now() - timenow).safe("ROUND", 0);
+            console.log(`[MCCFR] WORKER_ID=${workerId} | FINAL_FLUSH | TIME_ELAPSED=${elapsed}ms`);
+        }
+        console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | EXIT`);
+        process.exit(0);
     }
 };
 
@@ -970,19 +1108,29 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
 // sudo caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js
 // ps ax -o pid,pcpu,pmem,command | grep 'MCCFR27Discards2.js'
+// win/ $ pm2 start tests/MCCFR27Discards2.js  --no-autorestart --no-daemon
+
+/** PROFILING CODE :
+ * node --prof tests/MCCFR27Discards2.js
+ * node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
+ */
+
+/** KILL ANY NODE PROCESSES ON PWSL :
+ * taskkill /F /IM node.exe
+ */
 
 (async () => {
     // getCacheSaved();
     // return getCacheCreated(2);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]); 
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 2;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -993,11 +1141,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    // getDataNashed();
-    // [MCCFR] NASH_BELOW_0.02=14456 / 14469
+    getDataNashed();
+    // [MCCFR] NASH_BELOW_0.02=14458 / 14469
     // [MCCFR] NASH_BELOW_0.05=14469 / 14469
-    // [MCCFR] NASH_AVERAGE=0.0065922870629453794
-    // [MCCFR] NASH_MAX=0.023741929471582886
+    // [MCCFR] NASH_AVERAGE=0.006244754453972848
+    // [MCCFR] NASH_MAX=0.02372164687682334
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
@@ -1090,3 +1238,4 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 // }
 // console.log(keysCanonicalSet.size);
 // fs.writeFileSync(`${PATH_STRATEGIES}-readable2`, [...keysCanonicalSet].sort().join('\n'), 'utf8');
+
