@@ -773,6 +773,7 @@ function getDataNashed() {
     let regretSumAvg = 0;
     let regretMaxAvg = 0;
     let count = 0;
+    let count00 = 0;
     let countBelow02 = 0;
     let countBelow05 = 0;
     for (const [key, values] of regretSum) {
@@ -788,13 +789,19 @@ function getDataNashed() {
         regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
         count++;
 
-        if (regretAvg <= 0.02) countBelow02++;
-        if (regretAvg <= 0.05) countBelow05++;
+        if (regretAvg !== 0) {
+            if (regretAvg <= 0.02) countBelow02++;
+            if (regretAvg <= 0.05) countBelow05++;
+        } else {
+            count00++;
+        }
+
         console.log(`[MCCFR] ${key} | count = ${visitAcc} | regretAvg = ${regretAvg}`);
     }
 
     const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
 
+    console.log(`[MCCFR] NASH_0.00=${count00} / ${count}`);
     console.log(`[MCCFR] NASH_BELOW_0.02=${countBelow02} / ${count}`);
     console.log(`[MCCFR] NASH_BELOW_0.05=${countBelow05} / ${count}`);
     console.log(`[MCCFR] NASH_AVERAGE=${regretAvgMean}`);
