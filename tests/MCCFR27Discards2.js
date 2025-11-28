@@ -925,17 +925,22 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float64Array([0, 0])), evSum.get(p0key));
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float64Array([0, 0])), evSum.get(p1key));
 
-    if (roundNumbersFrozen[roundNumber]) {
-        const ev = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumberMax);
-        /** DEBUG_START */
-        // const evsafe = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
-        // if (ev !== evsafe) console.log(`EV: ${ev} || EV_SAFE: ${evsafe}`);
-        /** DEBUG_END */
-        return ev;
-    }
+    // if (roundNumbersFrozen[roundNumber]) {
+    //     const ev = HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumberMax);
+    //     /** DEBUG_START */
+    //     // const evsafe = (p0evsum[1] / p0evsum[0]).safe("ROUND", 6);
+    //     // if (ev !== evsafe) console.log(`EV: ${ev} || EV_SAFE: ${evsafe}`);
+    //     /** DEBUG_END */
+    //     return ev;
+    // }
 
-    p0evsum[0]++;
-    p1evsum[0]++;
+    const ROUND_IS_FROZEN = roundNumbersFrozen[roundNumber] === 1;
+    const p0utilfrozen = ROUND_IS_FROZEN ? HANDS_EV_FLAT.getflat(h0.index, roundNumber, roundNumberMax) : null;
+
+    if (!ROUND_IS_FROZEN) {
+        p0evsum[0]++;
+        p1evsum[0]++;
+    }
 
     const p0reg = regretSum.get(p0key) || (regretSum.set(p0key, new Float64Array(ACTION_COUNT)), regretSum.get(p0key));
     const p1reg = regretSum.get(p1key) || (regretSum.set(p1key, new Float64Array(ACTION_COUNT)), regretSum.get(p1key));
@@ -958,42 +963,53 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
     const p1hRnd = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, p1aRnd);
     // if (!p0hRnd?.hand || !p1hRnd?.hand) console.log(deck.length, p0hRnd?.hand, p1hRnd?.hand)
 
-    const p0util = roundNumber <= 1
-        ? getScores(p0hRnd.index, p1hRnd.index)
-        : getDiscardsSimulated(p0hRnd, p1hRnd, deck, p1hRnd.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax);
+    const p0util = !ROUND_IS_FROZEN
+        ? roundNumber <= 1
+            ? getScores(p0hRnd.index, p1hRnd.index)
+            : getDiscardsSimulated(p0hRnd, p1hRnd, deck, p1hRnd.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax)
+        : p0utilfrozen;
     const p1util = -p0util;
 
-    p0evsum[1] += p0util;
-    p1evsum[1] += p1util;
+    if (!ROUND_IS_FROZEN) {
+        p0evsum[1] += p0util;
+        p1evsum[1] += p1util;
+    }
 
     const p0utilAlt = new Float64Array(ACTION_COUNT);
     const p1utilAlt = new Float64Array(ACTION_COUNT);
 
-    if (roundNumber <= 1) {
-        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
-            // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
-            p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index);
-        }
+    if (!ROUND_IS_FROZEN) {
+        if (roundNumber <= 1) {
+            for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+                const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
+                const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
+                // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
+                p0utilAlt[ai] = getScores(p0hAlt.index, p1hFix.index);
+            }
 
-        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
-            // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
-            p1utilAlt[ai] = -getScores(p0hRnd.index, p1hAlt.index);
+            for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+                const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
+                // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
+                p1utilAlt[ai] = -getScores(p0hRnd.index, p1hAlt.index);
+            }
+        } else {
+            for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+                const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
+                const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
+                // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
+                p0utilAlt[ai] = getDiscardsSimulated(p0hAlt, p1hFix, deck, p1hFix.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax);
+            }
+
+            for (let ai = 0; ai < ACTION_COUNT; ++ai) {
+                const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
+                // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
+                p1utilAlt[ai] = -getDiscardsSimulated(p0hRnd, p1hAlt, deck, p1hAlt.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax);
+            }
         }
     } else {
         for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const p0hAlt = getActionApplied(h0.hand, deck, deckOffset, ai); // ALT
-            const p1hFix = getActionApplied(h1.hand, deck, p0hAlt.deckOffset, p1aRnd); // FIX
-            // if (!p0hAlt?.hand || !p1hFix?.hand) console.log(deck.length, p0hAlt?.hand, p1hFix?.hand)
-            p0utilAlt[ai] = getDiscardsSimulated(p0hAlt, p1hFix, deck, p1hFix.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax);
-        }
-
-        for (let ai = 0; ai < ACTION_COUNT; ++ai) {
-            const p1hAlt = getActionApplied(h1.hand, deck, p0hRnd.deckOffset, ai); // ALT
-            // if (!p0hRnd?.hand || !p1hAlt?.hand) console.log(deck.length, p0hRnd?.hand, p1hAlt?.hand)
-            p1utilAlt[ai] = -getDiscardsSimulated(p0hRnd, p1hAlt, deck, p1hAlt.deckOffset, roundNumber - 1, roundNumbersFrozen, roundNumberMax);
+            p0utilAlt[ai] = p0util;
+            p1utilAlt[ai] = -p1util;
         }
     }
 
@@ -1059,7 +1075,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
                 console.log(`[MCCFR] WORKER_ID=${workerId} | ${signal.toUpperCase()} | FINISHING_CURRENT_ITERATION`);
                 stop = true;
             });
-        });
+        }); 
 
         const workerId = Number(process.env.WORKER_ID);
         console.log(`[MCCFR] WORKER_ID=${workerId} | PID=${process.pid} | START`);
@@ -1150,12 +1166,12 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(3);
 
 
-    const roundNumber = 2;
+    const roundNumber = 3;
     /** (roundNumbersFrozen) >>
      * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
      * INDEX 0 === 0 */ 
     // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
+    const roundNumbersFrozen = new Uint8Array([0, 1, 1, 0]); // ROUND 1 FREEZED
     getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
