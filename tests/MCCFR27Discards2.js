@@ -523,6 +523,7 @@ const getCacheCreated = (roundNumber) => {
     // evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
     // const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
+    let visitscount = new Uint8Array(roundNumberIndexMax);
     const cache = [];
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
         const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
@@ -540,6 +541,7 @@ const getCacheCreated = (roundNumber) => {
 
             if (evVisit === 1) {
                 visits[r] = 1;
+                visitscount[r]++;
                 continue;
             }
 
@@ -547,15 +549,22 @@ const getCacheCreated = (roundNumber) => {
             const strategyValues = strategySum.get(key);
             const visitAcc = strategyValues.reduce((acc, strat) => acc + strat, 0);
             const regretValues = regretSum.get(key);
-            const regretAcc = regretValues.reduce((acc, value) => acc + Math.max(0, value), 0);
-            const regretAvg = regretAcc / (regretValues.length * visitAcc);
-            if (regretAvg > 0.02) {
+
+            let rvmax = 0;
+            for (let rv = 0; rv < regretValues.length; rv++) {
+                const v = regretValues[rv];
+                if (v > rvmax) rvmax = v;
+            }
+            const rva = rvmax / visitAcc;
+            if (rva > 0.01) {
                 visits[r] = 1;
+                visitscount[r]++;
                 continue;
             }
         }
         cache.push([handUint32, detailsUint32, score, evs, visits]);
     }
+    console.log(`VISITS_COUNTS=${visitscount}`);
 
     /** DEBUG_START - EVS */
     // const evscache = cache.slice().sort((a, b) => b[3] - a[3]); // need to sort by evs to get top evs
@@ -776,6 +785,48 @@ function getDataFlushedMerged(dir) {
     }
 }
 
+function computeEpsilonFromRegrets(totalIterations, roundFilter = null) {
+    if (totalIterations <= 0) {
+        throw new Error("computeEpsilonFromRegrets: totalIterations must be > 0");
+    }
+
+    // Load the merged regrets into regretSum (same as getDataNashed)
+    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
+
+    let Rtotal = 0;           // This will approximate R1 + R2
+    let infosetCount = 0;     // Just for logging
+
+    for (const [key, values] of regretSum) {
+        // key format: "<detailsUint32>,<roundNumber>"
+        if (roundFilter !== null) {
+            const parts = key.split(",");
+            const round = parseInt(parts[1], 10);
+            if (round !== roundFilter) continue;
+        }
+
+        let maxPos = 0;
+        for (let i = 0; i < values.length; ++i) {
+            const v = values[i];
+            if (v > maxPos) maxPos = v;
+        }
+
+        Rtotal += maxPos;
+        infosetCount++;
+    }
+
+    const epsilon = Rtotal / totalIterations;
+
+    console.log("[MCCFR] EPSILON_REGRET",
+        "| round =", roundFilter === null ? "ALL" : roundFilter,
+        "| R_total =", Rtotal.toFixed(6),
+        "| infosets =", infosetCount,
+        "| T =", totalIterations,
+        "| epsilon =", epsilon.toFixed(8)
+    );
+
+    return epsilon;
+}
+
 
 function getDataNashed() {
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
@@ -826,6 +877,58 @@ function getDataNashed() {
     console.log(`[MCCFR] NASH_AVERAGE=${regretAvgMean}`);
     console.log(`[MCCFR] NASH_MAX=${regretMaxAvg}`);
 }
+
+
+function getAverageNash() {
+    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
+    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
+    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
+
+    let regretSumAvg = 0;
+    let regretMaxAvg = 0;
+    let count = 0;
+    let count00 = 0;
+    let countBelow02 = 0;
+    let countBelow05 = 0;
+    const count00keys = [];
+
+    for (const [key, values] of regretSum) {
+        const strat = strategySum.get(key);
+        if (!strat) continue;
+
+        const visitAcc = strat.reduce((acc, val) => acc + val, 0);
+        if (visitAcc <= 0) continue; 
+
+        let regretMax = 0;
+        for (let i = 0; i < values.length; i++) {
+            if (values[i] > regretMax) {
+                regretMax = values[i];
+            }
+        }
+
+        const regretAvg = regretMax / visitAcc;
+        regretSumAvg += regretAvg;
+        regretMaxAvg = Math.max(regretMaxAvg, regretAvg);
+        count++;
+
+        if (regretAvg === 0) {
+            count00++;
+            count00keys.push(key);
+        } else {
+            if (regretAvg <= 0.02) countBelow02++;
+            if (regretAvg <= 0.05) countBelow05++;
+        }
+    }
+
+    const regretAvgMean = count > 0 ? regretSumAvg / count : 0;
+
+    console.log(`[MCCFR] NASH_0.00=${count00} / ${count}`);
+    console.log(`[MCCFR] NASH_BELOW_0.02=${countBelow02} / ${count}`);
+    console.log(`[MCCFR] NASH_BELOW_0.05=${countBelow05} / ${count}`);
+    console.log(`[MCCFR] NASH_AVERAGE=${regretAvgMean}`);
+    console.log(`[MCCFR] NASH_MAX=${regretMaxAvg}`);
+}
+
 
 function getNashEquilibrium(key, regret, strategy) {
     const visitAcc = strategy.reduce((acc, strat) => acc + strat, 0);
@@ -1082,7 +1185,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 5_000;
+        const iterations = 200;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
@@ -1163,15 +1266,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // return getCacheCreated(3);
+    // return getCacheCreated(2);
 
 
-    const roundNumber = 3;
+    const roundNumber = 1;
     /** (roundNumbersFrozen) >>
      * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
      * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    const roundNumbersFrozen = new Uint8Array([0, 1, 1, 0]); // ROUND 1 FREEZED
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
     getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
@@ -1184,6 +1287,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // })
 
     // getDataNashed();
+    // getAverageNash();
     // [MCCFR] NASH_BELOW_0.02=14458 / 14469
     // [MCCFR] NASH_BELOW_0.05=14469 / 14469
     // [MCCFR] NASH_AVERAGE=0.006244754453972848
