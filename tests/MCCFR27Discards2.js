@@ -523,7 +523,6 @@ const getCacheCreated = (roundNumber) => {
     // evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
     // const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
-    let visitscount = new Uint8Array(roundNumberIndexMax);
     const cache = [];
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
         const hand = getHandUint32AsReadable(ALL_HANDS_UINT32[i]).sortByCardRankValue();
@@ -534,14 +533,14 @@ const getCacheCreated = (roundNumber) => {
 
         for (let r = roundNumber; r > 0; r--) { 
             const key = `${detailsUint32 + "," + r}`;
-            const evValues = evSum?.get(key) || new Float64Array([1, 0]);
+            const evValues = evSum.get(key) || new Float64Array([1, 0]);
             const evVisit = evValues[0];
             const ev = (evValues[1] / evVisit);
             evs[r] = ev;
 
             if (evVisit === 1) {
+                console.log(`EV_VISIT_IS_ONE=${key}`);
                 visits[r] = 1;
-                visitscount[r]++;
                 continue;
             }
 
@@ -556,15 +555,13 @@ const getCacheCreated = (roundNumber) => {
                 if (v > rvmax) rvmax = v;
             }
             const rva = rvmax / visitAcc;
-            if (rva > 0.01) {
+            if (rva > 0.1) {
                 visits[r] = 1;
-                visitscount[r]++;
                 continue;
             }
         }
         cache.push([handUint32, detailsUint32, score, evs, visits]);
     }
-    console.log(`VISITS_COUNTS=${visitscount}`);
 
     /** DEBUG_START - EVS */
     // const evscache = cache.slice().sort((a, b) => b[3] - a[3]); // need to sort by evs to get top evs
@@ -584,8 +581,8 @@ const getCacheCreated = (roundNumber) => {
     /** DEBUG_END - EVS */
 
     /** ALWAYS ASCENDING ORDER FOR BINARY SEARCH (BY HANDS_UINT32 THEN ROUND) */ 
-    cache.sort((a, b) => a[0] - b[0]);
     const N = cache.length;
+    cache.sort((a, b) => a[0] - b[0]);
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_DETAILS_UINT32 = new Uint32Array(N);
     HANDS_SCORE = new Uint32Array(N);
@@ -604,10 +601,12 @@ const getCacheCreated = (roundNumber) => {
 
         /** WE FORCE ITERATE OVER LOW VISIT COUNTS TO EXPLORE RARE HANDS FROM THE LAST ROUND
          * (LAST_ROUND || roundNumber) === 1 */
-        const visit = visits[roundNumber] === 1;
-        if (!handsCanonicalSeen.has(detailsUint32) && visit) {
-            handsCanonicalSeen.add(detailsUint32);
-            handsCanonical.push(i);
+        const needsVisit = visits[roundNumber] === 1;
+        if (needsVisit) {
+            if (!handsCanonicalSeen.has(detailsUint32)) {
+                handsCanonicalSeen.add(detailsUint32);
+                handsCanonical.push(i);
+            }
         }
     }
 
@@ -1091,7 +1090,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 200;
+        const iterations = 1_000;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
@@ -1172,16 +1171,16 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
 (async () => {
     // getCacheSaved();
-    // return getCacheCreated(2);
+    // return getCacheCreated(1);
 
 
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    // const roundNumber = 1;
+    // /** (roundNumbersFrozen) >>
+    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+    //  * INDEX 0 === 0 */ 
+    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
+    // // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
+    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
@@ -1192,8 +1191,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    // getDataNashed();
-    // getAverageNash();
+    getAverageNash();
     // [MCCFR] NASH_BELOW_0.02=14458 / 14469
     // [MCCFR] NASH_BELOW_0.05=14469 / 14469
     // [MCCFR] NASH_AVERAGE=0.006244754453972848
