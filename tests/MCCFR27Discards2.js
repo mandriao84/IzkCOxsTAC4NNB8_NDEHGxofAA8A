@@ -1174,13 +1174,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(1);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    // // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 1;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
