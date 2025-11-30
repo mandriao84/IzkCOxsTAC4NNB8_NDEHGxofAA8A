@@ -1090,7 +1090,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 1_000;
+        const iterations = 10_000;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
@@ -1191,11 +1191,11 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     //     getDataFlushedMerged(dir)
     // })
 
-    getAverageNash();
-    // [MCCFR] NASH_BELOW_0.02=14458 / 14469
-    // [MCCFR] NASH_BELOW_0.05=14469 / 14469
-    // [MCCFR] NASH_AVERAGE=0.006244754453972848
-    // [MCCFR] NASH_MAX=0.02372164687682334
+    // getAverageNash();
+    // [MCCFR] NASH_BELOW_0.02=3 / 14469
+    // [MCCFR] NASH_BELOW_0.05=885 / 14469
+    // [MCCFR] NASH_AVERAGE=0.10318419413729063
+    // [MCCFR] NASH_MAX=0.21769154600311705
 })();
 
 // const hand = ["6s", "4h", "6d", "4s", "7c"]
