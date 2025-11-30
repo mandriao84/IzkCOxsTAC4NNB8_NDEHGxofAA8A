@@ -555,7 +555,7 @@ const getCacheCreated = (roundNumber) => {
                 if (v > rvmax) rvmax = v;
             }
             const rva = rvmax / visitAcc;
-            if (rva > 0.1) {
+            if (rva > 0.05) {
                 visits[r] = 1;
                 continue;
             }
