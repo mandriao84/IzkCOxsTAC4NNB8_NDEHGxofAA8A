@@ -249,13 +249,10 @@ const getNDJSONAsMap = (filePath, map = new Map(), mapValuesType = Float64Array)
 
 const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
-        // const roundNumber = key % KEY_SHIFT_MULTIPLIER;
-        // const detailsUint32 = (key / KEY_SHIFT_MULTIPLIER).safe("FLOOR", 0);
-        // const hd = getHandDetailsUint32AsReadable(detailsUint32);
-        // const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + roundNumber;
-        const keyParts = key.split(',');
-        const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
-        const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyParts[1];
+        const roundNumber = key % KEY_SHIFT_MULTIPLIER;
+        const detailsUint32 = (key / KEY_SHIFT_MULTIPLIER).safe("FLOOR", 0);
+        const hd = getHandDetailsUint32AsReadable(detailsUint32);
+        const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + roundNumber;
 
         const getStrategyAveraged = (key) => {
             const values = strategiesMap.get(key);
@@ -523,10 +520,6 @@ const getCacheCreated = (roundNumber) => {
     getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
     getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
     getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
-    // const evSumBottomLow = (evSum.size * 1).safe("ROUND", 0);
-    // const evSumEntries = Array.from(evSum.entries());
-    // evSumEntries.sort((a, b) => a[1][0] - b[1][0]);
-    // const evVisitBottomLowAvg = evSumEntries[evSumBottomLow - 1][1][0];
 
     const cache = [];
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
@@ -537,8 +530,7 @@ const getCacheCreated = (roundNumber) => {
         const evs = new Float64Array(roundNumberIndexMax); /** PUT VALUE ON INDEX THAT MATCH THE ROUND */
 
         for (let r = roundNumber; r > 0; r--) { 
-            const key = `${detailsUint32 + "," + r}`;
-            // const key = (detailsUint32 * KEY_SHIFT_MULTIPLIER) + r;
+            const key = (detailsUint32 * KEY_SHIFT_MULTIPLIER) + r;
             const evValues = evSum.get(key) || new Float64Array([1, 0]);
             const evVisit = evValues[0];
             const ev = (evValues[1] / evVisit);
@@ -933,16 +925,8 @@ function getRandomActionIndex(strat) {
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen, roundNumberMax) {
-    // const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
-    // const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
     const p0key = (HANDS_DETAILS_UINT32[h0.index] * KEY_SHIFT_MULTIPLIER) + roundNumber;
     const p1key = (HANDS_DETAILS_UINT32[h1.index] * KEY_SHIFT_MULTIPLIER) + roundNumber;
-    // const p0key_roundnumber = p0key % KEY_SHIFT_MULTIPLIER;
-    // const p0key_details = (p0key_ / KEY_SHIFT_MULTIPLIER).safe("FLOOR", 0);
-    // console.log("p0details", HANDS_DETAILS_UINT32[h0.index], roundNumber);
-    // console.log("p0key_", p0key_);
-    // console.log("p0key_roundnumber", p0key_roundnumber);
-    // console.log("p0key_details", p0key_details, "\n");
 
     let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float64Array([0, 0])), evSum.get(p0key));
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float64Array([0, 0])), evSum.get(p1key));
