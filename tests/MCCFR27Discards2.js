@@ -1030,7 +1030,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 1/32).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 32/32).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -1083,7 +1083,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 100;
+        const iterations = 10_000;
         const timenow = performance.now();
         let timenow1 = performance.now();
 

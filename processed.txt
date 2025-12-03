@@ -1,0 +1,371 @@
+Statistical profiling result from isolate-0000025264B02000-14380-v8-14380.log, (4506 ticks, 65 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+    306    6.8%          C:\Program Files\nodejs\node.exe
+    134    3.0%          C:\WINDOWS\SYSTEM32\ntdll.dll
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+   1093   24.3%   26.9%  JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    959   21.3%   23.6%  JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+    670   14.9%   16.5%  Builtin: KeyedLoadIC_Megamorphic
+    374    8.3%    9.2%  JS: *desc5 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:155:19
+    164    3.6%    4.0%  Builtin: FindOrderedHashMapEntry
+    122    2.7%    3.0%  JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     72    1.6%    1.8%  JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     60    1.3%    1.5%  JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     49    1.1%    1.2%  Builtin: KeyedLoadICTrampoline_Megamorphic
+     48    1.1%    1.2%  Builtin: FindOrderedHashSetEntry
+     45    1.0%    1.1%  Builtin: ArrayTimSort
+     29    0.6%    0.7%  Builtin: GrowFastSmiOrObjectElements
+     24    0.5%    0.6%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:583:16
+     23    0.5%    0.6%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:547:52
+     23    0.5%    0.6%  Builtin: CallFunction_ReceiverIsNullOrUndefined
+     21    0.5%    0.5%  Builtin: TypedArrayPrototypeReduce
+     14    0.3%    0.3%  Builtin: StringEqual
+     13    0.3%    0.3%  Builtin: ArrayPrototypeSort
+     12    0.3%    0.3%  JS: *getRandomActionIndex D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:906:30
+     12    0.3%    0.3%  Builtin: GetProperty
+     12    0.3%    0.3%  Builtin: CreateTypedArray
+     10    0.2%    0.2%  Builtin: RecordWriteSaveFP
+      9    0.2%    0.2%  Builtin: MathRandom
+      8    0.2%    0.2%  JS: *getHandScore D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:477:22
+      8    0.2%    0.2%  Builtin: CallFunction_ReceiverIsAny
+      7    0.2%    0.2%  JS: *getHandUint32AsReadable D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:337:33
+      7    0.2%    0.2%  Builtin: MergeAt
+      7    0.2%    0.2%  Builtin: ArrayPrototypeJoinImpl
+      6    0.1%    0.1%  JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      6    0.1%    0.1%  Builtin: ToObject
+      6    0.1%    0.1%  Builtin: NonPrimitiveToPrimitive_Number
+      5    0.1%    0.1%  Builtin: SetPrototypeAdd
+      5    0.1%    0.1%  Builtin: SetConstructor
+      5    0.1%    0.1%  Builtin: Call_ReceiverIsNullOrUndefined
+      5    0.1%    0.1%  Builtin: ArrayIteratorPrototypeNext
+      4    0.1%    0.1%  JS: *getAllHandsAsUint32 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:291:29
+      4    0.1%    0.1%  Builtin: Store_FastSmiElements_0
+      4    0.1%    0.1%  Builtin: SortCompareUserFn
+      4    0.1%    0.1%  Builtin: MapPrototypeSet
+      4    0.1%    0.1%  Builtin: Load_FastObjectElements_0
+      4    0.1%    0.1%  Builtin: JSBuiltinsConstructStub
+      4    0.1%    0.1%  Builtin: Copy
+      3    0.1%    0.1%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:420:25
+      3    0.1%    0.1%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:419:25
+      3    0.1%    0.1%  Builtin: Store_FastObjectElements_0
+      3    0.1%    0.1%  Builtin: LoadTypedElement_Float64Elements_0
+      3    0.1%    0.1%  Builtin: ArrayPrototypeSlice
+      2    0.0%    0.0%  Builtin: OrdinaryToPrimitive_Number_Inline
+      2    0.0%    0.0%  Builtin: NumberPrototypeValueOf
+      2    0.0%    0.0%  Builtin: KeyedLoadIC
+      2    0.0%    0.0%  Builtin: ArrayIncludesSmi
+      1    0.0%    0.0%  JS: +getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+      1    0.0%    0.0%  JS: +getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+      1    0.0%    0.0%  JS: +<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:417:25
+      1    0.0%    0.0%  JS: *getStrategyFromRegret D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:881:31
+      1    0.0%    0.0%  JS: *getHandReadableAsUint32 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:326:33
+      1    0.0%    0.0%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:418:39
+      1    0.0%    0.0%  JS: *<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:417:25
+      1    0.0%    0.0%  Builtin: ToNumber
+      1    0.0%    0.0%  Builtin: MapConstructor
+      1    0.0%    0.0%  Builtin: GallopRight
+      1    0.0%    0.0%  Builtin: GallopLeft
+      1    0.0%    0.0%  Builtin: Delete_FastObjectElements_0
+      1    0.0%    0.0%  Builtin: CanUseSameAccessor_FastObjectElements_0
+      1    0.0%    0.0%  Builtin: Call_ReceiverIsNotNullOrUndefined
+      1    0.0%    0.0%  Builtin: Call_ReceiverIsAny
+      1    0.0%    0.0%  Builtin: CEntry_Return1_ArgvOnStack_BuiltinExit
+      1    0.0%    0.0%  Builtin: AdaptorWithBuiltinExitFrame1
+
+ [C++]:
+   ticks  total  nonlib   name
+
+ [Summary]:
+   ticks  total  nonlib   name
+   4001   88.8%   98.4%  JavaScript
+      0    0.0%    0.0%  C++
+    109    2.4%    2.7%  GC
+    440    9.8%          Shared libraries
+     65    1.4%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+   1093   24.3%  JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+   1085   99.3%    JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+   1085  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+   1085  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+   1085  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+    959   21.3%  JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+    942   98.2%    JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    942  100.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    942  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    942  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    942  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     12    1.3%    JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      6   50.0%      JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      6  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      6  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      6  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      3   25.0%      JS: +getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      3  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      3  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      3  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      3   25.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      3  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      3  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      3  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+    670   14.9%  Builtin: KeyedLoadIC_Megamorphic
+    265   39.6%    JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    263   99.2%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    263  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    263  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    263  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+    223   33.3%    JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+    219   98.2%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    219  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    219  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    219  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      4    1.8%      JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      3   75.0%        JS: +getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      3  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      3  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1   25.0%        JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     88   13.1%    JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     88  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     88  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     88  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     33    4.9%    JS: *desc5 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:155:19
+     24   72.7%      JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+     24  100.0%        JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     24  100.0%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     24  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      5   15.2%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      5  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      5  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      5  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      3    9.1%      JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      3  100.0%        JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      3  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      3  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1    3.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     24    3.6%    JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     24  100.0%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     24  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     24  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     24  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     18    2.7%    JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     18  100.0%      JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     18  100.0%        JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     18  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     18  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      7    1.0%    JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      7  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      7  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      7  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+    374    8.3%  JS: *desc5 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:155:19
+    223   59.6%    JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+    223  100.0%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    223  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    223  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    223  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    131   35.0%    JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    131  100.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    131  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    131  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    131  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     13    3.5%    JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     13  100.0%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     13  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     13  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     13  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      6    1.6%    JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      6  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      6  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      6  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+    306    6.8%  C:\Program Files\nodejs\node.exe
+     77   25.2%    C:\Program Files\nodejs\node.exe
+     40   51.9%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     40  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     40  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     40  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     18   23.4%      JS: *getRandomActionIndex D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:906:30
+     17   94.4%        JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     17  100.0%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     17  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1    5.6%        JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      1  100.0%          JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      7    9.1%      Builtin: SetPrototypeAdd
+      7  100.0%        Builtin: SetConstructor
+      7  100.0%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      7  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      3    3.9%      JS: *getNDJSONAsMap D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:233:24
+      3  100.0%        JS: ~getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      3  100.0%          JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      3  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      2    2.6%      JS: *toLines D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:669:21
+      2  100.0%        JS: ~getDataFlushed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:668:30
+      2  100.0%          Builtin: AsyncFunctionAwaitResolveClosure
+      2    2.6%      JS: *desc5 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:155:19
+      2  100.0%        JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+      2  100.0%          JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      2  100.0%            JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1    1.3%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    1.3%      JS: *getStrategyFromRegret D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:881:31
+      1  100.0%        JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      1  100.0%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1    1.3%      JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      1  100.0%        JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1    1.3%      Builtin: TypedArrayPrototypeReduce
+      1  100.0%        JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      1  100.0%          JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1    1.3%      Builtin: ArrayPrototypeSort
+      1  100.0%        JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+      1  100.0%          JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      1  100.0%            JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     64   20.9%    JS: *desc5 D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:155:19
+     42   65.6%      JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     42  100.0%        JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     42  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     42  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     22   34.4%      JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+     22  100.0%        JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     21   95.5%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     21  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1    4.5%          JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     13    4.2%    Builtin: ArrayPrototypeJoin
+     13  100.0%      JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     13  100.0%        JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     13  100.0%          JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     13  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     12    3.9%    Builtin: ArrayPrototypeSort
+     12  100.0%      JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     12  100.0%        JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     12  100.0%          JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     12  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     10    3.3%    JS: *getHandScore D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:477:22
+     10  100.0%      JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     10  100.0%        JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     10  100.0%          JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     10  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     10    3.3%    Builtin: SetPrototypeAdd
+     10  100.0%      Builtin: SetConstructor
+     10  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     10  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     10  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      4    1.3%    Builtin: MathRandom
+      4  100.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      4  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      4  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      4  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+    164    3.6%  Builtin: FindOrderedHashMapEntry
+    111   67.7%    JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+    111  100.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    111  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    111  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    111  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+     44   26.8%    JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     44  100.0%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     44  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     44  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     44  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      9    5.5%    JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+      9  100.0%      JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      9  100.0%        JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      9  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      9  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+
+    134    3.0%  C:\WINDOWS\SYSTEM32\ntdll.dll
+    129   96.3%    C:\Program Files\nodejs\node.exe
+     89   69.0%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     89  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     89  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     89  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     39   30.2%      JS: *getRandomActionIndex D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:906:30
+     37   94.9%        JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     37  100.0%          JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     37  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      2    5.1%        JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      1   50.0%          JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1   50.0%          JS: +getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+
+    122    2.7%  JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+    122  100.0%    JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+    122  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+    122  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+    122  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     72    1.6%  JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     72  100.0%    JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     72  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     72  100.0%        JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     65    1.4%  UNKNOWN
+
+     60    1.3%  JS: *getHandDetails D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:391:24
+     60  100.0%    JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+     60  100.0%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     60  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     60  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     60  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     49    1.1%  Builtin: KeyedLoadICTrampoline_Megamorphic
+     34   69.4%    JS: *getActionApplied D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:849:26
+     33   97.1%      JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+     33  100.0%        JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     33  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     33  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1    2.9%      JS: +getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      1  100.0%        JS: ^getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%            JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      8   16.3%    JS: *getCacheCreated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:517:25
+      8  100.0%      JS: ~getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      8  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      8  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      8  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      6   12.2%    JS: *getDiscardsSimulated D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:927:30
+      6  100.0%      JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      6  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      6  100.0%          JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      6  100.0%            JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    2.0%    JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+      1  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
+     48    1.1%  Builtin: FindOrderedHashSetEntry
+     47   97.9%    JS: *getMCCFRComputed D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1030:26
+     47  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+     47  100.0%        JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+     47  100.0%          JS: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    2.1%    JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1165:2
+      1  100.0%      JS: ~<anonymous> D:\work\IzkCOxsTAC4NNB8_NDEHGxofAA8A\tests\MCCFR27Discards2.js:1:1
+      1  100.0%        JS: ~<anonymous> node:internal/main/run_main_module:1:1
+
