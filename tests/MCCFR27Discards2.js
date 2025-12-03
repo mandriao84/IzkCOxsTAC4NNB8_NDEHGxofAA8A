@@ -326,8 +326,8 @@ const getAllHandsAsUint32 = () => {
 const getHandReadableAsUint32 = (hand) => {
     let uint32 = 0;
     for (let i = 0; i < hand.length; i++) {
-        const rank = RANKS.indexOf(hand[i][0]);
-        const suit = SUITS.indexOf(hand[i][1]);
+        const rank = RANKS_REF[hand[i][0]] - 1;
+        const suit = SUITS_REF[hand[i][1]];
         const cardIndex = suit * RANKS.length + rank;
         uint32 |= cardIndex << (6 * (4 - i));
     }
@@ -349,8 +349,8 @@ const getHandUint32AsReadable = (uint32) => {
 const getHandReadableAsUint8 = (hand) => {
     const uint8 = new Uint8Array(hand.length);
     for (let i = 0; i < hand.length; i++) {
-        const rank = RANKS.indexOf(hand[i][0]);
-        const suit = SUITS.indexOf(hand[i][1]);
+        const rank = RANKS_REF[hand[i][0]] - 1;
+        const suit = SUITS_REF[hand[i][1]];
         const cardIndex = suit * RANKS.length + rank;
         uint8[i] = cardIndex;
     }
@@ -1083,7 +1083,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 1_000;
+        const iterations = 100;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
