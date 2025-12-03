@@ -84,6 +84,7 @@ const CARDS_KEYS = function () {
     }
     return result;
 }();
+const KEY_SHIFT_MULTIPLIER = 16;
 let HANDS_UINT32, HANDS_DETAILS_UINT32, HANDS_SCORE, HANDS_EV_FLAT, HANDS_CANONICAL_INDEX;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
@@ -248,6 +249,10 @@ const getNDJSONAsMap = (filePath, map = new Map(), mapValuesType = Float64Array)
 
 const getStrategiesReadableSaved = (strategiesMap) => {
     const getStrategyReadable = (key) => {
+        // const roundNumber = key % KEY_SHIFT_MULTIPLIER;
+        // const detailsUint32 = (key / KEY_SHIFT_MULTIPLIER).safe("FLOOR", 0);
+        // const hd = getHandDetailsUint32AsReadable(detailsUint32);
+        // const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + roundNumber;
         const keyParts = key.split(',');
         const hd = getHandDetailsUint32AsReadable(parseInt(keyParts[0]));
         const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',' + keyParts[1];
@@ -533,6 +538,7 @@ const getCacheCreated = (roundNumber) => {
 
         for (let r = roundNumber; r > 0; r--) { 
             const key = `${detailsUint32 + "," + r}`;
+            // const key = (detailsUint32 * KEY_SHIFT_MULTIPLIER) + r;
             const evValues = evSum.get(key) || new Float64Array([1, 0]);
             const evVisit = evValues[0];
             const ev = (evValues[1] / evVisit);
@@ -927,8 +933,16 @@ function getRandomActionIndex(strat) {
 }
 
 function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNumbersFrozen, roundNumberMax) {
-    const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
-    const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
+    // const p0key = `${HANDS_DETAILS_UINT32[h0.index]},${roundNumber}`;
+    // const p1key = `${HANDS_DETAILS_UINT32[h1.index]},${roundNumber}`;
+    const p0key = (HANDS_DETAILS_UINT32[h0.index] * KEY_SHIFT_MULTIPLIER) + roundNumber;
+    const p1key = (HANDS_DETAILS_UINT32[h1.index] * KEY_SHIFT_MULTIPLIER) + roundNumber;
+    // const p0key_roundnumber = p0key % KEY_SHIFT_MULTIPLIER;
+    // const p0key_details = (p0key_ / KEY_SHIFT_MULTIPLIER).safe("FLOOR", 0);
+    // console.log("p0details", HANDS_DETAILS_UINT32[h0.index], roundNumber);
+    // console.log("p0key_", p0key_);
+    // console.log("p0key_roundnumber", p0key_roundnumber);
+    // console.log("p0key_details", p0key_details, "\n");
 
     let p0evsum = evSum.get(p0key) || (evSum.set(p0key, new Float64Array([0, 0])), evSum.get(p0key));
     let p1evsum = evSum.get(p1key) || (evSum.set(p1key, new Float64Array([0, 0])), evSum.get(p1key));
@@ -1026,18 +1040,13 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
         p1reg[ai] += p1utilAlt[ai] - p1util;
     }
 
-    // evSum.get(p0key)[1] += p0util;
-    // evSum.get(p1key)[1] += p1util;
-    // p0evsum[1] += p0util;
-    // p1evsum[1] += p1util;
-
     return p0util;
 }
 
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 32/32).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 1/32).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -1090,7 +1099,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 100_000;
+        const iterations = 1_000;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
