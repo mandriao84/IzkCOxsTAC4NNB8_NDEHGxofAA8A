@@ -1005,7 +1005,7 @@ const seedStratsFromRegrets = (strats_buffer, regrets) => {
     }
 }
 
-function rngActionIdx(strats) {
+const rngActionIdx = (strats) => {
     const r = rng(); 
     let sum = 0;
     for (let i = 0; i < ACTIONS_LENGTH; i++) {
@@ -1015,7 +1015,7 @@ function rngActionIdx(strats) {
     return ACTIONS_LENGTH - 1;
 }
 
-function simulate(p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round_int, rounds_frozen_u8_arr, round_int_max) {
+const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round_int, rounds_frozen_u8_arr, round_int_max) => {
     const p0_key = (HANDS_KEYS_UINT32[p0_hand_u32_idx] * KEY_SHIFT_MULTIPLIER) + round_int;
     const p1_key = (HANDS_KEYS_UINT32[p1_hand_u32_idx] * KEY_SHIFT_MULTIPLIER) + round_int;
 
@@ -1204,7 +1204,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
                 const p1_hand_u32 = p1_hand_u8_arr_buffer.handUint32();
                 const p1_hand_u32_idx = getHu32IndexByBinarySearch(HANDS_UINT32, p1_hand_u32);
 
-                // simulate(p0_hand_u32_idx, p1_hand_u32_idx, deck_u8_arr_buffer, 5, round_int, rounds_frozen_u8_arr, round_int);
+                simulate(p0_hand_u32_idx, p1_hand_u32_idx, deck_u8_arr_buffer, 5, round_int, rounds_frozen_u8_arr, round_int);
 
                 if ((s * HANDS_INDICES.length + i + 1) % flush_interval === 0 || (s === iterations - 1 && i === HANDS_INDICES.length - 1)) {
                     await flushNdjson(worker_id);
