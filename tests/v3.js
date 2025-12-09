@@ -1035,19 +1035,19 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
 
     const p0_strats_buffer = new Float64Array(ACTIONS_LENGTH);
     const p1_strats_buffer = new Float64Array(ACTIONS_LENGTH);
-    const p0_strats = seedStratsFromRegrets(p0_strats_buffer, p0_regrets);
-    const p1_strats = seedStratsFromRegrets(p1_strats_buffer, p1_regrets);
+    seedStratsFromRegrets(p0_strats_buffer, p0_regrets);
+    seedStratsFromRegrets(p1_strats_buffer, p1_regrets);
 
     const p0_strats_sum = STRATEGIES_MAP.get(p0_key) || (STRATEGIES_MAP.set(p0_key, new Float64Array(ACTIONS_LENGTH)), STRATEGIES_MAP.get(p0_key));
     const p1_strats_sum = STRATEGIES_MAP.get(p1_key) || (STRATEGIES_MAP.set(p1_key, new Float64Array(ACTIONS_LENGTH)), STRATEGIES_MAP.get(p1_key));
 
     for (let i = 0; i < ACTIONS_LENGTH; ++i) {
-        p0_strats_sum[i] += p0_strats[i];
-        p1_strats_sum[i] += p1_strats[i];
+        p0_strats_sum[i] += p0_strats_buffer[i];
+        p1_strats_sum[i] += p1_strats_buffer[i];
     }
 
-    const p0_rng_action_idx = rngActionIdx(p0_strats);
-    const p1_rng_action_idx = rngActionIdx(p1_strats);
+    const p0_rng_action_idx = rngActionIdx(p0_strats_buffer);
+    const p1_rng_action_idx = rngActionIdx(p1_strats_buffer);
 
     const p0_rng_u32 = playerActs(p0_hand_u32_idx, deck, deck_offset, p0_rng_action_idx);
     const p0_rng_hand_u32_idx = p0_rng_u32 >>> 6;
@@ -1129,7 +1129,7 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
 
 const compute = async (round_int, rounds_frozen_u8_arr) => {
     if (cluster.isMaster) {
-        const cpu_count = (os.cpus().length * 32 / 32).safe("ROUND", 0);
+        const cpu_count = (os.cpus().length * 2 / 32).safe("ROUND", 0);
         let workers_count = cpu_count;
 
         for (let id = 0; id < cpu_count; id++) cluster.fork({ WORKER_ID: id });
@@ -1183,7 +1183,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
         const flush_interval = HANDS_INDICES.length * 100;
-        const iterations = 10_000;
+        const iterations = 100;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
