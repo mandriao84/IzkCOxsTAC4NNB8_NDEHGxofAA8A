@@ -58,6 +58,11 @@ const DECK_STR = new Array(DECK_LENGTH);
 const CARDS_UINT8_SORTED = new Uint8Array(DECK_LENGTH);
 const CARDS_STR_TO_UINT8_MAP = new Map();
 
+const ALL_HANDS_LENGTH = 2598960; /** (52 * 51 * 50 * 49 * 48) / (5 * 4 * 3 * 2 * 1) >> C(52, 5) */
+const ALL_HANDS_IDX_LUT = new Uint32Array(ALL_HANDS_LENGTH).fill(0xFFFFFFFF);
+
+const COMBINADIC_K = new Uint32Array(53 * 6);
+
 const KEY_SHIFT_MULTIPLIER = 16;
 
 const REGRETS_MAP = new Map();
@@ -134,45 +139,6 @@ const seedSuitsPatternLut = () => {
         }
     }
 };
-
-/** INIT */
-const { ACTIONS, ACTIONS_LENGTH, STRAT_VALUE_DEFAULT } = (() => {
-    for (let i = 0; i < SUITS_PATTERN_KEYS.length; i++) SUITS_PATTERN[SUITS_PATTERN_KEYS[i]] = i;
-    seedSuitsPatternLut();
-
-    for (let i = 0; i < DECK_LENGTH; i++) {
-        DECK_UINT8[i] = i;
-        const r = i % RANKS_LENGTH;
-        const s = (i / RANKS_LENGTH) | 0;
-        
-        RANKS_VALUE_MAP[i] = r;
-        SUITS_VALUE_MAP[i] = s;
-        
-        const c = RANKS[r] + SUITS[s];
-        DECK_STR[i] = c;
-        CARDS_STR_TO_UINT8_MAP.set(c, i);
-        CARDS_UINT8_SORTED[i] = ((r + 1) << 2) | s;
-    }
-
-    const actions = [];
-    for (let mask = 0; mask < 32; ++mask) {
-        const arr = [];
-        for (let i = 0; i < 5; ++i) {
-            if (mask & (1 << i)) arr.push(i);
-        }
-        actions.push(arr);
-    }
-
-    const count = actions.length;
-
-    return { 
-        ACTIONS: actions,
-        ACTIONS_LENGTH: actions.length,
-        STRAT_VALUE_DEFAULT: 1 / count
-    };
-})();
-
-let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES;
 
 Number.prototype.safe = function (method = "FLOOR", decimals = 2) {
     const v = +this;
@@ -252,17 +218,6 @@ const handUint8ArrayFromUint32 = (hand_u8_arr_buffer, hand_u32) => {
     hand_u8_arr_buffer[4] = hand_u32 & 0x3F;
 }
 
-// Uint32Array.prototype.handReadable = function () {
-//     const p = this[0];
-//     return [
-//         DECK_STR[(p >>> 24) & 0x3F],
-//         DECK_STR[(p >>> 18) & 0x3F],
-//         DECK_STR[(p >>> 12) & 0x3F],
-//         DECK_STR[(p >>> 6) & 0x3F],
-//         DECK_STR[p & 0x3F]
-//     ];
-// };
-
 Array.prototype.handUint8Array = function () {
     const result = new Uint8Array(5);
     for (let i = 0; i < this.length; i++) {
@@ -273,12 +228,26 @@ Array.prototype.handUint8Array = function () {
     return result;
 }
 
-Uint8Array.prototype.deckUint8FilledAndShuffled = function (hand_u8_arr_sorted) { 
-    const c0 = hand_u8_arr_sorted[0];
-    const c1 = hand_u8_arr_sorted[1];
-    const c2 = hand_u8_arr_sorted[2];
-    const c3 = hand_u8_arr_sorted[3];
-    const c4 = hand_u8_arr_sorted[4];
+Uint8Array.prototype.deckUint8FilledAndShuffled = function (hand_u8_arr) { 
+    let c0 = hand_u8_arr[0];
+    let c1 = hand_u8_arr[1];
+    let c2 = hand_u8_arr[2];
+    let c3 = hand_u8_arr[3];
+    let c4 = hand_u8_arr[4];
+
+    /** DECK ALGO NEEDS HAND SORTED BY INDEX ASC NOT BY VALUE
+     * eg : hand_u8_arr = [A, 2, ...] > [51, 0, ...] >>> ALGO WILL STOP BECAUSE 51 IS LAST INDEX
+     */
+    let tmp;
+    if (c0 > c1) { tmp = c0; c0 = c1; c1 = tmp; }
+    if (c3 > c4) { tmp = c3; c3 = c4; c4 = tmp; }
+    if (c2 > c4) { tmp = c2; c2 = c4; c4 = tmp; }
+    if (c2 > c3) { tmp = c2; c2 = c3; c3 = tmp; }
+    if (c1 > c4) { tmp = c1; c1 = c4; c4 = tmp; }
+    if (c0 > c3) { tmp = c0; c0 = c3; c3 = tmp; }
+    if (c0 > c2) { tmp = c0; c0 = c2; c2 = tmp; }
+    if (c1 > c3) { tmp = c1; c1 = c3; c3 = tmp; }
+    if (c1 > c2) { tmp = c1; c1 = c2; c2 = tmp; }
 
     let k = 0;
     let d = 0;
@@ -480,7 +449,7 @@ const score = (hand_u32) => {
     weight = (weight * SCORE_MULTIPLIER) + weight4;
 
     const score = SCORE_BASES[type] + weight;
-    /** KEY_UINT32 = RANKS = 5CARDS (0...12) * 4BITS >> 20BITS | SUITS_PATTERN_LENGTH = 52 >> 6BITS */
+    /** KEY_UINT32 = RANKS = 5CARDS (0..12) * 4BITS >> 20BITS | SUITS_PATTERN_LENGTH = 52 >> 6BITS */
     const key_u32 = (rank0 << 22) | (rank1 << 18) | (rank2 << 14) | (rank3 << 10) | (rank4 << 6) | suit_pattern_idx;
     /** KEY_UINT32_DECODED :
      * rank0 = (key >>> 22) & 0x0F;
@@ -788,11 +757,10 @@ const nashAvg = async () => {
     console.log(`>>> NASH_MAX=${regret_max_normalized}`);
 }
 
-const getAllHandsUint32Sorted = () => {
+const allHandsUint32Sorted = () => {
     const k = 5;
     const n = 52;
-    const total = 2598960; /** (52 * 51 * 50 * 49 * 48) / (5 * 4 * 3 * 2 * 1) >> C(52, 5) */
-    const result = new Uint32Array(total);
+    const result = new Uint32Array(ALL_HANDS_LENGTH);
 
     const idx = new Uint8Array(k);
     for (let i = 0; i < k; i++) idx[i] = i;
@@ -819,7 +787,7 @@ const getAllHandsUint32Sorted = () => {
 
 const seedCache = async (round_int) => {
     const round_int_idx_max = round_int + 1;
-    const ALL_HANDS_UINT32 = getAllHandsUint32Sorted(); /** ASC SORTING */
+    const ALL_HANDS_UINT32 = allHandsUint32Sorted(); /** ASC SORTING */
 
     /** TU START */
     // const h8arr_from_h32 = new Uint8Array(5);
@@ -867,7 +835,10 @@ const seedCache = async (round_int) => {
         const will_visits_per_round = new Uint8Array(round_int_idx_max);
         const evs_per_round = new Float64Array(round_int_idx_max);
 
-        for (let r = round_int; r > 0; r--) { 
+        const hand_u32_combinadic_idx = combinadicHu32Idx(hand_u32);
+        ALL_HANDS_IDX_LUT[hand_u32_combinadic_idx] = i;
+
+        for (let r = round_int; r > 0; r--) {
             const key = (key_u32 * KEY_SHIFT_MULTIPLIER) + r;
             const ev_values = EVS_MAP.get(key) || new Float64Array([1, 0]);
             const ev_visit = ev_values[0];
@@ -899,7 +870,7 @@ const seedCache = async (round_int) => {
         cache.push([hand_u32, key_u32, hand_u32_score, evs_per_round, will_visits_per_round]);
     }
 
-    /** MANDATORY : CACHE ALREADY SORTED ASCENDINGLY FOR BINARY SEARCH BECAUSE OF getAllHandsUint32Sorted() */
+    /** MANDATORY : CACHE ALREADY SORTED ASCENDINGLY FOR BINARY SEARCH BECAUSE OF allHandsUint32Sorted() */
     const N = cache.length;
     HANDS_UINT32 = new Uint32Array(N);
     HANDS_KEYS_UINT32 = new Uint32Array(N);
@@ -947,6 +918,34 @@ const getHu32IndexByBinarySearch = (arr, target) => {
     return -1;
 };
 
+const combinadicHu32Idx = (hand_u32) => {
+    const c0 = (hand_u32 >>> 24) & 0x3F;
+    const c1 = (hand_u32 >>> 18) & 0x3F;
+    const c2 = (hand_u32 >>> 12) & 0x3F;
+    const c3 = (hand_u32 >>> 6)  & 0x3F;
+    const c4 = hand_u32 & 0x3F;
+
+    /** RELIES ON CARDS_UINT8_SORTED MEANING WE NEED TO NORMALIZE THE VALUE FROM 4..55 TO 0..51 */
+    const v0 = CARDS_UINT8_SORTED[c0] - 4;
+    const v1 = CARDS_UINT8_SORTED[c1] - 4;
+    const v2 = CARDS_UINT8_SORTED[c2] - 4;
+    const v3 = CARDS_UINT8_SORTED[c3] - 4;
+    const v4 = CARDS_UINT8_SORTED[c4] - 4;
+
+    /** WE START FROM v0 TO v4 BECAUSE HAND_U32 IS SORTED DESC */
+    return COMBINADIC_K[v0 * 6 + 5] + 
+           COMBINADIC_K[v1 * 6 + 4] + 
+           COMBINADIC_K[v2 * 6 + 3] + 
+           COMBINADIC_K[v3 * 6 + 2] + 
+           COMBINADIC_K[v4 * 6 + 1];
+};
+
+const combinadicHu32LutIdx = (hand_u32) => {
+    const idx = combinadicHu32Idx(hand_u32);
+    if (idx < 0 || idx >= ALL_HANDS_LENGTH) return -1;
+    return ALL_HANDS_IDX_LUT[idx];
+};
+
 const util = (p0_hand_u32_idx, p1_hand_u32_idx) => {
     const p0_hand_score = HANDS_SCORES[p0_hand_u32_idx];
     const p1_hand_score = HANDS_SCORES[p1_hand_u32_idx];
@@ -982,9 +981,70 @@ const playerActs = (hand_u32_idx, deck_u8_arr, deck_offset, action_idx) => {
 
     const hand_u32_new = ((c0 << 24) | (c1 << 18) | (c2 << 12) | (c3 << 6) | c4) >>> 0;
     const hand_u32_idx_new = getHu32IndexByBinarySearch(HANDS_UINT32, hand_u32_new);
+    // if (hand_u32_idx_new === -1) console.log(hand_u32_idx_new, c0, c1, c2, c3, c4, "NOT_FOUND");
+    // const hand_u32_idx_new_ = combinadicHu32LutIdx(hand_u32_new);
+    // if (hand_u32_idx_new !== hand_u32_idx_new_) {
+    //     console.error("ERROR");
+    // }
 
     return (hand_u32_idx_new << 6) | deck_offset_new;
 };
+
+// const playerActs = (hand_u32_idx, deck_u8_arr, deck_offset, action_idx, temp_hand_buffer) => {
+//     const hand_u32 = HANDS_UINT32[hand_u32_idx];
+//     let deck_offset_new = deck_offset;
+
+//     // 1. CAPTURE RAW VALUES (Before Sorting)
+//     // If deck_offset_new is OOB, deck_u8_arr[] returns undefined -> cX becomes 0 (if assigned to Uint8Array)
+//     // We capture in simple vars first to check for undefined.
+//     let c0 = (action_idx & 1)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 24) & 0x3F;
+//     let c1 = (action_idx & 2)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 18) & 0x3F;
+//     let c2 = (action_idx & 4)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 12) & 0x3F;
+//     let c3 = (action_idx & 8)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 6)  & 0x3F;
+//     let c4 = (action_idx & 16) ? deck_u8_arr[deck_offset_new++] : hand_u32 & 0x3F;
+
+//     // 2. CRITICAL SAFETY CHECK
+//     if (c0 === undefined || c1 === undefined || c2 === undefined || c3 === undefined || c4 === undefined) {
+//         console.error("\n!!! FATAL: DECK READ ERROR !!!");
+//         console.error(`Deck Offset Start: ${deck_offset}`);
+//         console.error(`Deck Offset End: ${deck_offset_new}`);
+//         console.error(`Deck Length: ${deck_u8_arr ? deck_u8_arr.length : "UNDEFINED"}`);
+//         console.error(`Drawn Values: [${c0}, ${c1}, ${c2}, ${c3}, ${c4}]`);
+//         process.exit(1);
+//     }
+
+//     // 3. USE BUFFER OR FALLBACK
+//     // (Ensure you pass temp_hand_buffer from compute/simulate for speed, but this handles fallback)
+//     const buf = temp_hand_buffer || new Uint8Array(5);
+//     buf[0] = c0; buf[1] = c1; buf[2] = c2; buf[3] = c3; buf[4] = c4;
+
+//     // 4. ROBUST SORT (Identical to Cache Logic)
+//     buf.handUint8ArraySorted();
+//     const hand_u32_new = buf.handUint32();
+
+//     // 5. LOOKUP
+//     // Use the fast combinadic lookup
+//     const hand_u32_idx_new = combinadicHu32LutIdx(hand_u32_new);
+
+//     // 6. VALIDATE LOOKUP
+//     if (hand_u32_idx_new === -1 || hand_u32_idx_new === undefined) {
+//          console.error("\n!!! CRITICAL LOGIC FAILURE !!!");
+//          console.error(`Hand: ${c0}, ${c1}, ${c2}, ${c3}, ${c4}`);
+//          console.error(`Sorted: ${buf.join(',')}`);
+//          console.error(`Packed U32: ${hand_u32_new}`);
+//          console.error(`Lookup Result: ${hand_u32_idx_new}`);
+//          console.error(`Deck Offset: ${deck_offset}`);
+         
+//          // Dump Deck context
+//          const dump = [];
+//          for(let i = deck_offset; i < Math.min(deck_offset + 5, deck_u8_arr.length); i++) dump.push(deck_u8_arr[i]);
+//          console.error(`Deck Next Cards: [${dump.join(', ')}]`);
+         
+//          process.exit(1);
+//     }
+
+//     return (hand_u32_idx_new << 6) | deck_offset_new;
+// };
 
 const seedStratsFromRegrets = (strats_buffer, regrets) => {
     let sum = 0;
@@ -1183,7 +1243,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
         const flush_interval = HANDS_INDICES.length * 100;
-        const iterations = 100;
+        const iterations = 1000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1203,6 +1263,12 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
 
                 const p1_hand_u32 = p1_hand_u8_arr_buffer.handUint32();
                 const p1_hand_u32_idx = getHu32IndexByBinarySearch(HANDS_UINT32, p1_hand_u32);
+
+                // const p1_hand_u32_idx = combinadicHu32LutIdx(p1_hand_u32);
+                // console.log(p1_hand_u32_idx, p1_hand_u32_idx_);
+                // if (p1_hand_u32_idx !== p1_hand_u32_idx_) {
+                //     console.error("SIMULATE.ERROR: p1_hand_u32_idx MISMATCH", p1_hand_u32, p1_hand_u32_idx, p1_hand_u32_idx_);
+                // }
 
                 simulate(p0_hand_u32_idx, p1_hand_u32_idx, deck_u8_arr_buffer, 5, round_int, rounds_frozen_u8_arr, round_int);
 
@@ -1225,6 +1291,61 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         process.exit(0);
     }
 };
+
+
+
+
+
+/** INIT */
+const { ACTIONS, ACTIONS_LENGTH, STRAT_VALUE_DEFAULT } = (() => {
+    for (let i = 0; i < SUITS_PATTERN_KEYS.length; i++) SUITS_PATTERN[SUITS_PATTERN_KEYS[i]] = i;
+    seedSuitsPatternLut();
+
+    for (let i = 0; i < DECK_LENGTH; i++) {
+        DECK_UINT8[i] = i;
+        const r = i % RANKS_LENGTH;
+        const s = (i / RANKS_LENGTH) | 0;
+        
+        RANKS_VALUE_MAP[i] = r;
+        SUITS_VALUE_MAP[i] = s;
+        
+        const c = RANKS[r] + SUITS[s];
+        DECK_STR[i] = c;
+        CARDS_STR_TO_UINT8_MAP.set(c, i);
+        CARDS_UINT8_SORTED[i] = ((r + 1) << 2) | s;
+
+        /** SEED COMBINADIC COEFFICIENTS */
+        COMBINADIC_K[i * 6 + 0] = 1;
+        for (let k = 1; k <= 5; k++) {
+            if (k > i) {
+                COMBINADIC_K[i * 6 + k] = 0;
+            } else {
+                let v = 1;
+                for (let j = 0; j < k; j++) v = v * (i - j) / (j + 1);
+                COMBINADIC_K[i * 6 + k] = v.safe("ROUND", 0);
+            }
+        }
+    }
+
+    const actions = [];
+    for (let mask = 0; mask < 32; ++mask) {
+        const arr = [];
+        for (let i = 0; i < 5; ++i) {
+            if (mask & (1 << i)) arr.push(i);
+        }
+        actions.push(arr);
+    }
+
+    const count = actions.length;
+
+    return { 
+        ACTIONS: actions,
+        ACTIONS_LENGTH: actions.length,
+        STRAT_VALUE_DEFAULT: 1 / count
+    };
+})();
+
+let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES;
 
 (async () => {
     const round_int = 1;
