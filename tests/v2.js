@@ -517,9 +517,9 @@ const getCacheSaved = () => {
 const getCacheCreated = (roundNumber) => {
     const roundNumberIndexMax = roundNumber + 1;
     const ALL_HANDS_UINT32 = getAllHandsAsUint32();
-    getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
-    getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
-    getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
+    // getNDJSONAsMap(".results/mccfr/evs/__REF.ndjson", evSum, Float64Array);
+    // getNDJSONAsMap(".results/mccfr/regrets/__REF.ndjson", regretSum, Float64Array);
+    // getNDJSONAsMap(".results/mccfr/strategies/__REF.ndjson", strategySum, Float64Array);
 
     const cache = [];
     for (let i = 0; i < ALL_HANDS_UINT32.length; i++) {
@@ -537,7 +537,7 @@ const getCacheCreated = (roundNumber) => {
             evs[r] = ev;
 
             if (evVisit === 1) {
-                console.log(`EV_VISIT_IS_ONE=${key}`);
+                // console.log(`EV_VISIT_IS_ONE=${key}`);
                 visits[r] = 1;
                 continue;
             }
@@ -1030,7 +1030,7 @@ function getDiscardsSimulated(h0, h1, deck, deckOffset = 0, roundNumber, roundNu
 const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
 
     if (cluster.isMaster) {
-        const cpuCount = (os.cpus().length * 32/32).safe("ROUND", 0);
+        const cpuCount = (os.cpus().length * 2/32).safe("ROUND", 0);
 
         for (let id = 0; id < cpuCount; id++) {
             cluster.fork({ WORKER_ID: id });
@@ -1083,7 +1083,7 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
         getCacheCreated(roundNumber);
 
         const flushInterval = HANDS_CANONICAL_INDEX.length * 100;
-        const iterations = 10_000;
+        const iterations = 100;
         const timenow = performance.now();
         let timenow1 = performance.now();
 
@@ -1146,15 +1146,15 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     }
 };
 
-// pgrep -fl "caffeinate|MCCFR27Discards2.js"
-// sudo pkill -9 -f "MCCFR27Discards2.js"
-// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js > mccfr.log 2>&1 &"
-// sudo caffeinate -dims nice -n -20 node tests/MCCFR27Discards2.js
-// ps ax -o pid,pcpu,pmem,command | grep 'MCCFR27Discards2.js'
-// win/ $ pm2 start tests/MCCFR27Discards2.js  --no-autorestart --no-daemon
+// pgrep -fl "caffeinate|v2.js"
+// sudo pkill -9 -f "v2.js"
+// sudo sh -c "nohup caffeinate -dims nice -n -20 node tests/v2.js > mccfr.log 2>&1 &"
+// sudo caffeinate -dims nice -n -20 node tests/v2.js
+// ps ax -o pid,pcpu,pmem,command | grep 'v2.js'
+// win/ $ pm2 start tests/v2.js  --no-autorestart --no-daemon
 
 /** PROFILING CODE :
- * node --prof tests/MCCFR27Discards2.js
+ * node --prof tests/v2.js
  * node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
  */
 
@@ -1167,13 +1167,13 @@ const getMCCFRComputed = async (roundNumber, roundNumbersFrozen) => {
     // return getCacheCreated(1);
 
 
-    // const roundNumber = 1;
-    // /** (roundNumbersFrozen) >>
-    //  * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-    //  * INDEX 0 === 0 */ 
-    // const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    // // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
-    // getMCCFRComputed(roundNumber, roundNumbersFrozen);
+    const roundNumber = 1;
+    /** (roundNumbersFrozen) >>
+     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
+     * INDEX 0 === 0 */ 
+    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
+    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
+    getMCCFRComputed(roundNumber, roundNumbersFrozen);
 
 
     // [
