@@ -915,7 +915,8 @@ const getHu32IndexByBinarySearch = (arr, target) => {
             high = mid - 1;
         }
     }
-    return -1;
+    console.error(`FATAL >>> BINARY SEARCH OUT OF BOUNDS = -1`);
+    return process.exit(1);
 };
 
 const combinadicHu32Idx = (hand_u32) => {
@@ -942,7 +943,12 @@ const combinadicHu32Idx = (hand_u32) => {
 
 const combinadicHu32LutIdx = (hand_u32) => {
     const idx = combinadicHu32Idx(hand_u32);
-    if (idx < 0 || idx >= ALL_HANDS_LENGTH) return -1;
+    /** SAFEGUARD START */
+    // if (idx < 0 || idx >= ALL_HANDS_LENGTH) {
+    //     console.error(`FATAL >>> COMBINATIC INDEX OUT OF BOUNDS = ${idx}`);
+    //     process.exit(1);
+    // }
+    /** SAFEGUARD END */
     return ALL_HANDS_IDX_LUT[idx];
 };
 
@@ -962,6 +968,17 @@ const playerActs = (hand_u32_idx, deck_u8_arr, deck_offset, action_idx) => {
     let c3 = (action_idx & 8)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 6)  & 0x3F;
     let c4 = (action_idx & 16) ? deck_u8_arr[deck_offset_new++] : hand_u32 & 0x3F;
 
+    /** SAFEGUARD START */
+    // if (c0 === undefined || c1 === undefined || c2 === undefined || c3 === undefined || c4 === undefined) {
+    //     console.error("FATAL >>> DECK OVERFLOW");
+    //     process.exit(1);
+    // }
+    // if (c0 === c1 || c0 === c2 || c0 === c3 || c0 === c4 || c1 === c2 || c1 === c3 || c1 === c4 || c2 === c3 || c2 === c4 || c3 === c4) {
+    //     console.error(`FATAL >>> DUPLICATE CARDS : ${c0},${c1},${c2},${c3},${c4}`);
+    //     process.exit(1);
+    // }
+    /** SAFEGUARD END */
+
     let v0 = CARDS_UINT8_SORTED[c0];
     let v1 = CARDS_UINT8_SORTED[c1];
     let v2 = CARDS_UINT8_SORTED[c2];
@@ -980,71 +997,18 @@ const playerActs = (hand_u32_idx, deck_u8_arr, deck_offset, action_idx) => {
     if (v1 < v2) { tc = c1; c1 = c2; c2 = tc; tv = v1; v1 = v2; v2 = tv; }
 
     const hand_u32_new = ((c0 << 24) | (c1 << 18) | (c2 << 12) | (c3 << 6) | c4) >>> 0;
-    const hand_u32_idx_new = getHu32IndexByBinarySearch(HANDS_UINT32, hand_u32_new);
-    // if (hand_u32_idx_new === -1) console.log(hand_u32_idx_new, c0, c1, c2, c3, c4, "NOT_FOUND");
-    // const hand_u32_idx_new_ = combinadicHu32LutIdx(hand_u32_new);
-    // if (hand_u32_idx_new !== hand_u32_idx_new_) {
-    //     console.error("ERROR");
+    const hand_u32_idx_new = combinadicHu32LutIdx(hand_u32_new);
+
+    /** SAFEGUARD START */
+    // const hand_u32_idx_new_2 = getHu32IndexByBinarySearch(HANDS_UINT32, hand_u32_new);
+    // if (hand_u32_idx_new !== hand_u32_idx_new_2) {
+    //     console.error(`FATAL >>> MISMATCH : COMBINATIC = ${hand_u32_idx_new} | BINARY = ${hand_u32_idx_new_2}`);
+    //     process.exit(1);
     // }
+    /** SAFEGUARD END */
 
     return (hand_u32_idx_new << 6) | deck_offset_new;
 };
-
-// const playerActs = (hand_u32_idx, deck_u8_arr, deck_offset, action_idx, temp_hand_buffer) => {
-//     const hand_u32 = HANDS_UINT32[hand_u32_idx];
-//     let deck_offset_new = deck_offset;
-
-//     // 1. CAPTURE RAW VALUES (Before Sorting)
-//     // If deck_offset_new is OOB, deck_u8_arr[] returns undefined -> cX becomes 0 (if assigned to Uint8Array)
-//     // We capture in simple vars first to check for undefined.
-//     let c0 = (action_idx & 1)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 24) & 0x3F;
-//     let c1 = (action_idx & 2)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 18) & 0x3F;
-//     let c2 = (action_idx & 4)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 12) & 0x3F;
-//     let c3 = (action_idx & 8)  ? deck_u8_arr[deck_offset_new++] : (hand_u32 >>> 6)  & 0x3F;
-//     let c4 = (action_idx & 16) ? deck_u8_arr[deck_offset_new++] : hand_u32 & 0x3F;
-
-//     // 2. CRITICAL SAFETY CHECK
-//     if (c0 === undefined || c1 === undefined || c2 === undefined || c3 === undefined || c4 === undefined) {
-//         console.error("\n!!! FATAL: DECK READ ERROR !!!");
-//         console.error(`Deck Offset Start: ${deck_offset}`);
-//         console.error(`Deck Offset End: ${deck_offset_new}`);
-//         console.error(`Deck Length: ${deck_u8_arr ? deck_u8_arr.length : "UNDEFINED"}`);
-//         console.error(`Drawn Values: [${c0}, ${c1}, ${c2}, ${c3}, ${c4}]`);
-//         process.exit(1);
-//     }
-
-//     // 3. USE BUFFER OR FALLBACK
-//     // (Ensure you pass temp_hand_buffer from compute/simulate for speed, but this handles fallback)
-//     const buf = temp_hand_buffer || new Uint8Array(5);
-//     buf[0] = c0; buf[1] = c1; buf[2] = c2; buf[3] = c3; buf[4] = c4;
-
-//     // 4. ROBUST SORT (Identical to Cache Logic)
-//     buf.handUint8ArraySorted();
-//     const hand_u32_new = buf.handUint32();
-
-//     // 5. LOOKUP
-//     // Use the fast combinadic lookup
-//     const hand_u32_idx_new = combinadicHu32LutIdx(hand_u32_new);
-
-//     // 6. VALIDATE LOOKUP
-//     if (hand_u32_idx_new === -1 || hand_u32_idx_new === undefined) {
-//          console.error("\n!!! CRITICAL LOGIC FAILURE !!!");
-//          console.error(`Hand: ${c0}, ${c1}, ${c2}, ${c3}, ${c4}`);
-//          console.error(`Sorted: ${buf.join(',')}`);
-//          console.error(`Packed U32: ${hand_u32_new}`);
-//          console.error(`Lookup Result: ${hand_u32_idx_new}`);
-//          console.error(`Deck Offset: ${deck_offset}`);
-         
-//          // Dump Deck context
-//          const dump = [];
-//          for(let i = deck_offset; i < Math.min(deck_offset + 5, deck_u8_arr.length); i++) dump.push(deck_u8_arr[i]);
-//          console.error(`Deck Next Cards: [${dump.join(', ')}]`);
-         
-//          process.exit(1);
-//     }
-
-//     return (hand_u32_idx_new << 6) | deck_offset_new;
-// };
 
 const seedStratsFromRegrets = (strats_buffer, regrets) => {
     let sum = 0;
@@ -1254,6 +1218,16 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
                 handUint8ArrayFromUint32(p0_hand_u8_arr_buffer, p0_hand_u32);
                 deck_u8_arr_buffer.deckUint8FilledAndShuffled(p0_hand_u8_arr_buffer);
 
+                /** SAFEGUARD START */
+                // for (let d = 0; d < 47; d++) {
+                //     const c = deck_u8_arr_buffer[d];
+                //     if (p0_hand_u8_arr_buffer.includes(c)) {
+                //         console.error(`FATAL >>> CARD(${c}) FOUND IN DECK AND HAND`);
+                //         process.exit(1);
+                //     }
+                // }
+                /** SAFEGUARD END */
+
                 p1_hand_u8_arr_buffer[0] = deck_u8_arr_buffer[0];
                 p1_hand_u8_arr_buffer[1] = deck_u8_arr_buffer[1];
                 p1_hand_u8_arr_buffer[2] = deck_u8_arr_buffer[2];
@@ -1262,15 +1236,16 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
                 p1_hand_u8_arr_buffer.handUint8ArraySorted();
 
                 const p1_hand_u32 = p1_hand_u8_arr_buffer.handUint32();
-                const p1_hand_u32_idx = getHu32IndexByBinarySearch(HANDS_UINT32, p1_hand_u32);
-
-                // const p1_hand_u32_idx = combinadicHu32LutIdx(p1_hand_u32);
-                // console.log(p1_hand_u32_idx, p1_hand_u32_idx_);
-                // if (p1_hand_u32_idx !== p1_hand_u32_idx_) {
-                //     console.error("SIMULATE.ERROR: p1_hand_u32_idx MISMATCH", p1_hand_u32, p1_hand_u32_idx, p1_hand_u32_idx_);
-                // }
+                const p1_hand_u32_idx = combinadicHu32LutIdx(p1_hand_u32);
 
                 simulate(p0_hand_u32_idx, p1_hand_u32_idx, deck_u8_arr_buffer, 5, round_int, rounds_frozen_u8_arr, round_int);
+
+                /** SAFEGUARD START */
+                // if (Number.isNaN(sim)) {
+                //     console.error("FATAL >>> SIM RETURNED NaN");
+                //     process.exit(1);
+                // }
+                /** SAFEGUARD END */
 
                 if ((s * HANDS_INDICES.length + i + 1) % flush_interval === 0 || (s === iterations - 1 && i === HANDS_INDICES.length - 1)) {
                     await flushNdjson(worker_id);
