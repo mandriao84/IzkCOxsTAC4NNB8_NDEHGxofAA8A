@@ -1394,9 +1394,9 @@ const transformFile = async (file_path_in, file_path_out) => {
 };
 
 const runMigration = async () => {
-    await transformFile(path.join(PATH_RESULTS, 'regrets/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'regrets/__REF_U32_NEW.ndjson'));
-    await transformFile(path.join(PATH_RESULTS, 'strategies/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'strategies/__REF_U32_NEW.ndjson'));
-    await transformFile(path.join(PATH_RESULTS, 'evs/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'evs/__REF_U32_NEW.ndjson'));
+    await transformFile(path.join(PATH_RESULTS, 'regrets/__REF.ndjson'), path.join(PATH_RESULTS, 'regrets/__REF_U32_NEW.ndjson'));
+    await transformFile(path.join(PATH_RESULTS, 'strategies/__REF.ndjson'), path.join(PATH_RESULTS, 'strategies/__REF_U32_NEW.ndjson'));
+    await transformFile(path.join(PATH_RESULTS, 'evs/__REF.ndjson'), path.join(PATH_RESULTS, 'evs/__REF_U32_NEW.ndjson'));
 };
 
 (async () => {

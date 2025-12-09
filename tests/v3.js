@@ -5,6 +5,7 @@ const cluster = require('cluster');
 const path = require('path');
 
 const DIR_PATH_RESULTS = path.join(process.cwd(), '.results/mccfr');
+const DIR_PATH_STRATEGIES_READABLE = path.join(DIR_PATH_RESULTS, 'strategies_readable');
 const DIR_PATH_STRATEGIES = path.join(DIR_PATH_RESULTS, 'strategies');
 const DIR_PATH_REGRETS = path.join(DIR_PATH_RESULTS, 'regrets');
 const DIR_PATH_EVS = path.join(DIR_PATH_RESULTS, 'evs');
@@ -602,7 +603,6 @@ const readableNdjsonStrategies = async (strategies_map) => {
         const suit_pattern_idx = key_u32 & 0x3F;
 
         const key_str = "" + RANKS[rank0] + RANKS[rank1] + RANKS[rank2] + RANKS[rank3] + RANKS[rank4] + ":" + SUITS_PATTERN_KEYS[suit_pattern_idx] + ',' + round_int;
-        console.log(key, key_str)
 
         const strats_values = strategies_map.get(key) ?? new Float64Array(ACTIONS_LENGTH).fill(STRAT_VALUE_DEFAULT);
 
@@ -629,7 +629,7 @@ const readableNdjsonStrategies = async (strategies_map) => {
         return result;
     }
 
-    const stream = fs.createWriteStream(path.join(DIR_PATH_STRATEGIES, `readable.ndjson`), { flags: 'w', highWaterMark: 1024 * 1024 }); /** 1MB BUFFER */ 
+    const stream = fs.createWriteStream(path.join(DIR_PATH_STRATEGIES_READABLE, `__REF.ndjson`), { flags: 'w', highWaterMark: 1024 * 1024 }); /** 1MB BUFFER */ 
 
     const streamWrite = (str) => {
         const buffer = stream.write(str);
@@ -1229,9 +1229,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
 (async () => {
     const round_int = 1;
     const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
-    await mapNdjson(path.join(DIR_PATH_RESULTS, 'strategies/__REF_U32_NEW.ndjson'), STRATEGIES_MAP, Float64Array)
-    await readableNdjsonStrategies(STRATEGIES_MAP);
-    // compute(round_int, rounds_frozen_u8_arr);
+    compute(round_int, rounds_frozen_u8_arr);
 
     // [
     //     DIR_PATH_EVS,
@@ -1242,4 +1240,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
     // })
 
     // await nashAvg();
+
+    // await mapNdjson(path.join(DIR_PATH_RESULTS, 'strategies/__REF.ndjson'), STRATEGIES_MAP, Float64Array)
+    // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
