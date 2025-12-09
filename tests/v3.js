@@ -731,7 +731,7 @@ const mergeNdjson = async (dir) => {
     });
 
     if (dir.includes('strategies')) {
-        readableNdjsonStrategies(map_merged);
+        await readableNdjsonStrategies(map_merged);
     }
 };
 
@@ -1229,7 +1229,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
 (async () => {
     const round_int = 1;
     const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
-    compute(round_int, rounds_frozen_u8_arr);
+    await compute(round_int, rounds_frozen_u8_arr);
 
     // [
     //     DIR_PATH_EVS,
