@@ -1231,13 +1231,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
     const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
     await compute(round_int, rounds_frozen_u8_arr);
 
-    // [
-    //     DIR_PATH_EVS,
-    //     DIR_PATH_REGRETS,
-    //     DIR_PATH_STRATEGIES
-    // ].forEach(dir => {
-    //     await mergeNdjson(dir)
-    // })
+    for (const dir of [DIR_PATH_EVS, DIR_PATH_REGRETS, DIR_PATH_STRATEGIES]) await mergeNdjson(dir);
 
     // await nashAvg();
 
