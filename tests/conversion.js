@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const cluster = require('cluster');
+const readline = require('readline');
 const path = require('path');
 
 const PATH_RESULTS = path.join(process.cwd(), '.results/mccfr');
@@ -378,17 +379,6 @@ const getHandDetailsReadableAsUint32 = ({ ranksValue, suitPatternIndex }) => {
     }
     uint32 = (uint32 << 6) | (suitPatternIndex & 0b111111); // 6BITS > (2⁶ = UPTO 64)
     return uint32 >>> 0; // FORCE UNSIGNED 32BITS
-};
-
-const getHandDetailsUint32AsReadable = (uint32) => {
-    const suitPatternIndex = uint32 & 0b111111;
-    const rankBits = uint32 >>> 6;
-    const ranksValue = new Array(5);
-    for (let i = 0; i < 5; i++) {
-        const shift = 5 * (4 - i);
-        ranksValue[i] = (rankBits >>> shift) & 0b11111;
-    }
-    return { ranksValue, suitPatternIndex };
 };
 
 const getHandDetails = (hand) => {
@@ -901,16 +891,6 @@ function getStrategyFromRegret(regret) {
     return strat;
 }
 
-function getBestActionIndex(strat) {
-    const result = strat.reduce((obj, value, index) => {
-        if (value > (obj.value ?? 0)) {
-            obj.index = index;
-        }
-        return obj;
-    }, {});
-    return result.index;
-}
-
 function getRandomActionIndex(strat) {
     const arr = new Float64Array(ACTION_COUNT);
     let total = 0;
@@ -1312,138 +1292,128 @@ function testKeyConversionIntegrity(oldFilePath, newFilePath) {
  * taskkill /F /IM node.exe
  */
 
-(async () => {
-    // getCacheSaved();
-    // return getCacheCreated(1);
+// const CARD_SORT_LOOKUP = new Uint8Array(52);
+// const DECK_INTS = new Uint8Array(52); 
 
+// (() => {
+//     for (let i = 0; i < 52; i++) {
+//         DECK_INTS[i] = i;
+//         const rankValue = (i % 13) + 1; // 1 to 13
+//         const suitValue = (i / 13) | 0; // 0 to 3
+//         CARD_SORT_LOOKUP[i] = (rankValue << 2) | suitValue;
+//     }
+// })();
+
+const encodeNewKey = ({ ranks_value, suit_pattern_idx, round_int }) => {
+    const key_u32 = 
+        ((ranks_value[0] & 0x0F) << 22) |
+        ((ranks_value[1] & 0x0F) << 18) |
+        ((ranks_value[2] & 0x0F) << 14) |
+        ((ranks_value[3] & 0x0F) << 10) |
+        ((ranks_value[4] & 0x0F) << 6)  |
+        (suit_pattern_idx & 0x3F);
+    
+    return (key_u32 * KEY_SHIFT_MULTIPLIER) + round_int;
+};
+
+const getHandDetailsUint32AsReadable2 = (u32) => {
+    const suit_pattern_idx = u32 & 0b111111;
+    const rank_bits = u32 >>> 6;
+    const ranks_value = new Array(5);
+    for (let i = 0; i < 5; i++) {
+        const shift = 5 * (4 - i);
+        ranks_value[i] = (rank_bits >>> shift) & 0b11111;
+    }
+    return { ranks_value, suit_pattern_idx };
+};
+
+const transformFile = async (file_path_in, file_path_out) => {
+    if (!fs.existsSync(file_path_in)) return console.log(`>>> File not found: ${file_path_in}`);
+
+    const stream_in = fs.createReadStream(file_path_in);
+    const stream_out = fs.createWriteStream(file_path_out, { flags: 'w', highWaterMark: 1024 * 1024 });
+
+    const rl = readline.createInterface({
+        input: stream_in,
+        crlfDelay: Infinity
+    });
+
+    const write = (str) => {
+        const ok = stream_out.write(str);
+        if (!ok) return new Promise(r => stream_out.once('drain', r));
+        return Promise.resolve();
+    };
+
+    let count = 0;
+
+    for await (const line of rl) {
+        if (!line.trim()) continue;
+
+        const { key, values } = JSON.parse(line);
+
+        const round_int = key % KEY_SHIFT_MULTIPLIER;
+        const key_u32_old = (key / KEY_SHIFT_MULTIPLIER) | 0;
+        const key_u32_old_decoded = getHandDetailsUint32AsReadable2(key_u32_old);
+
+        const key_new = encodeNewKey({ 
+            ranks_value: key_u32_old_decoded.ranks_value.map(r => r - 1), 
+            suit_pattern_idx: key_u32_old_decoded.suit_pattern_idx, 
+            round_int 
+        });
+        const key_u32_new = (key_new / KEY_SHIFT_MULTIPLIER) | 0;
+        const rank0 = (key_u32_new >>> 22) & 0x0F;
+        const rank1 = (key_u32_new >>> 18) & 0x0F;
+        const rank2 = (key_u32_new >>> 14) & 0x0F;
+        const rank3 = (key_u32_new >>> 10) & 0x0F;
+        const rank4 = (key_u32_new >>> 6) & 0x0F;
+        const suit_pattern_idx = key_u32_new & 0x3F;
+
+        const key_u32_new_decoded = {
+            ranks_value: [rank0, rank1, rank2, rank3, rank4],
+            suit_pattern_idx
+        }
+
+        for (let i = 0; i < 5; i++) {
+            if (key_u32_old_decoded.ranks_value[i] - 1 !== key_u32_new_decoded.ranks_value[i]) {
+                console.log(`RANK MISMATCH at index ${i}: OLD=${key_u32_old_decoded.ranks_value[i]} vs NEW=${key_u32_new_decoded.ranks_value[i]}`);
+            }
+        }
+        if (key_u32_old_decoded.suit_pattern_idx !== key_u32_new_decoded.suit_pattern_idx) {
+            console.log(`SUIT PATTERN MISMATCH: OLD=${key_u32_old_decoded.suit_pattern_idx} vs NEW=${key_u32_new_decoded.suit_pattern_idx}`);
+        }
+
+        const line_new = `{"key":${key_new},"values":[${values.join(',')}]}\n`;
+        await write(line_new);
+        
+        count++;
+        if (count % 100000 === 0) process.stdout.write(`\rConverted ${count} lines...`);
+    }
+
+    stream_out.end();
+    await new Promise(r => stream_out.on('finish', r));
+};
+
+const runMigration = async () => {
+    await transformFile(path.join(PATH_RESULTS, 'regrets/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'regrets/__REF_U32_NEW.ndjson'));
+    await transformFile(path.join(PATH_RESULTS, 'strategies/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'strategies/__REF_U32_NEW.ndjson'));
+    await transformFile(path.join(PATH_RESULTS, 'evs/__REF_U32.ndjson'), path.join(PATH_RESULTS, 'evs/__REF_U32_NEW.ndjson'));
+};
+
+(async () => {
     // convertKeysToNumerical(".results/mccfr/evs/__REF.ndjson")
     // convertKeysToNumerical(".results/mccfr/regrets/__REF.ndjson")
     // convertKeysToNumerical(".results/mccfr/strategies/__REF.ndjson")
-    testKeyConversionIntegrity(
-        ".results/mccfr/evs/__REF.ndjson",
-        ".results/mccfr/evs/__REF_NEW.ndjson"
-    );
-    testKeyConversionIntegrity(
-        ".results/mccfr/regrets/__REF.ndjson",
-        ".results/mccfr/regrets/__REF_NEW.ndjson"
-    );
-    testKeyConversionIntegrity(
-        ".results/mccfr/strategies/__REF.ndjson",
-        ".results/mccfr/strategies/__REF_NEW.ndjson"
-    );
-    return;
-
-    const roundNumber = 1;
-    /** (roundNumbersFrozen) >>
-     * PUT 1 ON ARRAY INDEX THAT MATCH ROUND TO FREEZE
-     * INDEX 0 === 0 */ 
-    const roundNumbersFrozen = new Uint8Array([0, 0, 0, 0]);
-    // const roundNumbersFrozen = new Uint8Array([0, 1, 0, 0]); // ROUND 1 FREEZED
-    getMCCFRComputed(roundNumber, roundNumbersFrozen);
-
-
-    // [
-    //     ".results/mccfr/evs",
-    //     ".results/mccfr/regrets",
-    //     ".results/mccfr/strategies"
-    // ].forEach(dir => {
-    //     getDataFlushedMerged(dir)
-    // })
-
-    // getAverageNash();
-    // [MCCFR] NASH_BELOW_0.02=3 / 14469
-    // [MCCFR] NASH_BELOW_0.05=921 / 14469
-    // [MCCFR] NASH_AVERAGE=0.10024106142256897
-    // [MCCFR] NASH_MAX=0.21367654348916884
+    // testKeyConversionIntegrity(
+    //     ".results/mccfr/evs/__REF.ndjson",
+    //     ".results/mccfr/evs/__REF_NEW.ndjson"
+    // );
+    // testKeyConversionIntegrity(
+    //     ".results/mccfr/regrets/__REF.ndjson",
+    //     ".results/mccfr/regrets/__REF_NEW.ndjson"
+    // );
+    // testKeyConversionIntegrity(
+    //     ".results/mccfr/strategies/__REF.ndjson",
+    //     ".results/mccfr/strategies/__REF_NEW.ndjson"
+    // );
+    // await runMigration()
 })();
-
-// const hand = ["6s", "4h", "6d", "4s", "7c"]
-// const { detailsUint32, score } = getHandDetails(hand)
-// console.log(hand, detailsUint32);
-// console.log(getHandDetailsUint32AsReadable(detailsUint32));
-
-// const iterations = 10000000;
-// const ref = [1,2,3,4,5,6,7,8,9,10];
-// const a = [1,2,3,4,5];
-// const aSet = new Set(a);
-
-// for (let i = 0; i < iterations; ++i) {
-//     aSet.clear();
-//     for (let j = 0; j < a.length; ++j) aSet.add(a[j]);
-// }
-
-// console.time('Array.filter performance');
-// for (let i = 0; i < iterations; ++i) {
-//     const r = ref.filter(x => !a.includes(x));
-// }
-// console.timeEnd('Array.filter performance');
-
-/** TU START */
-// getCacheCreated(1);
-// const hand = [ 'Ac', 'Ad', '9s', '9h', '5s' ];
-// hand.sortByCardRankValue();
-// const hu32 = getHandReadableAsUint32(hand);
-// const hi = getHu32IndexByBinarySearch(HANDS_UINT32, hu32);
-// // const hi = HANDS_UINT32.indexOf(hu32);
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const h = getHandUint32AsReadable(HANDS_UINT32[hi]);
-// const hs = HANDS_SCORE[hi];
-// const hkey = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex];
-// console.log("hdu32_from_hand >>", hdu32);
-// console.log("hd_from_hdu32 >>", hd);
-// console.log("hi_from_cache >>", hi);
-// console.log("hu32_from_hi >>", HANDS_UINT32[hi]);
-// console.log("h_from_hi >>", h);
-// console.log("hs_from_hi >>", hs);
-// console.log("hkey_from_hd >>", hkey);
-/** TU END */
-
-// const hand = ["2s", "3s", "4s", "Ac", "As"];
-// hand.sort();
-// const hdu32 = getHandDetails(hand);
-// const hd = getHandDetailsUint32AsReadable(hdu32.detailsUint32);
-// const keyDecoded = hd.ranksValue.map(r => RANKS_REF_FROM_VALUE[r]).join('') + ":" + SUITS_PATTERN_KEYS[hd.suitPatternIndex] + ',';
-// console.log(hdu32, hd);
-// console.log(keyDecoded);
-
-
-// const stratReadSum = getNDJSONAsMap(".results/mccfr/strategies-readable.ndjson");
-// const keysCanonicalSet = new Map();
-// for (const [key, values] of stratReadSum) {
-//     const keyParts = key.split(':');
-//     const rankCanonicalArr = keyParts[0].split('');
-//     const suitCanonical = keyParts[1].split(',')[0];
-//     const indicesString = values[0][0];
-//     const indicesStringIsEmpty = indicesString === "-";
-//     const indicesSet = new Set([...indicesString].map(Number));
-//     let keyCanonicalNew = [];
-//     let keyCanonicalNewHasX = false;
-//     for (let i = 0; i < rankCanonicalArr.length; i++) {
-//         if (indicesSet.has(i)) {
-//             keyCanonicalNew.push('X');
-//             keyCanonicalNewHasX = true;
-//         } else {
-//             keyCanonicalNew.push(rankCanonicalArr[i]);
-//         }
-//     }
-//     keyCanonicalNew = keyCanonicalNew.join('') + ':' + suitCanonical;
-//     if (!keysCanonicalSet.has(keyCanonicalNew)) {
-//         // keysCanonicalSet.set(keyCanonicalNew, structuredClone(values));
-//         keysCanonicalSet.set(keyCanonicalNew, indicesString);
-//     } else {
-//         // const valuesPrev = keysCanonicalSet.get(keyCanonicalNew);
-//         // for (let j = 0; j < valuesPrev.length; j++) {
-//         //     arr[j] += values[j];
-//         // }
-//         // for (let i = 0; i < valuesPrev.length; i++) {
-//         //     const prevRow = valuesPrev[i];
-//         //     const newRow = values[i];
-//         //     for (let j = 0; j < prevRow.length; j++) {
-//         //         prevRow[j] += newRow[j];
-//         //     }
-//         // }
-//     }
-// }
-// console.log(keysCanonicalSet.size);
-// fs.writeFileSync(`${PATH_STRATEGIES}-readable2`, [...keysCanonicalSet].sort().join('\n'), 'utf8');
