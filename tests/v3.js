@@ -1334,3 +1334,8 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
     // await mapNdjson(path.join(DIR_PATH_RESULTS, 'strategies/__REF.ndjson'), STRATEGIES_MAP, Float64Array)
     // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
+// >>> NASH_ZERO=0 / 14469
+// >>> NASH_0.02=3 / 14469
+// >>> NASH_0.05=5328 / 14469
+// >>> NASH_AVG=0.060935896334631284
+// >>> NASH_MAX=0.13319984192731973
