@@ -1206,8 +1206,8 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p0_hand_u8_arr_buffer = new Uint8Array(5);
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
-        const flush_interval = HANDS_INDICES.length * 100;
-        const iterations = 1000;
+        const flush_interval = HANDS_INDICES.length * 1000;
+        const iterations = 10_000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
