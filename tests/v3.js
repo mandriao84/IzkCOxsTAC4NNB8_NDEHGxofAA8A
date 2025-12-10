@@ -899,7 +899,7 @@ const seedCache = async (round_int) => {
     }
 
     HANDS_INDICES = Uint32Array.from(keys_indices);
-    console.log(`HANDS_INDICES_LENGTH=${HANDS_INDICES.length}`);
+    console.log(`>>> HANDS_INDICES_LENGTH=${HANDS_INDICES.length}`);
 };
 
 const getHu32IndexByBinarySearch = (arr, target) => {
@@ -1207,7 +1207,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
         const flush_interval = HANDS_INDICES.length * 1000;
-        const iterations = 10_000;
+        const iterations = 50_000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1336,6 +1336,6 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
 })();
 // >>> NASH_ZERO=0 / 14469
 // >>> NASH_0.02=3 / 14469
-// >>> NASH_0.05=5328 / 14469
-// >>> NASH_AVG=0.060935896334631284
-// >>> NASH_MAX=0.13319984192731973
+// >>> NASH_0.05=5339 / 14469
+// >>> NASH_AVG=0.060919388359999854
+// >>> NASH_MAX=0.13522548504006157
