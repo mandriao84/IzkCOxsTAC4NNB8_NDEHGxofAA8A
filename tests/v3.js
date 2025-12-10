@@ -1153,7 +1153,7 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
 
 const compute = async (round_int, rounds_frozen_u8_arr) => {
     if (cluster.isMaster) {
-        const cpu_count = (os.cpus().length * 2 / 32).safe("ROUND", 0);
+        const cpu_count = (os.cpus().length * 32 / 32).safe("ROUND", 0);
         let workers_count = cpu_count;
 
         for (let id = 0; id < cpu_count; id++) cluster.fork({ WORKER_ID: id });
