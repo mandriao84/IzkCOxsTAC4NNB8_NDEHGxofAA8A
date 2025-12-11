@@ -1207,7 +1207,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
         const flush_interval = HANDS_INDICES.length * 1000;
-        const iterations = 50_000;
+        const iterations = 200_000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1323,9 +1323,9 @@ const { ACTIONS, ACTIONS_LENGTH, STRAT_VALUE_DEFAULT } = (() => {
 let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES;
 
 (async () => {
-    const round_int = 1;
-    const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
-    await compute(round_int, rounds_frozen_u8_arr);
+    // const round_int = 1;
+    // const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
+    // await compute(round_int, rounds_frozen_u8_arr);
 
     // for (const dir of [DIR_PATH_EVS, DIR_PATH_REGRETS, DIR_PATH_STRATEGIES]) await mergeNdjson(dir);
 
@@ -1336,6 +1336,6 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
 })();
 // >>> NASH_ZERO=0 / 14469
 // >>> NASH_0.02=3 / 14469
-// >>> NASH_0.05=5339 / 14469
-// >>> NASH_AVG=0.060919388359999854
-// >>> NASH_MAX=0.13522548504006157
+// >>> NASH_0.05=10412 / 14469
+// >>> NASH_AVG=0.04832422600269662
+// >>> NASH_MAX=0.09695018783230412
