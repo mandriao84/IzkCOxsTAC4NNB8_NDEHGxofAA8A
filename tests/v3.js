@@ -868,7 +868,7 @@ const seedCache = async (round_int) => {
                 }
             }
             const regret_value_max_avg = visit_count > 0 ? regret_value_max / visit_count : 0;
-            if (regret_value_max_avg > 0.04) {
+            if (regret_value_max_avg > 0.03) {
                 will_visits_per_round[r] = 1;
                 continue;
             }
@@ -1341,9 +1341,9 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
     // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
 // >>> NASH_ZERO=0 / 14469
-// >>> NASH_0.02=5 / 14469
-// >>> NASH_0.03=1102 / 14469
-// >>> NASH_0.04=6863 / 14469
+// >>> NASH_0.02=164 / 14469
+// >>> NASH_0.03=9900 / 14469
+// >>> NASH_0.04=14469 / 14469
 // >>> NASH_0.05=14469 / 14469
-// >>> NASH_AVG=0.03958433715452922
-// >>> NASH_MAX=0.04986930118549648
+// >>> NASH_AVG=0.02860058084812451
+// >>> NASH_MAX=0.039823440139178046
