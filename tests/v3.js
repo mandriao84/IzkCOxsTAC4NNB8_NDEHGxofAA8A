@@ -871,7 +871,7 @@ const seedCache = async (round_int) => {
                 }
             }
             const regret_value_max_avg = visit_count > 0 ? regret_value_max / visit_count : 0;
-            if (regret_value_max_avg > 0.02) {
+            if (regret_value_max_avg > 0.01) {
                 will_visits_per_round[r] = 1;
                 continue;
             }
@@ -1216,7 +1216,7 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
         const flush_interval = HANDS_INDICES.length * 10000;
-        const iterations = 500_000;
+        const iterations = 50_000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1332,9 +1332,9 @@ const { ACTIONS, ACTIONS_LENGTH, STRAT_VALUE_DEFAULT } = (() => {
 let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES;
 
 (async () => {
-    // const round_int = 1;
-    // const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
-    // await compute(round_int, rounds_frozen_u8_arr);
+    const round_int = 1;
+    const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
+    await compute(round_int, rounds_frozen_u8_arr);
 
     // for (const dir of [DIR_PATH_EVS, DIR_PATH_REGRETS, DIR_PATH_STRATEGIES]) await mergeNdjson(dir);
 
@@ -1344,10 +1344,10 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
     // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
 // >>> NASH_ZERO=0 / 14469
-// >>> NASH_0.01=14 / 14469
-// >>> NASH_0.02=12574 / 14469
+// >>> NASH_0.01=70 / 14469
+// >>> NASH_0.02=14469 / 14469
 // >>> NASH_0.03=14469 / 14469
 // >>> NASH_0.04=14469 / 14469
 // >>> NASH_0.05=14469 / 14469
-// >>> NASH_AVG=0.017576670623778084
-// >>> NASH_MAX=0.023841373314983677
+// >>> NASH_AVG=0.016922419839146184
+// >>> NASH_MAX=0.0199922842360403
