@@ -715,7 +715,7 @@ const nashAvg = async () => {
     let regret_max_normalized = 0;
     
     let count = 0;
-    let count_zero = 0;
+    let count_zero05 = 0;
     let count_zero1 = 0;
     let count_zero2 = 0;
     let count_zero3 = 0;
@@ -744,8 +744,8 @@ const nashAvg = async () => {
         
         count++;
 
-        if (value_avg === 0) count_zero++;
-        else if (value_avg > 0) {
+        if (value_avg > 0) {
+            if (value_avg <= 0.005) count_zero05++;
             if (value_avg <= 0.01) count_zero1++;
             if (value_avg <= 0.02) count_zero2++;
             if (value_avg <= 0.03) count_zero3++;
@@ -756,7 +756,7 @@ const nashAvg = async () => {
 
     const regret_avg_normalized = count > 0 ? regret_sum_normalized / count : 0;
 
-    console.log(`>>> NASH_ZERO=${count_zero} / ${count}`);
+    console.log(`>>> NASH_0.005=${count_zero05} / ${count}`);
     console.log(`>>> NASH_0.01=${count_zero1} / ${count}`);
     console.log(`>>> NASH_0.02=${count_zero2} / ${count}`);
     console.log(`>>> NASH_0.03=${count_zero3} / ${count}`);
@@ -1215,8 +1215,8 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p0_hand_u8_arr_buffer = new Uint8Array(5);
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
-        const flush_interval = HANDS_INDICES.length * 10000;
-        const iterations = 50_000;
+        const flush_interval = HANDS_INDICES.length * 100000;
+        const iterations = 10_000_000;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1344,10 +1344,10 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
     // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
 // >>> NASH_ZERO=0 / 14469
-// >>> NASH_0.01=70 / 14469
+// >>> NASH_0.01=12537 / 14469
 // >>> NASH_0.02=14469 / 14469
 // >>> NASH_0.03=14469 / 14469
 // >>> NASH_0.04=14469 / 14469
 // >>> NASH_0.05=14469 / 14469
-// >>> NASH_AVG=0.016922419839146184
-// >>> NASH_MAX=0.0199922842360403
+// >>> NASH_AVG=0.008974240833475238
+// >>> NASH_MAX=0.012815689668056428
