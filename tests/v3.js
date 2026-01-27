@@ -1066,6 +1066,9 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
         p1_ev_sum[0]++;
     }
 
+    const p0_weight = p0_ev_sum[0];
+    const p1_weight = p1_ev_sum[0];
+
     const p0_regrets = REGRETS_MAP.get(p0_key) || (REGRETS_MAP.set(p0_key, new Float64Array(ACTIONS_LENGTH)), REGRETS_MAP.get(p0_key));
     const p1_regrets = REGRETS_MAP.get(p1_key) || (REGRETS_MAP.set(p1_key, new Float64Array(ACTIONS_LENGTH)), REGRETS_MAP.get(p1_key));
 
@@ -1078,8 +1081,8 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
     const p1_strats_sum = STRATEGIES_MAP.get(p1_key) || (STRATEGIES_MAP.set(p1_key, new Float64Array(ACTIONS_LENGTH)), STRATEGIES_MAP.get(p1_key));
 
     for (let i = 0; i < ACTIONS_LENGTH; ++i) {
-        p0_strats_sum[i] += p0_strats_buffer[i];
-        p1_strats_sum[i] += p1_strats_buffer[i];
+        p0_strats_sum[i] += p0_strats_buffer[i] * p0_weight;
+        p1_strats_sum[i] += p1_strats_buffer[i] * p1_weight;
     }
 
     const p0_rng_action_idx = rngActionIdx(p0_strats_buffer);
@@ -1156,8 +1159,8 @@ const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round
     }
 
     for (let ai = 0; ai < ACTIONS_LENGTH; ++ai) {
-        p0_regrets[ai] += p0_util_alt[ai] - p0_util;
-        p1_regrets[ai] += p1_util_alt[ai] - p1_util;
+        p0_regrets[ai] += (p0_util_alt[ai] - p0_util) * p0_weight;
+        p1_regrets[ai] += (p1_util_alt[ai] - p1_util) * p1_weight;
     }
 
     return p0_util;
