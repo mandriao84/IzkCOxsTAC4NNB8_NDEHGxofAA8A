@@ -448,7 +448,7 @@ const score = (hand_u32) => {
     weight = (weight * SCORE_MULTIPLIER) + weight3;
     weight = (weight * SCORE_MULTIPLIER) + weight4;
 
-    const score = SCORE_BASES[type] + weight;
+    const hand_u32_score = SCORE_BASES[type] + weight;
     /** KEY_UINT32 = RANKS = 5CARDS (0..12) * 4BITS >> 20BITS | SUITS_PATTERN_LENGTH = 52 >> 6BITS */
     const key_u32 = (rank0 << 22) | (rank1 << 18) | (rank2 << 14) | (rank3 << 10) | (rank4 << 6) | suit_pattern_idx;
     /** KEY_UINT32_DECODED :
@@ -459,7 +459,7 @@ const score = (hand_u32) => {
      * rank4 = (key >>> 6) & 0x0F;
      * suit_pattern_idx = key & 0x3F;
      */
-    return { key_u32, score };
+    return { key_u32, hand_u32_score };
 }
 
 const seedRng = (seed) => {
@@ -871,7 +871,7 @@ const seedCache = async (round_int) => {
                 }
             }
             const regret_value_max_avg = visit_count > 0 ? regret_value_max / visit_count : 0;
-            if (regret_value_max_avg > 0.005) {
+            if (regret_value_max_avg === 0 || regret_value_max_avg > 0.005) {
                 will_visits_per_round[r] = 1;
                 continue;
             }
@@ -1049,6 +1049,9 @@ const rngActionIdx = (strats) => {
 }
 
 const simulate = (p0_hand_u32_idx, p1_hand_u32_idx, deck, deck_offset = 0, round_int, rounds_frozen_u8_arr, round_int_max) => {
+    // const ROUND_IS_FROZEN = rounds_frozen_u8_arr[round_int] === 1;
+    // if (ROUND_IS_FROZEN) return HANDS_EVS_FLAT.flatten(p0_hand_u32_idx, round_int, round_int_max);
+
     const p0_key = (HANDS_KEYS_UINT32[p0_hand_u32_idx] * KEY_SHIFT_MULTIPLIER) + round_int;
     const p1_key = (HANDS_KEYS_UINT32[p1_hand_u32_idx] * KEY_SHIFT_MULTIPLIER) + round_int;
 
@@ -1215,8 +1218,8 @@ const compute = async (round_int, rounds_frozen_u8_arr) => {
         const p0_hand_u8_arr_buffer = new Uint8Array(5);
         const p1_hand_u8_arr_buffer = new Uint8Array(5);
 
-        const flush_interval = HANDS_INDICES.length * 10000;
-        const iterations = 100_000;
+        const flush_interval = HANDS_INDICES.length * 5;
+        const iterations = 2; //50;
         const time_now_out = performance.now();
         let time_now_in = performance.now();
 
@@ -1332,9 +1335,9 @@ const { ACTIONS, ACTIONS_LENGTH, STRAT_VALUE_DEFAULT } = (() => {
 let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES;
 
 (async () => {
-    const round_int = 1;
-    const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
-    await compute(round_int, rounds_frozen_u8_arr);
+    // const round_int = 3;
+    // const rounds_frozen_u8_arr = new Uint8Array([0, 0, 0, 0]);
+    // await compute(round_int, rounds_frozen_u8_arr);
 
     // for (const dir of [DIR_PATH_EVS, DIR_PATH_REGRETS, DIR_PATH_STRATEGIES]) await mergeNdjson(dir);
 
@@ -1343,11 +1346,11 @@ let HANDS_UINT32, HANDS_KEYS_UINT32, HANDS_SCORES, HANDS_EVS_FLAT, HANDS_INDICES
     // await mapNdjson(path.join(DIR_PATH_RESULTS, 'strategies/__REF.ndjson'), STRATEGIES_MAP, Float64Array)
     // await readableNdjsonStrategies(STRATEGIES_MAP);
 })();
-// >>> NASH_ZERO=0 / 14469
-// >>> NASH_0.01=12537 / 14469
+// >>> NASH_0.005=14469 / 14469
+// >>> NASH_0.01=14469 / 14469
 // >>> NASH_0.02=14469 / 14469
 // >>> NASH_0.03=14469 / 14469
 // >>> NASH_0.04=14469 / 14469
 // >>> NASH_0.05=14469 / 14469
-// >>> NASH_AVG=0.008974240833475238
-// >>> NASH_MAX=0.012815689668056428
+// >>> NASH_AVG=0.004441627058523589
+// >>> NASH_MAX=0.004997119379735315
